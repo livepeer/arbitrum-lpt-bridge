@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
       },
     },
     rinkeby: {
-      url: process.env.RINKEBY_URL,
+      url: process.env.RINKEBY_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
@@ -51,7 +51,7 @@ const config: HardhatUserConfig = {
       gasPrice: 0,
     },
     arbitrumRinkeby: {
-      url: process.env.ARB_RINKEBY_URL,
+      url: process.env.ARB_RINKEBY_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
