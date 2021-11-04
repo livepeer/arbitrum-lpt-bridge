@@ -1,12 +1,15 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20, ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILivepeerToken} from "./ILivepeerToken.sol";
 
-contract LivepeerToken is ILivepeerToken, ERC20, Ownable {
-    constructor() ERC20("Livepeer Token", "LPT") {}
+contract LivepeerToken is ILivepeerToken, ERC20Permit, Ownable {
+    constructor()
+        ERC20("Livepeer Token", "LPT")
+        ERC20Permit("Livepeer Token")
+    {}
 
     /**
      * @dev Function to mint tokens

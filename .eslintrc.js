@@ -15,5 +15,6 @@ module.exports = {
   rules: {
     'require-jsdoc': 'off',
     'camelcase': 'off',
+    'new-cap': ['error', {capIsNew: false}],
   },
 };
