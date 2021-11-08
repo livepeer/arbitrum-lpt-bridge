@@ -12,12 +12,22 @@ import {getSignature, getDomainSeparator} from './utils/eip-712-helper';
 describe('LivepeerToken', function() {
   let token: LivepeerToken;
   let owner: SignerWithAddress;
+  let mintController: SignerWithAddress;
   let notOwner: SignerWithAddress;
+
+  const DEFAULT_ADMIN_ROLE =
+    '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+  const MINT_CONTROLLER = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['MINT_CONTROLLER'],
+  );
 
   beforeEach(async function() {
     const signers = await ethers.getSigners();
     owner = signers[0];
-    notOwner = signers[1];
+    mintController = signers[1];
+    notOwner = signers[2];
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
         'LivepeerToken',
@@ -33,44 +43,54 @@ describe('LivepeerToken', function() {
     const tokenSymbol = await token.symbol();
     expect(tokenSymbol).to.equal('LPT');
 
-    const tokenOwner = await token.owner();
-    expect(tokenOwner).to.equal(owner.address);
+    const isAdmin = await token.hasRole(DEFAULT_ADMIN_ROLE, owner.address);
+    expect(isAdmin).to.be.true;
   });
 
   describe('mint', async function() {
-    it('should fail to mint if not owner', async function() {
-      const tx = token
-          .connect(notOwner)
-          .mint(notOwner.address, ethers.utils.parseEther('10000'));
+    describe('caller does not have minter role', async function() {
+      it('should fail to mint', async function() {
+        const tx = token.mint(owner.address, ethers.utils.parseEther('10000'));
 
-      await expect(tx).to.be.revertedWith('Ownable: caller is not the owner');
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${MINT_CONTROLLER}`
+        );
+      });
     });
 
-    it('should mint tokens', async function() {
-      const amount = ethers.utils.parseEther('10000');
-      const balance = await token.balanceOf(owner.address);
+    describe('caller has minter role', async function() {
+      beforeEach(async function() {
+        await token.addMintController(mintController.address);
+      });
 
-      await token.mint(owner.address, amount);
+      it('should mint tokens', async function() {
+        const amount = ethers.utils.parseEther('10000');
+        const balance = await token.balanceOf(owner.address);
 
-      const newBalance = await token.balanceOf(owner.address);
-      expect(newBalance).to.equal(balance.add(amount));
-    });
+        await token.connect(mintController).mint(owner.address, amount);
 
-    it('should mint to another address', async function() {
-      const amount = ethers.utils.parseEther('10000');
-      const balance = await token.balanceOf(notOwner.address);
+        const newBalance = await token.balanceOf(owner.address);
+        expect(newBalance).to.equal(balance.add(amount));
+      });
 
-      await token.mint(notOwner.address, amount);
+      it('should mint to another address', async function() {
+        const amount = ethers.utils.parseEther('10000');
+        const balance = await token.balanceOf(notOwner.address);
 
-      const newBalance = await token.balanceOf(notOwner.address);
-      expect(newBalance).to.equal(balance.add(amount));
+        await token.connect(mintController).mint(notOwner.address, amount);
+
+        const newBalance = await token.balanceOf(notOwner.address);
+        expect(newBalance).to.equal(balance.add(amount));
+      });
     });
   });
 
   describe('burn', async function() {
     beforeEach(async function() {
       const amount = ethers.utils.parseEther('10000');
-      await token.mint(owner.address, amount);
+      await token.addMintController(mintController.address);
+      await token.connect(mintController).mint(owner.address, amount);
     });
 
     it('should burn tokens', async function() {
@@ -112,7 +132,8 @@ describe('LivepeerToken', function() {
 
       beforeEach(async function() {
         const amount = ethers.utils.parseEther('10000');
-        await token.mint(owner.address, amount);
+        await token.addMintController(mintController.address);
+        await token.connect(mintController).mint(owner.address, amount);
 
         const MockSpender: MockSpender__factory =
           await ethers.getContractFactory('MockSpender');
