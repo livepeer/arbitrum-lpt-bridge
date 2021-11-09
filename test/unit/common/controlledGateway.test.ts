@@ -6,7 +6,8 @@ import {
   ControlledGateway__factory,
   LivepeerToken,
   LivepeerToken__factory,
-} from '../../typechain';
+} from '../../../typechain';
+import {L1_LPT} from '../../../deploy/constants';
 
 describe('L1 Gateway', function() {
   let token: LivepeerToken;
@@ -40,7 +41,7 @@ describe('L1 Gateway', function() {
     const Gateway: ControlledGateway__factory = await ethers.getContractFactory(
         'ControlledGateway',
     );
-    gateway = await Gateway.deploy(token.address);
+    gateway = await Gateway.deploy(L1_LPT, token.address);
     await gateway.deployed();
   });
 

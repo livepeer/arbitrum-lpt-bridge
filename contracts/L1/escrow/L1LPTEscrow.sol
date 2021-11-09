@@ -42,7 +42,7 @@ contract L1LPTEscrow {
         address _spender,
         uint256 _value
     ) external auth {
-        emit Approve(token, spender, value);
-        ApproveLike(token).approve(spender, value);
+        emit Approve(_token, _spender, _value);
+        ApproveLike(_token).approve(_spender, _value);
     }
 }

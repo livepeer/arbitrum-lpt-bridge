@@ -6,8 +6,8 @@ import {
   LivepeerToken__factory,
   MockSpender,
   MockSpender__factory,
-} from '../../typechain';
-import {getSignature, getDomainSeparator} from '../utils/eip-712-helper';
+} from '../../../typechain';
+import {getSignature, getDomainSeparator} from '../../utils/eip-712-helper';
 
 describe('LivepeerToken', function() {
   let token: LivepeerToken;
