@@ -30,7 +30,7 @@ abstract contract L2ArbitrumMessenger {
         _;
     }
 
-    uint160 constant offset =
+    uint160 internal constant OFFSET =
         uint160(0x1111000000000000000000000000000000001111);
 
     // l1 addresses are transformed durng l1->l2 calls
@@ -39,6 +39,6 @@ abstract contract L2ArbitrumMessenger {
         pure
         returns (address l2Address)
     {
-        l2Address = address(uint160(l1Address) + offset);
+        l2Address = address(uint160(l1Address) + OFFSET);
     }
 }
