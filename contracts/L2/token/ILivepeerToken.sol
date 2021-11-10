@@ -8,7 +8,7 @@ interface ILivepeerToken is IERC20 {
 
     event Burn(address indexed burner, uint256 amount);
 
-    function mint(address _to, uint256 _amount) external returns (bool);
+    function mint(address _to, uint256 _amount) external;
 
     function burn(uint256 _amount) external;
 }

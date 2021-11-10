@@ -18,9 +18,9 @@ describe('LivepeerToken', function() {
   const DEFAULT_ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-  const MINT_CONTROLLER = ethers.utils.solidityKeccak256(
+  const MINTER_ROLE = ethers.utils.solidityKeccak256(
       ['string'],
-      ['MINT_CONTROLLER'],
+      ['MINTER_ROLE'],
   );
 
   beforeEach(async function() {
@@ -54,14 +54,14 @@ describe('LivepeerToken', function() {
 
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${MINT_CONTROLLER}`
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${MINTER_ROLE}`
         );
       });
     });
 
     describe('caller has minter role', async function() {
       beforeEach(async function() {
-        await token.addMintController(mintController.address);
+        await token.grantRole(MINTER_ROLE, mintController.address);
       });
 
       it('should mint tokens', async function() {
@@ -89,7 +89,7 @@ describe('LivepeerToken', function() {
   describe('burn', async function() {
     beforeEach(async function() {
       const amount = ethers.utils.parseEther('10000');
-      await token.addMintController(mintController.address);
+      await token.grantRole(MINTER_ROLE, mintController.address);
       await token.connect(mintController).mint(owner.address, amount);
     });
 
@@ -132,7 +132,7 @@ describe('LivepeerToken', function() {
 
       beforeEach(async function() {
         const amount = ethers.utils.parseEther('10000');
-        await token.addMintController(mintController.address);
+        await token.grantRole(MINTER_ROLE, mintController.address);
         await token.connect(mintController).mint(owner.address, amount);
 
         const MockSpender: MockSpender__factory =
