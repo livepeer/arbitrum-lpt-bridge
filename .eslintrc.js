@@ -5,20 +5,16 @@ module.exports = {
     mocha: true,
     node: true,
   },
-  plugins: ["@typescript-eslint"],
-  extends: [
-    "standard",
-    "plugin:prettier/recommended",
-    "plugin:node/recommended",
-  ],
-  parser: "@typescript-eslint/parser",
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
+  extends: ['./node_modules/eslint-config-google/index.js'],
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 8,
+    sourceType: 'module',
   },
   rules: {
-    "node/no-unsupported-features/es-syntax": [
-      "error",
-      { ignores: ["modules"] },
-    ],
+    'require-jsdoc': 'off',
+    'camelcase': 'off',
+    'new-cap': ['error', {capIsNew: false}],
   },
 };
