@@ -2,10 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {ControlledGateway} from "../../ControlledGateway.sol";
-<<<<<<< HEAD
 import {L2ArbitrumMessenger} from "./L2ArbitrumMessenger.sol";
+import {IL2LPTGateway} from "./IL2LPTGateway.sol";
 
-contract L2LPTGateway is ControlledGateway, L2ArbitrumMessenger {
+interface Mintable {
+    function mint(address _to, uint256 _amount) external;
+
+    function burn(uint256 _amount) external;
+}
+
+contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
     address public immutable l2Router;
     address public immutable l1Counterpart;
 
@@ -18,9 +24,18 @@ contract L2LPTGateway is ControlledGateway, L2ArbitrumMessenger {
         l2Router = _l2Router;
         l1Counterpart = _l1Counterpart;
     }
-=======
 
-contract L2LPTGateway is ControlledGateway {
-    constructor(address _token) ControlledGateway(_token) {}
->>>>>>> f054fec (added base contract for L1 and L2 gateways)
+    function finalizeInboundTransfer(
+        address _l1Token,
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata // data -- unused
+    ) external override onlyL1Counterpart(l1Counterpart) {
+        require(_l1Token == l1Lpt, "TOKEN_NOT_LPT");
+
+        Mintable(l2Lpt).mint(_to, _amount);
+
+        emit DepositFinalized(_l1Token, _from, _to, _amount);
+    }
 }

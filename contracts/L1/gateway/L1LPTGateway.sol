@@ -77,27 +77,6 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         return abi.encode(seqNum);
     }
 
-    function getOutboundCalldata(
-        address l1Token,
-        address from,
-        address to,
-        uint256 amount,
-        bytes memory data
-    ) public pure returns (bytes memory outboundCalldata) {
-        bytes memory emptyBytes = "";
-
-        outboundCalldata = abi.encodeWithSelector(
-            IL2LPTGateway.finalizeInboundTransfer.selector,
-            l1Token,
-            from,
-            to,
-            amount,
-            abi.encode(emptyBytes, data)
-        );
-
-        return outboundCalldata;
-    }
-
     function parseOutboundData(bytes memory data)
         internal
         view
@@ -119,5 +98,26 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
             extraData,
             (uint256, bytes)
         );
+    }
+
+    function getOutboundCalldata(
+        address l1Token,
+        address from,
+        address to,
+        uint256 amount,
+        bytes memory data
+    ) public pure returns (bytes memory outboundCalldata) {
+        bytes memory emptyBytes = "";
+
+        outboundCalldata = abi.encodeWithSelector(
+            IL2LPTGateway.finalizeInboundTransfer.selector,
+            l1Token,
+            from,
+            to,
+            amount,
+            abi.encode(emptyBytes, data)
+        );
+
+        return outboundCalldata;
     }
 }
