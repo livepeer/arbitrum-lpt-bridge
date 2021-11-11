@@ -5,30 +5,22 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ControlledGateway is AccessControl, Pausable {
-    bytes32 public constant GOVERNANCE_CONTROLLER =
-        keccak256("GOVERNANCE_CONTROLLER");
+    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
 
     address public token;
 
     constructor(address _token) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setRoleAdmin(GOVERNANCE_CONTROLLER, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
 
         token = _token;
     }
 
-    function addGovernanceController(address _newController)
-        external
-        whenNotPaused
-    {
-        grantRole(GOVERNANCE_CONTROLLER, _newController);
-    }
-
-    function pause() external onlyRole(GOVERNANCE_CONTROLLER) {
+    function pause() external onlyRole(GOVERNOR_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyRole(GOVERNANCE_CONTROLLER) {
+    function unpause() external onlyRole(GOVERNOR_ROLE) {
         _unpause();
     }
 }
