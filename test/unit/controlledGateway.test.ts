@@ -13,8 +13,8 @@ describe('L1 Gateway', function() {
   let gateway: ControlledGateway;
   let owner: SignerWithAddress;
   let notOwner: SignerWithAddress;
-  let governanceController: SignerWithAddress;
-  let governanceController2: SignerWithAddress;
+  let governor: SignerWithAddress;
+  let governor2: SignerWithAddress;
 
   const ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -27,8 +27,8 @@ describe('L1 Gateway', function() {
   beforeEach(async function() {
     const signers = await ethers.getSigners();
     owner = signers[0];
-    governanceController = signers[1];
-    governanceController2 = signers[2];
+    governor = signers[1];
+    governor2 = signers[2];
     notOwner = signers[3];
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
@@ -50,12 +50,12 @@ describe('L1 Gateway', function() {
   });
 
   describe('AccessControl', async function() {
-    describe('addGovernanceController', async function() {
+    describe('addgovernor', async function() {
       describe('caller is not admin', async function() {
         it('should not be able to set governance controller', async function() {
           const tx = gateway
               .connect(notOwner)
-              .grantRole(GOVERNOR_ROLE, governanceController.address);
+              .grantRole(GOVERNOR_ROLE, governor.address);
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
@@ -66,11 +66,11 @@ describe('L1 Gateway', function() {
 
       describe('caller is admin', async function() {
         it('should set governance controller', async function() {
-          await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
+          await gateway.grantRole(GOVERNOR_ROLE, governor.address);
 
           const hasControllerRole = await gateway.hasRole(
               GOVERNOR_ROLE,
-              governanceController.address,
+              governor.address,
           );
           expect(hasControllerRole).to.be.true;
         });
@@ -79,7 +79,7 @@ describe('L1 Gateway', function() {
 
     describe('pause', async function() {
       beforeEach(async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
+        await gateway.grantRole(GOVERNOR_ROLE, governor.address);
       });
 
       describe('caller is not governance controller', async function() {
@@ -95,7 +95,7 @@ describe('L1 Gateway', function() {
 
       describe('caller is governance controller', async function() {
         it('should pause system', async function() {
-          await gateway.connect(governanceController).pause();
+          await gateway.connect(governor).pause();
 
           const isPaused = await gateway.paused();
           expect(isPaused).to.be.true;
@@ -105,8 +105,8 @@ describe('L1 Gateway', function() {
 
     describe('unpause', async function() {
       beforeEach(async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
-        await gateway.connect(governanceController).pause();
+        await gateway.grantRole(GOVERNOR_ROLE, governor.address);
+        await gateway.connect(governor).pause();
 
         const isPaused = await gateway.paused();
         expect(isPaused).to.be.true;
@@ -125,7 +125,7 @@ describe('L1 Gateway', function() {
 
       describe('caller is governance controller', async function() {
         it('should unpause system', async function() {
-          await gateway.connect(governanceController).unpause();
+          await gateway.connect(governor).unpause();
 
           const isPaused = await gateway.paused();
           expect(isPaused).to.be.false;
@@ -136,16 +136,16 @@ describe('L1 Gateway', function() {
 
   describe('Pausable', async function() {
     beforeEach(async function() {
-      await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
+      await gateway.grantRole(GOVERNOR_ROLE, governor.address);
     });
 
     describe('contract is not paused', async function() {
       it('should call function', async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governanceController2.address);
+        await gateway.grantRole(GOVERNOR_ROLE, governor2.address);
 
         const hasControllerRole = await gateway.hasRole(
             GOVERNOR_ROLE,
-            governanceController2.address,
+            governor2.address,
         );
         expect(hasControllerRole).to.be.true;
       });
@@ -153,11 +153,11 @@ describe('L1 Gateway', function() {
 
     describe('contract is paused', async function() {
       beforeEach(async function() {
-        await gateway.connect(governanceController).pause();
+        await gateway.connect(governor).pause();
       });
 
       it('should fail to call function', async function() {
-        const tx = gateway.connect(governanceController).pause();
+        const tx = gateway.connect(governor).pause();
 
         await expect(tx).to.be.revertedWith('Pausable: paused');
       });
