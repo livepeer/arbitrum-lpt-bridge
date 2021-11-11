@@ -19,9 +19,9 @@ describe('L1 Gateway', function() {
   const ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-  const GOVERNANCE_CONTROLLER_ROLE = ethers.utils.solidityKeccak256(
+  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
       ['string'],
-      ['GOVERNANCE_CONTROLLER'],
+      ['GOVERNOR_ROLE'],
   );
 
   beforeEach(async function() {
@@ -55,7 +55,7 @@ describe('L1 Gateway', function() {
         it('should not be able to set governance controller', async function() {
           const tx = gateway
               .connect(notOwner)
-              .addGovernanceController(governanceController.address);
+              .grantRole(GOVERNOR_ROLE, governanceController.address);
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
@@ -66,10 +66,10 @@ describe('L1 Gateway', function() {
 
       describe('caller is admin', async function() {
         it('should set governance controller', async function() {
-          await gateway.addGovernanceController(governanceController.address);
+          await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
 
           const hasControllerRole = await gateway.hasRole(
-              GOVERNANCE_CONTROLLER_ROLE,
+              GOVERNOR_ROLE,
               governanceController.address,
           );
           expect(hasControllerRole).to.be.true;
@@ -79,7 +79,7 @@ describe('L1 Gateway', function() {
 
     describe('pause', async function() {
       beforeEach(async function() {
-        await gateway.addGovernanceController(governanceController.address);
+        await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
       });
 
       describe('caller is not governance controller', async function() {
@@ -88,7 +88,7 @@ describe('L1 Gateway', function() {
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNANCE_CONTROLLER_ROLE}`
+            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
           );
         });
       });
@@ -105,7 +105,7 @@ describe('L1 Gateway', function() {
 
     describe('unpause', async function() {
       beforeEach(async function() {
-        await gateway.addGovernanceController(governanceController.address);
+        await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
         await gateway.connect(governanceController).pause();
 
         const isPaused = await gateway.paused();
@@ -118,7 +118,7 @@ describe('L1 Gateway', function() {
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNANCE_CONTROLLER_ROLE}`
+            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
           );
         });
       });
@@ -136,15 +136,15 @@ describe('L1 Gateway', function() {
 
   describe('Pausable', async function() {
     beforeEach(async function() {
-      await gateway.addGovernanceController(governanceController.address);
+      await gateway.grantRole(GOVERNOR_ROLE, governanceController.address);
     });
 
     describe('contract is not paused', async function() {
       it('should call function', async function() {
-        await gateway.addGovernanceController(governanceController2.address);
+        await gateway.grantRole(GOVERNOR_ROLE, governanceController2.address);
 
         const hasControllerRole = await gateway.hasRole(
-            GOVERNANCE_CONTROLLER_ROLE,
+            GOVERNOR_ROLE,
             governanceController2.address,
         );
         expect(hasControllerRole).to.be.true;
@@ -157,9 +157,7 @@ describe('L1 Gateway', function() {
       });
 
       it('should fail to call function', async function() {
-        const tx = gateway.addGovernanceController(
-            governanceController2.address,
-        );
+        const tx = gateway.connect(governanceController).pause();
 
         await expect(tx).to.be.revertedWith('Pausable: paused');
       });
