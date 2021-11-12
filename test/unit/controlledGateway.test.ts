@@ -50,9 +50,9 @@ describe('L1 Gateway', function() {
   });
 
   describe('AccessControl', async function() {
-    describe('addgovernor', async function() {
+    describe('add governor', async function() {
       describe('caller is not admin', async function() {
-        it('should not be able to set governance controller', async function() {
+        it('should not be able to set governor', async function() {
           const tx = gateway
               .connect(notOwner)
               .grantRole(GOVERNOR_ROLE, governor.address);
@@ -65,7 +65,7 @@ describe('L1 Gateway', function() {
       });
 
       describe('caller is admin', async function() {
-        it('should set governance controller', async function() {
+        it('should set governor', async function() {
           await gateway.grantRole(GOVERNOR_ROLE, governor.address);
 
           const hasControllerRole = await gateway.hasRole(
@@ -82,7 +82,7 @@ describe('L1 Gateway', function() {
         await gateway.grantRole(GOVERNOR_ROLE, governor.address);
       });
 
-      describe('caller is not governance controller', async function() {
+      describe('caller is not governor', async function() {
         it('should not be able to pause system', async function() {
           const tx = gateway.pause();
 
@@ -93,7 +93,7 @@ describe('L1 Gateway', function() {
         });
       });
 
-      describe('caller is governance controller', async function() {
+      describe('caller is governor', async function() {
         it('should pause system', async function() {
           await gateway.connect(governor).pause();
 
@@ -112,7 +112,7 @@ describe('L1 Gateway', function() {
         expect(isPaused).to.be.true;
       });
 
-      describe('caller is not governance controller', async function() {
+      describe('caller is not governor', async function() {
         it('should not be able to unpause system', async function() {
           const tx = gateway.unpause();
 
@@ -123,7 +123,7 @@ describe('L1 Gateway', function() {
         });
       });
 
-      describe('caller is governance controller', async function() {
+      describe('caller is governor', async function() {
         it('should unpause system', async function() {
           await gateway.connect(governor).unpause();
 
