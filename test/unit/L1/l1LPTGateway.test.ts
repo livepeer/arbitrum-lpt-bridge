@@ -141,7 +141,7 @@ describe('L1 LPT Gateway', function() {
     });
 
     describe('when gateway is not paused', async function() {
-      it('reverts when tranferring non LPT token', async function() {
+      it('should revert when tranferring non LPT token', async function() {
         const tx = l1Gateway
             .connect(sender)
             .outboundTransfer(
@@ -159,7 +159,7 @@ describe('L1 LPT Gateway', function() {
         await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
       });
 
-      it('reverts when approval is too low', async () => {
+      it('should revert when approval is too low', async () => {
         const tx = l1Gateway
             .connect(sender)
             .outboundTransfer(
@@ -175,7 +175,7 @@ describe('L1 LPT Gateway', function() {
         );
       });
 
-      it('reverts when funds too low', async () => {
+      it('should revert when funds are too low', async () => {
         const tx = l1Gateway
             .connect(sender)
             .outboundTransfer(
@@ -191,7 +191,7 @@ describe('L1 LPT Gateway', function() {
         );
       });
 
-      it('reverts when called with hook calldata', async () => {
+      it('should revert when called with hook calldata', async () => {
         const tx = l1Gateway
             .connect(sender)
             .outboundTransfer(
