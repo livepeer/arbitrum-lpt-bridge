@@ -77,6 +77,21 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         return abi.encode(seqNum);
     }
 
+    function finalizeInboundTransfer(
+        address l1Token,
+        address from,
+        address to,
+        uint256 amount,
+        bytes calldata data
+    ) external override onlyL2Counterpart(l2Counterpart) {
+        require(l1Token == l1Lpt, "TOKEN_NOT_LPT");
+        (uint256 exitNum, ) = abi.decode(data, (uint256, bytes));
+
+        TokenLike(l1Token).transferFrom(l1LPTEscrow, to, amount);
+
+        emit WithdrawalFinalized(l1Token, from, to, exitNum, amount);
+    }
+
     function parseOutboundData(bytes memory data)
         internal
         view
@@ -98,6 +113,23 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
             extraData,
             (uint256, bytes)
         );
+    }
+
+    function counterpartGateway() external view override returns (address) {
+        return l2Counterpart;
+    }
+
+    function calculateL2TokenAddress(address l1Token)
+        external
+        view
+        override
+        returns (address)
+    {
+        if (l1Token != l1Lpt) {
+            return address(0);
+        }
+
+        return l2Lpt;
     }
 
     function getOutboundCalldata(

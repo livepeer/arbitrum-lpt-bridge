@@ -88,16 +88,29 @@ describe('LivepeerToken', function() {
       const amount = ethers.utils.parseEther('10000');
       await token.grantRole(MINTER_ROLE, mintController.address);
       await token.connect(mintController).mint(owner.address, amount);
+      await token.connect(mintController).mint(notOwner.address, amount);
     });
 
-    it('should burn tokens', async function() {
-      const amount = ethers.utils.parseEther('5000');
-      const balance = await token.balanceOf(owner.address);
+    describe('caller does not have minter role', async function() {
+      it('should fail to burn tokens for another address', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const tx = token.gatewayBurn(notOwner.address, amount);
 
-      await token.burn(amount);
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${MINTER_ROLE}`
+        );
+      });
 
-      const newBalance = await token.balanceOf(owner.address);
-      expect(newBalance).to.equal(balance.sub(amount));
+      it('should burn tokens for self', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const balance = await token.balanceOf(owner.address);
+
+        await token.burn(amount);
+
+        const newBalance = await token.balanceOf(owner.address);
+        expect(newBalance).to.equal(balance.sub(amount));
+      });
     });
   });
 
