@@ -7,9 +7,12 @@ import {
   L1LPTEscrow__factory,
   LivepeerToken,
   LivepeerToken__factory,
+  MockSpender,
+  MockSpender__factory,
 } from '../../../typechain';
 
 describe('L1Escrow', () => {
+  let owner: SignerWithAddress;
   let notOwner: SignerWithAddress;
   let spender: SignerWithAddress;
   let token: LivepeerToken;
@@ -18,9 +21,7 @@ describe('L1Escrow', () => {
   const allowanceLimit = 100;
 
   beforeEach(async function() {
-    const signers = await ethers.getSigners();
-    notOwner = signers[1];
-    spender = signers[2];
+    [owner, notOwner, spender] = await ethers.getSigners();
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
         'LivepeerToken',
@@ -52,6 +53,14 @@ describe('L1Escrow', () => {
 
     it('reverts when called deny', async () => {
       const tx = escrow.connect(notOwner).deny(spender.address);
+
+      await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
+    });
+
+    it('reverts when called revoke', async () => {
+      const tx = escrow
+          .connect(notOwner)
+          .revoke(token.address, spender.address);
 
       await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
     });
@@ -125,6 +134,129 @@ describe('L1Escrow', () => {
         const tx = escrow.deny(spender.address);
 
         await expect(tx).to.emit(escrow, 'Deny').withArgs(spender.address);
+      });
+    });
+  });
+
+  describe('transactions', async function() {
+    let mockSpender: MockSpender;
+    const initialSupply = 10000;
+
+    beforeEach(async function() {
+      await token.grantRole(
+          ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
+          owner.address,
+      );
+      await token.mint(escrow.address, initialSupply);
+      mockSpender = await new MockSpender__factory(owner).deploy();
+    });
+
+    describe('spender does not have allowance', () => {
+      it('should revert on token transfer', async () => {
+        const tx = mockSpender.transferTokens(
+            escrow.address,
+            token.address,
+            1000,
+        );
+
+        await expect(tx).to.be.revertedWith(
+            'ERC20: transfer amount exceeds allowance',
+        );
+      });
+    });
+
+    describe('spender has allowance', () => {
+      const amount = 1000;
+
+      beforeEach(async function() {
+        await escrow.allow(mockSpender.address);
+        await escrow.approve(token.address, mockSpender.address, amount);
+      });
+
+      it('should revert if amount exceeds balance', async () => {
+        const tx = mockSpender.transferTokens(
+            escrow.address,
+            token.address,
+            initialSupply + 10,
+        );
+
+        await expect(tx).to.be.revertedWith(
+            'ERC20: transfer amount exceeds balance',
+        );
+      });
+
+      it('should revert if amount exceeds allowance', async () => {
+        const tx = mockSpender.transferTokens(
+            escrow.address,
+            token.address,
+            amount + 100,
+        );
+
+        await expect(tx).to.be.revertedWith(
+            'ERC20: transfer amount exceeds allowance',
+        );
+      });
+
+      it('should transfer tokens to itself', async () => {
+        const spenderInitialBalance = await token.balanceOf(
+            mockSpender.address,
+        );
+        const escrowInitialBalance = await token.balanceOf(escrow.address);
+
+        await mockSpender.transferTokens(escrow.address, token.address, amount);
+
+        expect(await token.balanceOf(mockSpender.address)).to.equal(
+            spenderInitialBalance.add(amount),
+        );
+        expect(await token.balanceOf(escrow.address)).to.equal(
+            escrowInitialBalance.sub(amount),
+        );
+      });
+
+      describe('spender access was modified', () => {
+        describe('deny', () => {
+          beforeEach(async function() {
+            await escrow.deny(mockSpender.address);
+          });
+
+          it('should transfer tokens to itself', async () => {
+            const spenderInitialBalance = await token.balanceOf(
+                mockSpender.address,
+            );
+            const escrowInitialBalance = await token.balanceOf(escrow.address);
+
+            await mockSpender.transferTokens(
+                escrow.address,
+                token.address,
+                amount,
+            );
+
+            expect(await token.balanceOf(mockSpender.address)).to.equal(
+                spenderInitialBalance.add(amount),
+            );
+            expect(await token.balanceOf(escrow.address)).to.equal(
+                escrowInitialBalance.sub(amount),
+            );
+          });
+        });
+
+        describe('revoke', () => {
+          beforeEach(async function() {
+            await escrow.revoke(token.address, mockSpender.address);
+          });
+
+          it('should revert on token transfer', async () => {
+            const tx = mockSpender.transferTokens(
+                escrow.address,
+                token.address,
+                1000,
+            );
+
+            await expect(tx).to.be.revertedWith(
+                'ERC20: transfer amount exceeds allowance',
+            );
+          });
+        });
       });
     });
   });

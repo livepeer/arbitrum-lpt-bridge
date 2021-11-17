@@ -32,7 +32,7 @@ contract L1LPTEscrow {
         emit Allow(_user);
     }
 
-    function deny(address _user) external auth {
+    function deny(address _user) public auth {
         allowed[_user] = false;
         emit Deny(_user);
     }
@@ -41,8 +41,13 @@ contract L1LPTEscrow {
         address _token,
         address _spender,
         uint256 _value
-    ) external auth {
+    ) public auth {
         emit Approve(_token, _spender, _value);
         ApproveLike(_token).approve(_spender, _value);
+    }
+
+    function revoke(address _token, address _user) external auth {
+        deny(_user);
+        approve(_token, _user, 0);
     }
 }
