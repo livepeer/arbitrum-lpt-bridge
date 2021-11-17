@@ -1,14 +1,19 @@
 import {Signer} from '@ethersproject/abstract-signer';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
-import {expect} from 'chai';
+import {expect, use} from 'chai';
 import {ethers} from 'hardhat';
 import {
+  L1LPTGateway__factory,
   L2LPTGateway,
   L2LPTGateway__factory,
   LivepeerToken,
   LivepeerToken__factory,
 } from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
+import {FakeContract, smock} from '@defi-wonderland/smock';
+import * as ArbSysABI from '../../utils/abis/ArbSys.json';
+
+use(smock.matchers);
 
 describe('L2 Gateway', function() {
   let token: LivepeerToken;
@@ -19,6 +24,7 @@ describe('L2 Gateway', function() {
   let governor: SignerWithAddress;
 
   // mocks
+  let arbSysMock: FakeContract;
   let mockL2RouterEOA: SignerWithAddress;
   let mockL1GatewayEOA: SignerWithAddress;
   let mockL1GatewayL2Alias: Signer;
@@ -68,11 +74,36 @@ describe('L2 Gateway', function() {
       to: await mockL1GatewayL2Alias.getAddress(),
       value: ethers.utils.parseUnits('1', 'ether'),
     });
+
+    arbSysMock = await smock.fake(ArbSysABI.abi, {
+      address: '0x0000000000000000000000000000000000000064',
+    });
   });
 
-  it('should correctly set token', async function() {
-    const lpt = await l2Gateway.l2Lpt();
-    expect(lpt).to.equal(token.address);
+  describe('constructor', () => {
+    describe('l2 token', () => {
+      it('should return correct l2 token', async function() {
+        const lpt = await l2Gateway.calculateL2TokenAddress(
+            mockL1LptEOA.address,
+        );
+        expect(lpt).to.equal(token.address);
+      });
+
+      // eslint-disable-next-line
+      it('should return 0 address when called with incorrect l1 token', async function () {
+        const lpt = await l2Gateway.calculateL2TokenAddress(
+            ethers.utils.hexlify(ethers.utils.randomBytes(20)),
+        );
+        expect(lpt).to.equal('0x0000000000000000000000000000000000000000');
+      });
+    });
+
+    describe('l1 counterpart', () => {
+      it('should return correct l1 counterpart', async function() {
+        const counterpart = await l2Gateway.counterpartGateway();
+        expect(counterpart).to.equal(mockL1GatewayEOA.address);
+      });
+    });
   });
 
   describe('finalizeInboundTransfer', () => {
@@ -228,6 +259,241 @@ describe('L2 Gateway', function() {
                 sender.address,
                 depositAmount,
             );
+      });
+    });
+  });
+
+  describe('outboundTransfer', () => {
+    const withdrawAmount = 100;
+    const defaultData = '0x';
+    const defaultDataWithNotEmptyCallHookData = '0x12';
+    const expectedWithdrawalId = 0;
+    const initialTotalL2Supply = 3000;
+
+    beforeEach(async function() {
+      await token.grantRole(
+          ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
+          owner.address,
+      );
+      await token.connect(owner).mint(sender.address, initialTotalL2Supply);
+    });
+
+    describe('when gateway is paused', async function() {
+      beforeEach(async function() {
+        await l2Gateway.connect(governor).pause();
+      });
+
+      it('should fail to tranfer', async () => {
+        await expect(
+            l2Gateway.outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                withdrawAmount,
+                defaultData,
+            ),
+        ).to.be.revertedWith('Pausable: paused');
+      });
+    });
+
+    describe('when gateway is not paused', async function() {
+      it('should revert when called with a different token', async () => {
+        await expect(
+            l2Gateway.outboundTransfer(
+                token.address,
+                sender.address,
+                withdrawAmount,
+                defaultData,
+            ),
+        ).to.be.revertedWith('TOKEN_NOT_LPT');
+      });
+
+      it('should revert when funds are too low', async () => {
+        const tx = l2Gateway
+            .connect(sender)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                initialTotalL2Supply + 100,
+                defaultData,
+            );
+        await expect(tx).to.be.revertedWith(
+            'ERC20: burn amount exceeds balance',
+        );
+      });
+
+      it('should revert when called with callHookData', async () => {
+        await expect(
+            l2Gateway.outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                withdrawAmount,
+                defaultDataWithNotEmptyCallHookData,
+            ),
+        ).to.be.revertedWith('CALL_HOOK_DATA_NOT_ALLOWED');
+      });
+
+      it('should revert when bridge doesnt have minter role', async () => {
+        // remove burn permissions
+        const MINTER_ROLE = ethers.utils.solidityKeccak256(
+            ['string'],
+            ['MINTER_ROLE'],
+        );
+        await token.revokeRole(MINTER_ROLE, l2Gateway.address);
+
+        const tx = l2Gateway.outboundTransfer(
+            mockL1LptEOA.address,
+            sender.address,
+            withdrawAmount,
+            defaultData,
+        );
+
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${l2Gateway.address.toLowerCase()} is missing role ${MINTER_ROLE}`
+        );
+      });
+
+      it('sends message to L1 and burns tokens', async () => {
+        const tx = await l2Gateway
+            .connect(sender)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                withdrawAmount,
+                defaultData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        expect(await token.totalSupply()).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        await expect(tx)
+            .to.emit(l2Gateway, 'WithdrawalInitiated')
+            .withArgs(
+                mockL1LptEOA.address,
+                sender.address,
+                sender.address,
+                expectedWithdrawalId,
+                expectedWithdrawalId,
+                withdrawAmount,
+            );
+
+        const calldata = new L1LPTGateway__factory(
+            owner,
+        ).interface.encodeFunctionData('finalizeInboundTransfer', [
+          mockL1LptEOA.address,
+          sender.address,
+          sender.address,
+          withdrawAmount,
+          ethers.utils.defaultAbiCoder.encode(
+              ['uint256', 'bytes'],
+              [expectedWithdrawalId, defaultData],
+          ),
+        ]);
+        expect(arbSysMock.sendTxToL1).to.be.calledOnceWith(
+            mockL1GatewayEOA.address,
+            calldata,
+        );
+      });
+
+      it('sends message to L1 and burns tokens for 3rd party', async () => {
+        const tx = await l2Gateway
+            .connect(sender)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                receiver.address,
+                withdrawAmount,
+                defaultData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        expect(await token.balanceOf(receiver.address)).to.be.eq(0);
+        expect(await token.totalSupply()).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        await expect(tx)
+            .to.emit(l2Gateway, 'WithdrawalInitiated')
+            .withArgs(
+                mockL1LptEOA.address,
+                sender.address,
+                receiver.address,
+                expectedWithdrawalId,
+                expectedWithdrawalId,
+                withdrawAmount,
+            );
+
+        const calldata = new L1LPTGateway__factory(
+            owner,
+        ).interface.encodeFunctionData('finalizeInboundTransfer', [
+          mockL1LptEOA.address,
+          sender.address,
+          receiver.address,
+          withdrawAmount,
+          ethers.utils.defaultAbiCoder.encode(
+              ['uint256', 'bytes'],
+              [expectedWithdrawalId, defaultData],
+          ),
+        ]);
+        expect(arbSysMock.sendTxToL1).to.be.calledOnceWith(
+            mockL1GatewayEOA.address,
+            calldata,
+        );
+      });
+
+      // eslint-disable-next-line
+      it('sends message to L1 and burns tokens when called through router', async () => {
+        const routerEncodedData = ethers.utils.defaultAbiCoder.encode(
+            ['address', 'bytes'],
+            [sender.address, defaultData],
+        );
+
+        const tx = await l2Gateway
+            .connect(mockL2RouterEOA)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                receiver.address,
+                withdrawAmount,
+                routerEncodedData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        expect(await token.balanceOf(receiver.address)).to.be.eq(0);
+        expect(await token.totalSupply()).to.be.eq(
+            initialTotalL2Supply - withdrawAmount,
+        );
+        await expect(tx)
+            .to.emit(l2Gateway, 'WithdrawalInitiated')
+            .withArgs(
+                mockL1LptEOA.address,
+                sender.address,
+                receiver.address,
+                expectedWithdrawalId,
+                expectedWithdrawalId,
+                withdrawAmount,
+            );
+
+        const calldata = new L1LPTGateway__factory(
+            owner,
+        ).interface.encodeFunctionData('finalizeInboundTransfer', [
+          mockL1LptEOA.address,
+          sender.address,
+          receiver.address,
+          withdrawAmount,
+          ethers.utils.defaultAbiCoder.encode(
+              ['uint256', 'bytes'],
+              [expectedWithdrawalId, defaultData],
+          ),
+        ]);
+        expect(arbSysMock.sendTxToL1).to.be.calledOnceWith(
+            mockL1GatewayEOA.address,
+            calldata,
+        );
       });
     });
   });

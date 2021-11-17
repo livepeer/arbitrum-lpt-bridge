@@ -35,4 +35,13 @@ contract LivepeerToken is ILivepeerToken, AccessControl, ERC20Permit {
         _burn(_msgSender(), _amount);
         emit Burn(_msgSender(), _amount);
     }
+
+    function gatewayBurn(address _from, uint256 _amount)
+        external
+        override
+        onlyRole(MINTER_ROLE)
+    {
+        _burn(_from, _amount);
+        emit Burn(_from, _amount);
+    }
 }
