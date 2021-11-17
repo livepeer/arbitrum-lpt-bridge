@@ -147,17 +147,16 @@ describe('L2 Gateway', function() {
 
       describe('caller is l1 gateway router (aliased)', () => {
         it('should revert when withdrawing not supported tokens', async () => {
-          await expect(
-              l2Gateway
-                  .connect(mockL1GatewayL2Alias)
-                  .finalizeInboundTransfer(
-                      ethers.utils.hexlify(ethers.utils.randomBytes(20)),
-                      sender.address,
-                      sender.address,
-                      depositAmount,
-                      defaultData,
-                  ),
-          ).to.be.revertedWith('TOKEN_NOT_LPT');
+          const tx = l2Gateway
+              .connect(mockL1GatewayL2Alias)
+              .finalizeInboundTransfer(
+                  ethers.utils.hexlify(ethers.utils.randomBytes(20)),
+                  sender.address,
+                  sender.address,
+                  depositAmount,
+                  defaultData,
+              );
+          await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
         });
 
         it('should revert when DAI minting access was revoked', async () => {
@@ -297,14 +296,13 @@ describe('L2 Gateway', function() {
 
     describe('when gateway is not paused', async function() {
       it('should revert when called with a different token', async () => {
-        await expect(
-            l2Gateway.outboundTransfer(
-                token.address,
-                sender.address,
-                withdrawAmount,
-                defaultData,
-            ),
-        ).to.be.revertedWith('TOKEN_NOT_LPT');
+        const tx = l2Gateway.outboundTransfer(
+            token.address,
+            sender.address,
+            withdrawAmount,
+            defaultData,
+        );
+        await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
       });
 
       it('should revert when funds are too low', async () => {
@@ -322,14 +320,13 @@ describe('L2 Gateway', function() {
       });
 
       it('should revert when called with callHookData', async () => {
-        await expect(
-            l2Gateway.outboundTransfer(
-                mockL1LptEOA.address,
-                sender.address,
-                withdrawAmount,
-                defaultDataWithNotEmptyCallHookData,
-            ),
-        ).to.be.revertedWith('CALL_HOOK_DATA_NOT_ALLOWED');
+        const tx = l2Gateway.outboundTransfer(
+            mockL1LptEOA.address,
+            sender.address,
+            withdrawAmount,
+            defaultDataWithNotEmptyCallHookData,
+        );
+        await expect(tx).to.be.revertedWith('CALL_HOOK_DATA_NOT_ALLOWED');
       });
 
       it('should revert when bridge doesnt have minter role', async () => {
