@@ -52,23 +52,4 @@ abstract contract L1ArbitrumMessenger {
         emit TxToL2(user, target, seqNum, data);
         return seqNum;
     }
-
-    function getBridge(address _inbox) internal view virtual returns (IBridge) {
-        return IBridge(IInbox(_inbox).bridge());
-    }
-
-    /** @dev the l2ToL1Sender behaves as the tx.origin, the msg.sender should be validated to protect against reentrancies
-     */
-    function getL2ToL1Sender(address _inbox)
-        internal
-        view
-        virtual
-        returns (address)
-    {
-        IOutbox outbox = IOutbox(getBridge(_inbox).activeOutbox());
-        address l2ToL1Sender = outbox.l2ToL1Sender();
-
-        require(l2ToL1Sender != address(0), "NO_SENDER");
-        return l2ToL1Sender;
-    }
 }
