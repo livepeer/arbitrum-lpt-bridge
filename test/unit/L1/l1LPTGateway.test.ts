@@ -504,146 +504,150 @@ describe('L1 LPT Gateway', function() {
       await token.connect(owner).mint(escrow.address, 10000);
     });
 
-    it('sends funds from the escrow', async () => {
-      const initialSenderBalance = await token.balanceOf(sender.address);
-      const initialEscrowBalance = await token.balanceOf(escrow.address);
-
-      const finalizeWithdrawalTx = await l1Gateway
-          .connect(mockBridgeEOA)
-          .finalizeInboundTransfer(
-              token.address,
-              sender.address,
-              sender.address,
-              withdrawAmount,
-              defaultWithdrawData,
-          );
-
-      expect(await token.balanceOf(sender.address)).to.be.equal(
-          initialSenderBalance.add(withdrawAmount),
-      );
-      expect(await token.balanceOf(escrow.address)).to.be.equal(
-          initialEscrowBalance.sub(withdrawAmount),
-      );
-      await expect(finalizeWithdrawalTx)
-          .to.emit(l1Gateway, 'WithdrawalFinalized')
-          .withArgs(
-              token.address,
-              sender.address,
-              sender.address,
-              expectedTransferId,
-              withdrawAmount,
-          );
-    });
-
-    it('sends funds from the escrow to the 3rd party', async () => {
-      const initialSenderBalance = await token.balanceOf(sender.address);
-      const initialReceiverBalance = await token.balanceOf(receiver.address);
-      const initialEscrowBalance = await token.balanceOf(escrow.address);
-
-      const finalizeWithdrawalTx = await l1Gateway
-          .connect(mockBridgeEOA)
-          .finalizeInboundTransfer(
-              token.address,
-              sender.address,
-              receiver.address,
-              withdrawAmount,
-              defaultWithdrawData,
-          );
-
-      expect(await token.balanceOf(sender.address)).to.be.equal(
-          initialSenderBalance,
-      );
-      expect(await token.balanceOf(receiver.address)).to.be.equal(
-          initialReceiverBalance.add(withdrawAmount),
-      );
-      expect(await token.balanceOf(escrow.address)).to.be.equal(
-          initialEscrowBalance.sub(withdrawAmount),
-      );
-      await expect(finalizeWithdrawalTx)
-          .to.emit(l1Gateway, 'WithdrawalFinalized')
-          .withArgs(
-              token.address,
-              sender.address,
-              receiver.address,
-              expectedTransferId,
-              withdrawAmount,
-          );
-    });
-
-    it('completes withdrawals even when closed', async () => {
-      await l1Gateway.connect(governor).pause();
-
-      const initialSenderBalance = await token.balanceOf(sender.address);
-      const initialEscrowBalance = await token.balanceOf(escrow.address);
-
-      const finalizeWithdrawalTx = await l1Gateway
-          .connect(mockBridgeEOA)
-          .finalizeInboundTransfer(
-              token.address,
-              sender.address,
-              sender.address,
-              withdrawAmount,
-              defaultWithdrawData,
-          );
-
-      expect(await token.balanceOf(sender.address)).to.be.equal(
-          initialSenderBalance.add(withdrawAmount),
-      );
-      expect(await token.balanceOf(escrow.address)).to.be.equal(
-          initialEscrowBalance.sub(withdrawAmount),
-      );
-      await expect(finalizeWithdrawalTx)
-          .to.emit(l1Gateway, 'WithdrawalFinalized')
-          .withArgs(
-              token.address,
-              sender.address,
-              sender.address,
-              expectedTransferId,
-              withdrawAmount,
-          );
-    });
-
     it('reverts when called with a different token', async () => {
-      await expect(
-          l1Gateway
-              .connect(mockBridgeEOA)
-              .finalizeInboundTransfer(
-                  mockL2LptEOA.address,
-                  sender.address,
-                  sender.address,
-                  withdrawAmount,
-                  defaultWithdrawData,
-              ),
-      ).to.be.revertedWith('TOKEN_NOT_LPT');
+      const tx = l1Gateway
+          .connect(mockBridgeEOA)
+          .finalizeInboundTransfer(
+              mockL2LptEOA.address,
+              sender.address,
+              sender.address,
+              withdrawAmount,
+              defaultWithdrawData,
+          );
+      await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
     });
 
     it('reverts when called not by the outbox', async () => {
-      await expect(
-          l1Gateway.finalizeInboundTransfer(
-              token.address,
-              sender.address,
-              sender.address,
-              withdrawAmount,
-              defaultWithdrawData,
-          ),
-      ).to.be.revertedWith('NOT_FROM_BRIDGE');
+      const tx = l1Gateway.finalizeInboundTransfer(
+          token.address,
+          sender.address,
+          sender.address,
+          withdrawAmount,
+          defaultWithdrawData,
+      );
+      await expect(tx).to.be.revertedWith('NOT_FROM_BRIDGE');
     });
 
     // eslint-disable-next-line
     it('reverts when called by the outbox but not relying message from l2 counterpart', async () => {
       outboxMock.l2ToL1Sender.returns(owner.address);
 
-      await expect(
-          l1Gateway
-              .connect(mockBridgeEOA)
-              .finalizeInboundTransfer(
-                  token.address,
-                  sender.address,
-                  sender.address,
-                  withdrawAmount,
-                  defaultWithdrawData,
-              ),
-      ).to.be.revertedWith('ONLY_COUNTERPART_GATEWAY');
+      const tx = l1Gateway
+          .connect(mockBridgeEOA)
+          .finalizeInboundTransfer(
+              token.address,
+              sender.address,
+              sender.address,
+              withdrawAmount,
+              defaultWithdrawData,
+          );
+
+      await expect(tx).to.be.revertedWith('ONLY_COUNTERPART_GATEWAY');
+    });
+
+    describe('when gateway is not paused', () => {
+      it('sends funds from the escrow', async () => {
+        const initialSenderBalance = await token.balanceOf(sender.address);
+        const initialEscrowBalance = await token.balanceOf(escrow.address);
+
+        const finalizeWithdrawalTx = await l1Gateway
+            .connect(mockBridgeEOA)
+            .finalizeInboundTransfer(
+                token.address,
+                sender.address,
+                sender.address,
+                withdrawAmount,
+                defaultWithdrawData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.equal(
+            initialSenderBalance.add(withdrawAmount),
+        );
+        expect(await token.balanceOf(escrow.address)).to.be.equal(
+            initialEscrowBalance.sub(withdrawAmount),
+        );
+        await expect(finalizeWithdrawalTx)
+            .to.emit(l1Gateway, 'WithdrawalFinalized')
+            .withArgs(
+                token.address,
+                sender.address,
+                sender.address,
+                expectedTransferId,
+                withdrawAmount,
+            );
+      });
+
+      it('sends funds from the escrow to the 3rd party', async () => {
+        const initialSenderBalance = await token.balanceOf(sender.address);
+        const initialReceiverBalance = await token.balanceOf(receiver.address);
+        const initialEscrowBalance = await token.balanceOf(escrow.address);
+
+        const finalizeWithdrawalTx = await l1Gateway
+            .connect(mockBridgeEOA)
+            .finalizeInboundTransfer(
+                token.address,
+                sender.address,
+                receiver.address,
+                withdrawAmount,
+                defaultWithdrawData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.equal(
+            initialSenderBalance,
+        );
+        expect(await token.balanceOf(receiver.address)).to.be.equal(
+            initialReceiverBalance.add(withdrawAmount),
+        );
+        expect(await token.balanceOf(escrow.address)).to.be.equal(
+            initialEscrowBalance.sub(withdrawAmount),
+        );
+        await expect(finalizeWithdrawalTx)
+            .to.emit(l1Gateway, 'WithdrawalFinalized')
+            .withArgs(
+                token.address,
+                sender.address,
+                receiver.address,
+                expectedTransferId,
+                withdrawAmount,
+            );
+      });
+    });
+
+    describe('when gateway is paused', () => {
+      beforeEach(async function() {
+        await l1Gateway.connect(governor).pause();
+      });
+
+      it('completes withdrawals even when closed', async () => {
+        const initialSenderBalance = await token.balanceOf(sender.address);
+        const initialEscrowBalance = await token.balanceOf(escrow.address);
+
+        const finalizeWithdrawalTx = await l1Gateway
+            .connect(mockBridgeEOA)
+            .finalizeInboundTransfer(
+                token.address,
+                sender.address,
+                sender.address,
+                withdrawAmount,
+                defaultWithdrawData,
+            );
+
+        expect(await token.balanceOf(sender.address)).to.be.equal(
+            initialSenderBalance.add(withdrawAmount),
+        );
+        expect(await token.balanceOf(escrow.address)).to.be.equal(
+            initialEscrowBalance.sub(withdrawAmount),
+        );
+        await expect(finalizeWithdrawalTx)
+            .to.emit(l1Gateway, 'WithdrawalFinalized')
+            .withArgs(
+                token.address,
+                sender.address,
+                sender.address,
+                expectedTransferId,
+                withdrawAmount,
+            );
+      });
     });
   });
 });
