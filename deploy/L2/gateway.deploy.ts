@@ -40,5 +40,4 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ['L2_GATEWAY'];
-func.dependencies = ['L2_LPT'];
 export default func;

@@ -15,13 +15,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
   await deployments.save('L1_LPT', token);
 
-  //   await execute(
-  //       'L1_LPT',
-  //       {from: deployer, log: true},
-  //       'grantRole',
-  //       ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
-  //       deployer,
-  //   );
+  await execute(
+      'L1_LPT',
+      {from: deployer, log: true},
+      'grantRole',
+      ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
+      deployer,
+  );
 
   await execute(
       'L1_LPT',
