@@ -32,6 +32,15 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       l1Gateway.address,
   );
 
+  await execute(
+      'L1LPTEscrow',
+      {from: deployer, log: true},
+      'approve',
+      l1LPT.address,
+      l1Gateway.address,
+      ethers.constants.MaxUint256,
+  );
+
   const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
       ['string'],
       ['GOVERNOR_ROLE'],
@@ -46,5 +55,4 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ['L1_GATEWAY'];
-func.dependencies = ['L1_LPT', 'L1_ESCROW'];
 export default func;
