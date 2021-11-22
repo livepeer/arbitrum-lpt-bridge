@@ -16,20 +16,25 @@ interface TokenLike {
 
 contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
     address public immutable l1Router;
-    address public immutable l2Counterpart;
     address public immutable l1LPTEscrow;
+    address public l2Counterpart;
 
     constructor(
         address _l1Router,
-        address _l2Counterpart,
         address _l1LPTEscrow,
         address _l1Lpt,
         address _l2Lpt,
         address _inbox
     ) ControlledGateway(_l1Lpt, _l2Lpt) L1ArbitrumMessenger(_inbox) {
         l1Router = _l1Router;
-        l2Counterpart = _l2Counterpart;
         l1LPTEscrow = _l1LPTEscrow;
+    }
+
+    function setCounterpart(address _l2Counterpart)
+        external
+        onlyRole(GOVERNOR_ROLE)
+    {
+        l2Counterpart = _l2Counterpart;
     }
 
     function outboundTransfer(

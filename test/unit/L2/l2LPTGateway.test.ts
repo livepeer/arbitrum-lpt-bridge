@@ -56,7 +56,6 @@ describe('L2 Gateway', function() {
     );
     l2Gateway = await L2Gateway.deploy(
         mockL2RouterEOA.address,
-        mockL1GatewayEOA.address,
         mockL1LptEOA.address,
         token.address,
     );
@@ -72,6 +71,7 @@ describe('L2 Gateway', function() {
         ['GOVERNOR_ROLE'],
     );
     await l2Gateway.grantRole(GOVERNOR_ROLE, governor.address);
+    await l2Gateway.connect(governor).setCounterpart(mockL1GatewayEOA.address);
 
     await token.grantRole(BURNER_ROLE, l2Gateway.address);
 
