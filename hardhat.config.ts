@@ -43,10 +43,25 @@ const config: HardhatUserConfig = {
         count: 10,
       },
     },
+    localhostl1: {
+      url: 'http://localhost:8545',
+      companionNetworks: {
+        l2: 'localhostl2',
+      },
+    },
+    localhostl2: {
+      url: 'http://localhost:8546',
+      companionNetworks: {
+        l1: 'localhostl1',
+      },
+    },
     rinkeby: {
       url: process.env.RINKEBY_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l2: 'arbitrumRinkeby',
+      },
     },
     arbitrumLocal: {
       url: 'http://localhost:8547',
@@ -63,6 +78,9 @@ const config: HardhatUserConfig = {
       url: process.env.ARB_RINKEBY_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l1: 'arbitrum',
+      },
     },
   },
   gasReporter: {
