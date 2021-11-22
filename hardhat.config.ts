@@ -79,7 +79,7 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       companionNetworks: {
-        l1: 'arbitrum',
+        l1: 'rinkeby',
       },
     },
   },
