@@ -79,7 +79,6 @@ describe('L1 LPT Gateway', function() {
 
     l1Gateway = await L1Gateway.deploy(
         mockL1RouterEOA.address,
-        mockL2GatewayEOA.address,
         escrow.address,
         token.address,
         mockL2LptEOA.address,
@@ -102,6 +101,7 @@ describe('L1 LPT Gateway', function() {
         ['GOVERNOR_ROLE'],
     );
     await l1Gateway.grantRole(GOVERNOR_ROLE, governor.address);
+    await l1Gateway.connect(governor).setCounterpart(mockL2GatewayEOA.address);
 
     inboxMock = await smock.fake(InboxABI.abi, {
       address: mockInboxEOA.address,
