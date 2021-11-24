@@ -6,6 +6,7 @@ import {
   L1LPTGateway__factory,
   NodeInterface__factory,
 } from '../typechain';
+import {waitForTx, waitToRelayTxsToL2} from '../test/utils/messaging';
 
 export function getArbitrumCoreContracts(l2: ethers2.providers.BaseProvider) {
   return {
@@ -23,10 +24,10 @@ export function getArbitrumCoreContracts(l2: ethers2.providers.BaseProvider) {
 }
 
 async function main(): Promise<void> {
-  const l1GatewayAddress = '0x335Ea1163A86D0F5536cC34D8D91d71342821160';
+  const l1GatewayAddress = '0x637D3cFE2FdB2ADb743D85C6Ed54E10b2A91ba75';
   const l1LPTAddress = '0x3d0dB674f6912c369995E82328187A9221b3efa5';
 
-  const amount = ethers.utils.parseEther('100');
+  const amount = ethers.utils.parseEther('10000');
 
   const ethProvider = new ethers.providers.JsonRpcProvider(
       process.env.RINKEBY_URL,
@@ -44,6 +45,10 @@ async function main(): Promise<void> {
   const l1Gateway = new L1LPTGateway__factory(l1TestWallet).attach(
       l1GatewayAddress,
   );
+
+  //   const token = new LivepeerToken__factory(l1TestWallet)
+  //   .attach(l1LPTAddress);
+  //   await token.approve(l1GatewayAddress, ethers.constants.MaxUint256)
 
   const gasPriceBid = await arbProvider.getGasPrice();
 
@@ -81,7 +86,7 @@ async function main(): Promise<void> {
   );
   const ethValue = await maxSubmissionPrice.add(gasPriceBid.mul(maxGas));
 
-  const tx = await l1Gateway.outboundTransfer(
+  const tx = l1Gateway.outboundTransfer(
       l1LPTAddress,
       l1TestWallet.address,
       amount,
@@ -93,7 +98,12 @@ async function main(): Promise<void> {
       },
   );
 
-  console.log(tx.hash);
+  await waitToRelayTxsToL2(
+      waitForTx(tx),
+      ARBITRUM_NETWORK.rinkeby.inbox,
+      ethProvider,
+      arbProvider,
+  );
 }
 
 main()
