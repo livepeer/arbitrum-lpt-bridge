@@ -13,6 +13,7 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    'max-len': 'off',
     'require-jsdoc': 'off',
     'camelcase': 'off',
     'new-cap': ['error', {capIsNew: false}],
