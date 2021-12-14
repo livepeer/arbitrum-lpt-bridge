@@ -18,6 +18,18 @@ interface IMigrator {
         address delegate;
     }
 
+    struct MigrateUnbondingLocksParams {
+        // Address that is migrating from L1
+        address l1Addr;
+        // Address to use on L2
+        // If null, l1Addr is used on L2
+        address l2Addr;
+        // Total tokens in unbonding locks
+        uint256 total;
+        // IDs of unbonding locks being migrated
+        uint256[] unbondingLockIds;
+    }
+
     struct MigrateSenderParams {
         // Address that is migrating from L1
         address l1Addr;
