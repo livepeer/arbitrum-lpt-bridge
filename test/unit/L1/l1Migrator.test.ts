@@ -52,6 +52,18 @@ describe('L1Migrator', function() {
       return this.signer._signTypedData(this.domain(), types, {l1Addr, l2Addr});
     }
 
+    signMigrateUnbondingLocks(l1Addr: string, l2Addr: string, unbondingLockIds: number[]) {
+      const types = {
+        MigrateUnbondingLocks: [
+          {name: 'l1Addr', type: 'address'},
+          {name: 'l2Addr', type: 'address'},
+          {name: 'unbondingLockIds', type: 'uint256[]'},
+        ],
+      };
+
+      return this.signer._signTypedData(this.domain(), types, {l1Addr, l2Addr, unbondingLockIds});
+    }
+
     signMigrateSender(l1Addr: string, l2Addr: string): Promise<string> {
       const types = {
         MigrateSender: [
@@ -262,6 +274,132 @@ describe('L1Migrator', function() {
           .to.emit(l1Migrator, 'MigrateDelegatorInitiated');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, migrateDelegatorParams)
+    });
+  });
+
+  describe('migrateUnbondingLocks', () => {
+    it('reverts for null l2Addr', async () => {
+      const tx = l1Migrator.connect(l1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          ethers.constants.AddressZero,
+          [],
+          '0x',
+          0,
+          0,
+          0,
+      );
+      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: INVALID_L2_ADDR');
+    });
+
+    it('reverts for failed auth', async () => {
+      // Invalid msg.sender + invalid non-null signature
+      const sig = await notL1EOA.signMessage('foo');
+      let tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          l1EOA.address,
+          [],
+          sig,
+          0,
+          0,
+          0,
+      );
+      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
+
+      // Invalid msg.sender + null signature
+      tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          l1EOA.address,
+          [],
+          '0x',
+          0,
+          0,
+          0,
+      );
+      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
+    });
+
+    it('does not revert for successful auth', async () => {
+      // Valid msg.sender
+      let tx = l1Migrator.connect(l1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          l1EOA.address,
+          [],
+          '0x',
+          0,
+          0,
+          0,
+      );
+      await expect(tx).to.not.reverted;
+
+      // Invalid msg.sender + valid signature
+      const network = await ethers.provider.getNetwork();
+      const l1MigratorSigner = new L1MigratorSigner(l1EOA, l1Migrator.address, network.chainId);
+      const sig = await l1MigratorSigner.signMigrateUnbondingLocks(l1EOA.address, l1EOA.address, [1, 2]);
+      tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          l1EOA.address,
+          [1, 2],
+          sig,
+          0,
+          0,
+          0,
+      );
+      // await tx
+      await expect(tx).to.not.reverted;
+    });
+
+    it('reads BondingManager state and creates a retryable ticket', async () => {
+      const seqNo = 7;
+      const unbondingLockIds = [1, 2];
+      const lock1Amount = 100;
+      const lock2Amount = 200;
+
+      inboxMock.createRetryableTicket.returns(seqNo);
+      bondingManagerMock.getDelegatorUnbondingLock.whenCalledWith(l1EOA.address, 1).returns([lock1Amount, 0]);
+      bondingManagerMock.getDelegatorUnbondingLock.whenCalledWith(l1EOA.address, 2).returns([lock2Amount, 0]);
+
+      const maxGas = 111;
+      const gasPriceBid = 222;
+      const maxSubmissionCost = 333;
+
+      // createRetryableTicket()
+      const migrateUnbondingLocksParams = {
+        l1Addr: l1EOA.address,
+        l2Addr: l1EOA.address,
+        total: lock1Amount + lock2Amount,
+        unbondingLockIds,
+      };
+      const l2Calldata = IL2Migrator__factory.createInterface().encodeFunctionData(
+          'finalizeMigrateUnbondingLocks',
+          [migrateUnbondingLocksParams],
+      );
+
+      const tx = await l1Migrator.connect(l1EOA).migrateUnbondingLocks(
+          l1EOA.address,
+          l1EOA.address,
+          unbondingLockIds,
+          '0x',
+          maxGas,
+          gasPriceBid,
+          maxSubmissionCost,
+      );
+
+      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+          mockL2MigratorEOA.address,
+          0,
+          maxSubmissionCost,
+          l1EOA.address,
+          l1EOA.address,
+          maxGas,
+          gasPriceBid,
+          l2Calldata,
+      );
+
+      // MigrateUnbondingLocksInitiated Event
+      await expect(tx)
+          .to.emit(l1Migrator, 'MigrateUnbondingLocksInitiated');
+      // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+      // .withArgs(seqNo, migrateUnbondingLocksParams)
     });
   });
 
