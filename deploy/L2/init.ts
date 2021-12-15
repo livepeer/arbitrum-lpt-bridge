@@ -11,11 +11,22 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       'L1LPTGateway',
   );
 
+  const l1Migrator = await hre.companionNetworks['l1'].deployments.get(
+      'L1Migrator',
+  );
+
   await execute(
       'L2LPTGateway',
       {from: deployer, log: true},
       'setCounterpart',
       l1Gateway.address,
+  );
+
+  await execute(
+      'L2Migrator',
+      {from: deployer, log: true},
+      'setL1Migrator',
+      l1Migrator.address,
   );
 };
 
