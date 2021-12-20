@@ -7,10 +7,12 @@ import {ILivepeerToken} from "./ILivepeerToken.sol";
 
 contract LivepeerToken is ILivepeerToken, AccessControl, ERC20Permit {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     constructor() ERC20("Livepeer Token", "LPT") ERC20Permit("Livepeer Token") {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
+        _setRoleAdmin(BURNER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
     /**
@@ -31,15 +33,10 @@ contract LivepeerToken is ILivepeerToken, AccessControl, ERC20Permit {
      * @dev Burns a specific amount of the sender's tokens
      * @param _amount The amount of tokens to be burned
      */
-    function burn(uint256 _amount) external override {
-        _burn(_msgSender(), _amount);
-        emit Burn(_msgSender(), _amount);
-    }
-
-    function gatewayBurn(address _from, uint256 _amount)
+    function burn(address _from, uint256 _amount)
         external
         override
-        onlyRole(MINTER_ROLE)
+        onlyRole(BURNER_ROLE)
     {
         _burn(_from, _amount);
         emit Burn(_from, _amount);

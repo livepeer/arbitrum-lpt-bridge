@@ -13,6 +13,7 @@ describe('LivepeerToken', function() {
   let token: LivepeerToken;
   let owner: SignerWithAddress;
   let mintController: SignerWithAddress;
+  let burnController: SignerWithAddress;
   let notOwner: SignerWithAddress;
 
   const DEFAULT_ADMIN_ROLE =
@@ -23,8 +24,14 @@ describe('LivepeerToken', function() {
       ['MINTER_ROLE'],
   );
 
+  const BURNER_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['BURNER_ROLE'],
+  );
+
   beforeEach(async function() {
-    [owner, mintController, notOwner] = await ethers.getSigners();
+    [owner, mintController, burnController, notOwner] =
+      await ethers.getSigners();
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
         'LivepeerToken',
@@ -87,28 +94,54 @@ describe('LivepeerToken', function() {
     beforeEach(async function() {
       const amount = ethers.utils.parseEther('10000');
       await token.grantRole(MINTER_ROLE, mintController.address);
+      await token.grantRole(BURNER_ROLE, burnController.address);
       await token.connect(mintController).mint(owner.address, amount);
       await token.connect(mintController).mint(notOwner.address, amount);
+      await token.connect(mintController).mint(burnController.address, amount);
     });
 
-    describe('caller does not have minter role', async function() {
+    describe('caller does not have burner role', async function() {
       it('should fail to burn tokens for another address', async function() {
         const amount = ethers.utils.parseEther('5000');
-        const tx = token.gatewayBurn(notOwner.address, amount);
+        const tx = token.burn(notOwner.address, amount);
 
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${MINTER_ROLE}`
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${BURNER_ROLE}`
         );
+      });
+
+      it('should fail to burn tokens for self', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const tx = token.connect(owner).burn(owner.address, amount);
+
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${BURNER_ROLE}`
+        );
+      });
+    });
+
+    describe('caller has burner role', async function() {
+      it('should burn tokens for another address', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const balance = await token.balanceOf(owner.address);
+
+        await token.connect(burnController).burn(owner.address, amount);
+
+        const newBalance = await token.balanceOf(owner.address);
+        expect(newBalance).to.equal(balance.sub(amount));
       });
 
       it('should burn tokens for self', async function() {
         const amount = ethers.utils.parseEther('5000');
-        const balance = await token.balanceOf(owner.address);
+        const balance = await token.balanceOf(burnController.address);
 
-        await token.burn(amount);
+        await token
+            .connect(burnController)
+            .burn(burnController.address, amount);
 
-        const newBalance = await token.balanceOf(owner.address);
+        const newBalance = await token.balanceOf(burnController.address);
         expect(newBalance).to.equal(balance.sub(amount));
       });
     });
