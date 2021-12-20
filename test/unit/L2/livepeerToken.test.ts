@@ -6,8 +6,8 @@ import {
   LivepeerToken__factory,
   MockSpender,
   MockSpender__factory,
-} from '../../typechain';
-import {getSignature, getDomainSeparator} from '../utils/eip-712-helper';
+} from '../../../typechain';
+import {getSignature, getDomainSeparator} from '../../utils/eip-712-helper';
 
 describe('LivepeerToken', function() {
   let token: LivepeerToken;
@@ -24,10 +24,7 @@ describe('LivepeerToken', function() {
   );
 
   beforeEach(async function() {
-    const signers = await ethers.getSigners();
-    owner = signers[0];
-    mintController = signers[1];
-    notOwner = signers[2];
+    [owner, mintController, notOwner] = await ethers.getSigners();
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
         'LivepeerToken',
@@ -150,6 +147,7 @@ describe('LivepeerToken', function() {
           expect(allowance).to.equal(0);
 
           const tx = mockSpender.transferTokens(
+              owner.address,
               token.address,
               ethers.utils.parseEther('100'),
           );
@@ -173,7 +171,11 @@ describe('LivepeerToken', function() {
             const amount = ethers.utils.parseEther('100');
             await token.approve(mockSpender.address, amount);
 
-            await mockSpender.transferTokens(token.address, amount);
+            await mockSpender.transferTokens(
+                owner.address,
+                token.address,
+                amount,
+            );
 
             const movedBalance = await token.balanceOf(mockSpender.address);
             expect(movedBalance).to.equal(amount);
@@ -344,7 +346,11 @@ describe('LivepeerToken', function() {
                 s,
             );
 
-            await mockSpender.transferTokens(token.address, amount);
+            await mockSpender.transferTokens(
+                owner.address,
+                token.address,
+                amount,
+            );
 
             expect(await token.nonces(owner.address)).to.equal(1);
             const movedBalance = await token.balanceOf(mockSpender.address);
