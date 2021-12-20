@@ -41,6 +41,11 @@ describe('L1 LPT Gateway', function() {
   const initialTotalL1Supply = 3000;
   const depositAmount = 100;
 
+  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['GOVERNOR_ROLE'],
+  );
+
   beforeEach(async function() {
     [
       owner,
@@ -96,10 +101,6 @@ describe('L1 LPT Gateway', function() {
     await token.transfer(sender.address, initialTotalL1Supply);
     await token.connect(sender).approve(l1Gateway.address, depositAmount);
 
-    const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-        ['string'],
-        ['GOVERNOR_ROLE'],
-    );
     await l1Gateway.grantRole(GOVERNOR_ROLE, governor.address);
     await l1Gateway.connect(governor).setCounterpart(mockL2GatewayEOA.address);
 
@@ -140,6 +141,30 @@ describe('L1 LPT Gateway', function() {
       it('should return correct l1 counterpart', async function() {
         const counterpart = await l1Gateway.counterpartGateway();
         expect(counterpart).to.equal(mockL2GatewayEOA.address);
+      });
+    });
+  });
+
+  describe('setCounterpart', () => {
+    const newAddress = ethers.utils.getAddress(
+        ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
+    );
+
+    describe('caller not governor', () => {
+      it('should fail to change counterpart address', async function() {
+        const tx = l1Gateway.connect(owner).setCounterpart(newAddress);
+        expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        );
+      });
+    });
+
+    describe('caller is governor', () => {
+      it('should change counterpart address', async function() {
+        await l1Gateway.connect(governor).setCounterpart(newAddress);
+        const counterpart = await l1Gateway.counterpartGateway();
+        expect(counterpart).to.equal(newAddress);
       });
     });
   });
