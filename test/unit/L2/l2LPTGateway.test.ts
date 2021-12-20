@@ -11,7 +11,6 @@ import {
 } from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
 import {FakeContract, smock} from '@defi-wonderland/smock';
-import * as ArbSysABI from '../../utils/abis/ArbSys.json';
 
 use(smock.matchers);
 
@@ -82,7 +81,7 @@ describe('L2 Gateway', function() {
       value: ethers.utils.parseUnits('1', 'ether'),
     });
 
-    arbSysMock = await smock.fake(ArbSysABI.abi, {
+    arbSysMock = await smock.fake('IArbSys', {
       address: '0x0000000000000000000000000000000000000064',
     });
   });
