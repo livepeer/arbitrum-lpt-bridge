@@ -21,7 +21,7 @@ pragma solidity ^0.8.0;
 /**
  * @title Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
  */
-interface ArbSys {
+interface IArbSys {
     /**
      * @notice Get internal version number identifying an ArbOS build
      * @return version number as int
