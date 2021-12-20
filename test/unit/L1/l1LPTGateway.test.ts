@@ -88,7 +88,6 @@ describe('L1 LPT Gateway', function() {
     );
     await l1Gateway.deployed();
 
-    await escrow.connect(owner).allow(l1Gateway.address);
     await escrow.approve(
         token.address,
         l1Gateway.address,
