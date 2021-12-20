@@ -34,6 +34,11 @@ describe('L2 Gateway', function() {
       ['BURNER_ROLE'],
   );
 
+  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['GOVERNOR_ROLE'],
+  );
+
   beforeEach(async function() {
     [
       owner,
@@ -66,10 +71,6 @@ describe('L2 Gateway', function() {
         l2Gateway.address,
     );
 
-    const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-        ['string'],
-        ['GOVERNOR_ROLE'],
-    );
     await l2Gateway.grantRole(GOVERNOR_ROLE, governor.address);
     await l2Gateway.connect(governor).setCounterpart(mockL1GatewayEOA.address);
 
@@ -108,6 +109,30 @@ describe('L2 Gateway', function() {
       it('should return correct l1 counterpart', async function() {
         const counterpart = await l2Gateway.counterpartGateway();
         expect(counterpart).to.equal(mockL1GatewayEOA.address);
+      });
+    });
+  });
+
+  describe('setCounterpart', () => {
+    const newAddress = ethers.utils.getAddress(
+        ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
+    );
+
+    describe('caller not governor', () => {
+      it('should fail to change counterpart address', async function() {
+        const tx = l2Gateway.connect(owner).setCounterpart(newAddress);
+        expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        );
+      });
+    });
+
+    describe('caller is governor', () => {
+      it('should change counterpart address', async function() {
+        await l2Gateway.connect(governor).setCounterpart(newAddress);
+        const counterpart = await l2Gateway.counterpartGateway();
+        expect(counterpart).to.equal(newAddress);
       });
     });
   });
