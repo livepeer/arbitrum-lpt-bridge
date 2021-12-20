@@ -7,3 +7,4 @@ abi
 keystore
 deployments
 scripts/**/*.sh
+dist
