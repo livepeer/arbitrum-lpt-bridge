@@ -8,21 +8,34 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.so
 
 interface IBondingManager {
     function isRegisteredTranscoder(address _addr) external view returns (bool);
-    function pendingStake(address _addr, uint256 _endRound) external view returns (uint256);
-    function pendingFees(address _addr, uint256 _endRound) external view returns (uint256);
-    function getDelegator(address _addr) external view returns (
-        uint256 bondedAmount,
-        uint256 fees,
-        address delegateAddress,
-        uint256 delegatedAmount,
-        uint256 startRound,
-        uint256 lastClaimRound,
-        uint256 nextUnbondingLockId
-    );
-    function getDelegatorUnbondingLock(
-        address _addr,
-        uint256 _unbondingLockId
-    ) external view returns (uint256 amount, uint256 withdrawRound);
+
+    function pendingStake(address _addr, uint256 _endRound)
+        external
+        view
+        returns (uint256);
+
+    function pendingFees(address _addr, uint256 _endRound)
+        external
+        view
+        returns (uint256);
+
+    function getDelegator(address _addr)
+        external
+        view
+        returns (
+            uint256 bondedAmount,
+            uint256 fees,
+            address delegateAddress,
+            uint256 delegatedAmount,
+            uint256 startRound,
+            uint256 lastClaimRound,
+            uint256 nextUnbondingLockId
+        );
+
+    function getDelegatorUnbondingLock(address _addr, uint256 _unbondingLockId)
+        external
+        view
+        returns (uint256 amount, uint256 withdrawRound);
 }
 
 interface ITicketBroker {
@@ -39,15 +52,17 @@ interface ITicketBroker {
     function getSenderInfo(address _addr)
         external
         view
-        returns (
-            Sender memory sender,
-            ReserveInfo memory reserve
-        );
+        returns (Sender memory sender, ReserveInfo memory reserve);
 }
 
 interface IL2Migrator is IMigrator {
-    function finalizeMigrateDelegator(MigrateDelegatorParams memory _params) external;
-    function finalizeMigrateUnbondingLocks(MigrateUnbondingLocksParams memory _params) external;
+    function finalizeMigrateDelegator(MigrateDelegatorParams memory _params)
+        external;
+
+    function finalizeMigrateUnbondingLocks(
+        MigrateUnbondingLocksParams memory _params
+    ) external;
+
     function finalizeMigrateSender(MigrateSenderParams memory _params) external;
 }
 
@@ -71,13 +86,15 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         MigrateSenderParams params
     );
 
-    bytes32 private constant MIGRATE_DELEGATOR_TYPE_HASH = 
+    bytes32 private constant MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
 
-    bytes32 private constant MIGRATE_UNBONDING_LOCKS_TYPE_HASH = 
-        keccak256("MigrateUnbondingLocks(address l1Addr,address l2Addr,uint256[] unbondingLockIds)");
+    bytes32 private constant MIGRATE_UNBONDING_LOCKS_TYPE_HASH =
+        keccak256(
+            "MigrateUnbondingLocks(address l1Addr,address l2Addr,uint256[] unbondingLockIds)"
+        );
 
-    bytes32 private constant MIGRATE_SENDER_TYPE_HASH = 
+    bytes32 private constant MIGRATE_SENDER_TYPE_HASH =
         keccak256("MigrateSender(address l1Addr,address l2Addr)");
 
     constructor(
@@ -98,51 +115,21 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    )
-        external
-    {
+    ) external {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
-            keccak256(abi.encode(
-                MIGRATE_DELEGATOR_TYPE_HASH,
-                _l1Addr,
-                _l2Addr
-            )),
+            keccak256(
+                abi.encode(MIGRATE_DELEGATOR_TYPE_HASH, _l1Addr, _l2Addr)
+            ),
             _sig
         );
 
-        IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
-
-        // pendingStake() ignores the _endRound arg
-        uint256 stake = bondingManager.pendingStake(_l1Addr, 0);
-        // pendingFees() ignores the _endRound arg
-        uint256 fees = bondingManager.pendingFees(_l1Addr, 0);
         (
-            ,
-            ,
-            address delegateAddress,
-            uint256 delegatedAmount,
-            ,
-            ,
-        ) = bondingManager.getDelegator(_l1Addr);
+            bytes memory data,
+            MigrateDelegatorParams memory params
+        ) = getMigrateDelegatorParams(_l1Addr, _l2Addr);
 
-        // We do not prevent migration replays here to minimize L1 gas costs
-        // The L2Migrator is responsible for rejecting migration replays
-
-        // Call finalizeMigrateDelegator() on L2Migrator
-        MigrateDelegatorParams memory params = MigrateDelegatorParams({
-            l1Addr: _l1Addr,
-            l2Addr: _l2Addr,
-            stake: stake,
-            delegatedStake: delegatedAmount,
-            fees: fees,
-            delegate: delegateAddress
-        });
-        bytes memory data = abi.encodeWithSelector(
-            IL2Migrator.finalizeMigrateDelegator.selector,
-            params
-        );
         uint256 seqNo = sendTxToL2(
             l2MigratorAddr,
             _l2Addr, // Refunds to the L2 address
@@ -163,46 +150,26 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    )
-        external
-    {
+    ) external {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
-            keccak256(abi.encode(
-                MIGRATE_UNBONDING_LOCKS_TYPE_HASH,
-                _l1Addr,
-                _l2Addr,
-                keccak256(abi.encodePacked(_unbondingLockIds))
-            )),
+            keccak256(
+                abi.encode(
+                    MIGRATE_UNBONDING_LOCKS_TYPE_HASH,
+                    _l1Addr,
+                    _l2Addr,
+                    keccak256(abi.encodePacked(_unbondingLockIds))
+                )
+            ),
             _sig
         );
 
-        IBondingManager bondingManager = IBondingManager(bondingManagerAddr); 
+        (
+            bytes memory data,
+            MigrateUnbondingLocksParams memory params
+        ) = getMigrateUnbondingLocksParams(_l1Addr, _l2Addr, _unbondingLockIds);
 
-        uint256 total = 0;
-        for (uint256 i = 0; i < _unbondingLockIds.length; i++) {
-            (
-                uint256 amount,
-            ) = bondingManager.getDelegatorUnbondingLock(_l1Addr, _unbondingLockIds[i]);
-
-            total += amount;
-        }
-
-        // We do not prevent migration replays here to minimize L1 gas costs
-        // The L2Migrator is responsible for rejecting migration replays
-
-        // Call finalizeMigrateUnbondingLocks() on L2Migrator
-        MigrateUnbondingLocksParams memory params = MigrateUnbondingLocksParams({
-            l1Addr: _l1Addr,
-            l2Addr: _l2Addr,
-            total: total,
-            unbondingLockIds: _unbondingLockIds
-        });
-        bytes memory data = abi.encodeWithSelector(
-            IL2Migrator.finalizeMigrateUnbondingLocks.selector,
-            params
-        );
         uint256 seqNo = sendTxToL2(
             l2MigratorAddr,
             _l2Addr, // Refund to the L2 address
@@ -211,7 +178,7 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
             _gasPriceBid,
             data
         );
-        
+
         emit MigrateUnbondingLocksInitiated(seqNo, params);
     }
 
@@ -222,20 +189,76 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    )
-        external
-    {
+    ) external {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
-            keccak256(abi.encode(
-                MIGRATE_SENDER_TYPE_HASH,
-                _l1Addr,
-                _l2Addr
-            )),
+            keccak256(abi.encode(MIGRATE_SENDER_TYPE_HASH, _l1Addr, _l2Addr)),
             _sig
         );
 
+        (
+            bytes memory data,
+            MigrateSenderParams memory params
+        ) = getMigrateSenderParams(_l1Addr, _l2Addr);
+
+        uint256 seqNo = sendTxToL2(
+            l2MigratorAddr,
+            _l2Addr, // Refund to the L2 address
+            _maxSubmissionCost,
+            _maxGas,
+            _gasPriceBid,
+            data
+        );
+
+        emit MigrateSenderInitiated(seqNo, params);
+    }
+
+    function getMigrateDelegatorParams(address _l1Addr, address _l2Addr)
+        public
+        view
+        returns (bytes memory data, MigrateDelegatorParams memory params)
+    {
+        IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
+
+        // pendingStake() ignores the _endRound arg
+        uint256 stake = bondingManager.pendingStake(_l1Addr, 0);
+        // pendingFees() ignores the _endRound arg
+        uint256 fees = bondingManager.pendingFees(_l1Addr, 0);
+        (
+            ,
+            ,
+            address delegateAddress,
+            uint256 delegatedAmount,
+            ,
+            ,
+
+        ) = bondingManager.getDelegator(_l1Addr);
+
+        // We do not prevent migration replays here to minimize L1 gas costs
+        // The L2Migrator is responsible for rejecting migration replays
+
+        // Call finalizeMigrateDelegator() on L2Migrator
+        params = MigrateDelegatorParams({
+            l1Addr: _l1Addr,
+            l2Addr: _l2Addr,
+            stake: stake,
+            delegatedStake: delegatedAmount,
+            fees: fees,
+            delegate: delegateAddress
+        });
+
+        data = abi.encodeWithSelector(
+            IL2Migrator.finalizeMigrateDelegator.selector,
+            params
+        );
+    }
+
+    function getMigrateSenderParams(address _l1Addr, address _l2Addr)
+        public
+        view
+        returns (bytes memory data, MigrateSenderParams memory params)
+    {
         ITicketBroker ticketBroker = ITicketBroker(ticketBrokerAddr);
 
         (
@@ -247,26 +270,55 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         // The L2Migrator is responsible for rejecting migration replays
 
         // Call finalizeMigrateSender() on L2Migrator
-        MigrateSenderParams memory params = MigrateSenderParams({
+        params = MigrateSenderParams({
             l1Addr: _l1Addr,
             l2Addr: _l2Addr,
             deposit: sender.deposit,
             reserve: reserveInfo.fundsRemaining
         });
-        bytes memory data = abi.encodeWithSelector(
+
+        data = abi.encodeWithSelector(
             IL2Migrator.finalizeMigrateSender.selector,
             params
         );
-        uint256 seqNo = sendTxToL2(
-            l2MigratorAddr,
-            _l2Addr, // Refund to the L2 address
-            _maxSubmissionCost,
-            _maxGas,
-            _gasPriceBid,
-            data
+    }
+
+    function getMigrateUnbondingLocksParams(
+        address _l1Addr,
+        address _l2Addr,
+        uint256[] memory _unbondingLockIds
+    )
+        public
+        view
+        returns (bytes memory data, MigrateUnbondingLocksParams memory params)
+    {
+        IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
+
+        uint256 total = 0;
+        for (uint256 i = 0; i < _unbondingLockIds.length; i++) {
+            (uint256 amount, ) = bondingManager.getDelegatorUnbondingLock(
+                _l1Addr,
+                _unbondingLockIds[i]
+            );
+
+            total += amount;
+        }
+
+        // We do not prevent migration replays here to minimize L1 gas costs
+        // The L2Migrator is responsible for rejecting migration replays
+
+        // Call finalizeMigrateUnbondingLocks() on L2Migrator
+        params = MigrateUnbondingLocksParams({
+            l1Addr: _l1Addr,
+            l2Addr: _l2Addr,
+            total: total,
+            unbondingLockIds: _unbondingLockIds
+        });
+
+        data = abi.encodeWithSelector(
+            IL2Migrator.finalizeMigrateUnbondingLocks.selector,
+            params
         );
-        
-        emit MigrateSenderInitiated(seqNo, params);
     }
 
     function requireValidMigration(
@@ -274,24 +326,19 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         address _l2Addr,
         bytes32 _structHash,
         bytes memory _sig
-    )
-        internal
-        view
-    {
+    ) internal view {
         require(
             _l2Addr != address(0),
             "L1Migrator#requireValidMigration: INVALID_L2_ADDR"
         );
         require(
-            msg.sender == _l1Addr || recoverSigner(_structHash, _sig) == _l1Addr,
+            msg.sender == _l1Addr ||
+                recoverSigner(_structHash, _sig) == _l1Addr,
             "L1Migrator#requireValidMigration: FAIL_AUTH"
         );
     }
 
-    function recoverSigner(
-        bytes32 _structHash,
-        bytes memory _sig
-    )
+    function recoverSigner(bytes32 _structHash, bytes memory _sig)
         internal
         view
         returns (address)
