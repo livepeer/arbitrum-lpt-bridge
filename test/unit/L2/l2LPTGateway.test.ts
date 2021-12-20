@@ -30,6 +30,11 @@ describe('L2 Gateway', function() {
   let mockL1GatewayL2Alias: Signer;
   let mockL1LptEOA: SignerWithAddress;
 
+  const BURNER_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['BURNER_ROLE'],
+  );
+
   beforeEach(async function() {
     [
       owner,
@@ -68,6 +73,8 @@ describe('L2 Gateway', function() {
         ['GOVERNOR_ROLE'],
     );
     await l2Gateway.grantRole(GOVERNOR_ROLE, governor.address);
+
+    await token.grantRole(BURNER_ROLE, l2Gateway.address);
 
     mockL1GatewayL2Alias = await getL2SignerFromL1(mockL1GatewayEOA);
     await owner.sendTransaction({
@@ -331,11 +338,7 @@ describe('L2 Gateway', function() {
 
       it('should revert when bridge doesnt have minter role', async () => {
         // remove burn permissions
-        const MINTER_ROLE = ethers.utils.solidityKeccak256(
-            ['string'],
-            ['MINTER_ROLE'],
-        );
-        await token.revokeRole(MINTER_ROLE, l2Gateway.address);
+        await token.revokeRole(BURNER_ROLE, l2Gateway.address);
 
         const tx = l2Gateway.outboundTransfer(
             mockL1LptEOA.address,
@@ -346,7 +349,7 @@ describe('L2 Gateway', function() {
 
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${l2Gateway.address.toLowerCase()} is missing role ${MINTER_ROLE}`
+          `AccessControl: account ${l2Gateway.address.toLowerCase()} is missing role ${BURNER_ROLE}`
         );
       });
 
