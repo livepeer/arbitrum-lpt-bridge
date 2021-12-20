@@ -10,7 +10,5 @@ interface ILivepeerToken is IERC20 {
 
     function mint(address _to, uint256 _amount) external;
 
-    function burn(uint256 _amount) external;
-
-    function gatewayBurn(address _from, uint256 _amount) external;
+    function burn(address _from, uint256 _amount) external;
 }
