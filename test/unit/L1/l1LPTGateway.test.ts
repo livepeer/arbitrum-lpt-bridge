@@ -3,8 +3,8 @@ import {expect} from 'chai';
 import {ethers} from 'hardhat';
 import {ARBITRUM_NETWORK} from '../../../deploy/constants';
 import {
-  L1LPTEscrow,
-  L1LPTEscrow__factory,
+  L1Escrow,
+  L1Escrow__factory,
   L1LPTGateway,
   L1LPTGateway__factory,
   LivepeerToken,
@@ -13,7 +13,7 @@ import {
 
 describe('L1 Gateway', function() {
   let token: LivepeerToken;
-  let escrow: L1LPTEscrow;
+  let escrow: L1Escrow;
   let l1Gateway: L1LPTGateway;
   let owner: SignerWithAddress;
 
@@ -31,8 +31,8 @@ describe('L1 Gateway', function() {
     token = await Token.deploy();
     await token.deployed();
 
-    const Escrow: L1LPTEscrow__factory = await ethers.getContractFactory(
-        'L1LPTEscrow',
+    const Escrow: L1Escrow__factory = await ethers.getContractFactory(
+        'L1Escrow',
     );
     escrow = await Escrow.deploy();
     await escrow.deployed();

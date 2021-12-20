@@ -3,8 +3,8 @@ import {expect} from 'chai';
 import {ethers} from 'hardhat';
 
 import {
-  L1LPTEscrow,
-  L1LPTEscrow__factory,
+  L1Escrow,
+  L1Escrow__factory,
   LivepeerToken,
   LivepeerToken__factory,
   MockSpender,
@@ -16,9 +16,12 @@ describe('L1Escrow', () => {
   let notOwner: SignerWithAddress;
   let spender: SignerWithAddress;
   let token: LivepeerToken;
-  let escrow: L1LPTEscrow;
+  let escrow: L1Escrow;
 
   const allowanceLimit = 100;
+
+  const ADMIN_ROLE =
+    '0x0000000000000000000000000000000000000000000000000000000000000000';
 
   beforeEach(async function() {
     [owner, notOwner, spender] = await ethers.getSigners();
@@ -29,8 +32,8 @@ describe('L1Escrow', () => {
     token = await Token.deploy();
     await token.deployed();
 
-    const Escrow: L1LPTEscrow__factory = await ethers.getContractFactory(
-        'L1LPTEscrow',
+    const Escrow: L1Escrow__factory = await ethers.getContractFactory(
+        'L1Escrow',
     );
     escrow = await Escrow.deploy();
     await escrow.deployed();
@@ -42,27 +45,21 @@ describe('L1Escrow', () => {
           .connect(notOwner)
           .approve(token.address, spender.address, allowanceLimit);
 
-      await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
+      await expect(tx).to.be.revertedWith(
+          // eslint-disable-next-line
+        `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+      );
     });
 
     it('reverts when called allow', async () => {
-      const tx = escrow.connect(notOwner).allow(spender.address);
-
-      await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
-    });
-
-    it('reverts when called deny', async () => {
-      const tx = escrow.connect(notOwner).deny(spender.address);
-
-      await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
-    });
-
-    it('reverts when called revoke', async () => {
       const tx = escrow
           .connect(notOwner)
-          .revoke(token.address, spender.address);
+          .grantRole(ADMIN_ROLE, spender.address);
 
-      await expect(tx).to.be.revertedWith('NOT_AUTHORIZED');
+      await expect(tx).to.be.revertedWith(
+          // eslint-disable-next-line
+        `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+      );
     });
   });
 
@@ -97,43 +94,18 @@ describe('L1Escrow', () => {
       });
     });
 
-    describe('allow', async function() {
-      it('adds user to whitelist', async () => {
-        const isAllowedInitial = await escrow.allowed(spender.address);
+    describe('grantRole', async function() {
+      it('grants another user admin role', async () => {
+        const isAllowedInitial = await escrow.hasRole(
+            ADMIN_ROLE,
+            spender.address,
+        );
         expect(isAllowedInitial).to.be.false;
 
-        await escrow.allow(spender.address);
+        await escrow.grantRole(ADMIN_ROLE, notOwner.address);
 
-        const isAllowed = await escrow.allowed(spender.address);
+        const isAllowed = await escrow.hasRole(ADMIN_ROLE, notOwner.address);
         expect(isAllowed).to.be.true;
-      });
-
-      it('emits Allow event', async () => {
-        const tx = escrow.allow(spender.address);
-
-        await expect(tx).to.emit(escrow, 'Allow').withArgs(spender.address);
-      });
-    });
-
-    describe('deny', async function() {
-      beforeEach(async function() {
-        await escrow.allow(spender.address);
-      });
-
-      it('adds user to whitelist', async () => {
-        const isAllowedInitial = await escrow.allowed(spender.address);
-        expect(isAllowedInitial).to.be.true;
-
-        await escrow.deny(spender.address);
-
-        const isAllowed = await escrow.allowed(spender.address);
-        expect(isAllowed).to.be.false;
-      });
-
-      it('emits Allow event', async () => {
-        const tx = escrow.deny(spender.address);
-
-        await expect(tx).to.emit(escrow, 'Deny').withArgs(spender.address);
       });
     });
   });
@@ -169,7 +141,6 @@ describe('L1Escrow', () => {
       const amount = 1000;
 
       beforeEach(async function() {
-        await escrow.allow(mockSpender.address);
         await escrow.approve(token.address, mockSpender.address, amount);
       });
 
@@ -211,52 +182,6 @@ describe('L1Escrow', () => {
         expect(await token.balanceOf(escrow.address)).to.equal(
             escrowInitialBalance.sub(amount),
         );
-      });
-
-      describe('spender access was modified', () => {
-        describe('deny', () => {
-          beforeEach(async function() {
-            await escrow.deny(mockSpender.address);
-          });
-
-          it('should transfer tokens to itself', async () => {
-            const spenderInitialBalance = await token.balanceOf(
-                mockSpender.address,
-            );
-            const escrowInitialBalance = await token.balanceOf(escrow.address);
-
-            await mockSpender.transferTokens(
-                escrow.address,
-                token.address,
-                amount,
-            );
-
-            expect(await token.balanceOf(mockSpender.address)).to.equal(
-                spenderInitialBalance.add(amount),
-            );
-            expect(await token.balanceOf(escrow.address)).to.equal(
-                escrowInitialBalance.sub(amount),
-            );
-          });
-        });
-
-        describe('revoke', () => {
-          beforeEach(async function() {
-            await escrow.revoke(token.address, mockSpender.address);
-          });
-
-          it('should revert on token transfer', async () => {
-            const tx = mockSpender.transferTokens(
-                escrow.address,
-                token.address,
-                1000,
-            );
-
-            await expect(tx).to.be.revertedWith(
-                'ERC20: transfer amount exceeds allowance',
-            );
-          });
-        });
       });
     });
   });
