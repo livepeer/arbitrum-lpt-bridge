@@ -1,4 +1,4 @@
-import {Signer} from '@ethersproject/abstract-signer';
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import {ethers} from 'hardhat';
 import hre from 'hardhat';
 
@@ -14,7 +14,9 @@ export function applyL1ToL2Alias(l1Address: string): string {
   return l2AddressAsNumber.mod(mask).toHexString();
 }
 
-export async function getL2SignerFromL1(l1Signer: Signer): Promise<Signer> {
+export async function getL2SignerFromL1(
+    l1Signer: SignerWithAddress,
+): Promise<SignerWithAddress> {
   const l2Address = applyL1ToL2Alias(await l1Signer.getAddress());
 
   await hre.network.provider.request({
