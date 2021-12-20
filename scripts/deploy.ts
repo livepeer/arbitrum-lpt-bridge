@@ -1,18 +1,22 @@
 import {ethers as ethers2, Wallet} from 'ethers';
 import {ethers} from 'hardhat';
 import {ARBITRUM_NETWORK} from '../deploy/constants';
-import {L1LPTGateway__factory} from '../typechain';
+import {
+  ArbRetryableTx__factory,
+  L1LPTGateway__factory,
+  NodeInterface__factory,
+} from '../typechain';
 
 export function getArbitrumCoreContracts(l2: ethers2.providers.BaseProvider) {
   return {
     arbRetryableTx: new ethers.Contract(
         ARBITRUM_NETWORK.rinkeby.arbRetryableTx,
-        require('../test/utils/abis/ArbRetryableTx.json').abi,
+        ArbRetryableTx__factory.createInterface(),
         l2,
     ),
     nodeInterface: new ethers.Contract(
         ARBITRUM_NETWORK.rinkeby.nodeInterface,
-        require('../test/utils/abis/NodeInterface.json').abi,
+        NodeInterface__factory.createInterface(),
         l2,
     ),
   };
