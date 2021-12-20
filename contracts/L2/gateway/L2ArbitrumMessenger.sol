@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ArbSys} from "../../arbitrum/ArbSys.sol";
+import {IArbSys} from "../../arbitrum/IArbSys.sol";
 
 abstract contract L2ArbitrumMessenger {
     event TxToL1(
@@ -17,7 +17,7 @@ abstract contract L2ArbitrumMessenger {
         bytes memory data
     ) internal returns (uint256) {
         // note: this method doesn't support sending ether to L1 together with a call
-        uint256 id = ArbSys(address(100)).sendTxToL1(to, data);
+        uint256 id = IArbSys(address(100)).sendTxToL1(to, data);
         emit TxToL1(user, to, id, data);
         return id;
     }
