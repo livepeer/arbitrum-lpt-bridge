@@ -12,9 +12,6 @@ import {
   LivepeerToken__factory,
 } from '../../../typechain';
 import {FakeContract, smock} from '@defi-wonderland/smock';
-import * as InboxABI from '../../utils/abis/Inbox.json';
-import * as OutboxABI from '../../utils/abis/Outbox.json';
-import * as BridgeABI from '../../utils/abis/Bridge.json';
 
 use(smock.matchers);
 
@@ -103,15 +100,15 @@ describe('L1 LPT Gateway', function() {
     );
     await l1Gateway.grantRole(GOVERNOR_ROLE, governor.address);
 
-    inboxMock = await smock.fake(InboxABI.abi, {
+    inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
     });
 
-    outboxMock = await smock.fake(OutboxABI.abi, {
+    outboxMock = await smock.fake('IOutbox', {
       address: mockOutboxEOA.address,
     });
 
-    bridgeMock = await smock.fake(BridgeABI.abi, {
+    bridgeMock = await smock.fake('IBridge', {
       address: mockBridgeEOA.address,
     });
 
