@@ -7,7 +7,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  await deploy('L1LPTEscrow', {
+  await deploy('L1Escrow', {
     from: deployer,
     args: [],
     log: true,

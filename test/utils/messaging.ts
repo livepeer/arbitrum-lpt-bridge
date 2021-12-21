@@ -7,6 +7,27 @@ import {
   ContractTransaction,
 } from 'ethers';
 import hre from 'hardhat';
+import {ARBITRUM_NETWORK} from '../../deploy/constants';
+import {
+  ArbRetryableTx__factory,
+  IInbox__factory,
+  NodeInterface__factory,
+} from '../../typechain';
+
+export function getArbitrumCoreContracts(l2: ethers.providers.BaseProvider) {
+  return {
+    arbRetryableTx: new ethers.Contract(
+        ARBITRUM_NETWORK.rinkeby.arbRetryableTx,
+        ArbRetryableTx__factory.createInterface(),
+        l2,
+    ),
+    nodeInterface: new ethers.Contract(
+        ARBITRUM_NETWORK.rinkeby.nodeInterface,
+        NodeInterface__factory.createInterface(),
+        l2,
+    ),
+  };
+}
 
 export async function waitForTx(
     tx: Promise<ContractTransaction>,
@@ -96,7 +117,7 @@ async function getInboxSeqNumFromContractTransaction(
 ) {
   const contract = new ethers.Contract(
       inboxAddress,
-      require('../test/utils/abis/Inbox.json').abi,
+      IInbox__factory.createInterface(),
       provider,
   );
   const iface = contract.interface;
