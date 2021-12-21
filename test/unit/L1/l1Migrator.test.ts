@@ -145,9 +145,12 @@ describe('L1Migrator', function() {
         },
     );
 
-    ticketBrokerMock = await smock.fake('ITicketBroker', {
-      address: mockTicketBrokerEOA.address,
-    });
+    ticketBrokerMock = await smock.fake(
+        'contracts/L1/gateway/L1Migrator.sol:ITicketBroker',
+        {
+          address: mockTicketBrokerEOA.address,
+        },
+    );
 
     inboxMock.bridge.returns(bridgeMock.address);
     bridgeMock.activeOutbox.returns(outboxMock.address);

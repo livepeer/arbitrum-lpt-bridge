@@ -18,10 +18,12 @@ describe('L2Migrator', function() {
 
   // mocks
   let bondingManagerMock: FakeContract;
+  let ticketBrokerMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
   let mockL1MigratorL2AliasEOA: Signer;
   let mockDelegatorPoolEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
+  let mockTicketBrokerEOA: SignerWithAddress;
 
   const mockMigrateDelegatorParams = () => ({
     l1Addr: ethers.constants.AddressZero,
@@ -40,12 +42,12 @@ describe('L2Migrator', function() {
     delegate: ethers.constants.AddressZero,
   });
 
-  const mockMigrateSenderParams = {
+  const mockMigrateSenderParams = () => ({
     l1Addr: ethers.constants.AddressZero,
     l2Addr: ethers.constants.AddressZero,
     deposit: 100,
-    reserve: 100,
-  };
+    reserve: 200,
+  });
 
   beforeEach(async function() {
     [
@@ -55,6 +57,7 @@ describe('L2Migrator', function() {
       mockL1MigratorEOA,
       mockDelegatorPoolEOA,
       mockBondingManagerEOA,
+      mockTicketBrokerEOA,
     ] = await ethers.getSigners();
 
     const L2Migrator: L2Migrator__factory = await ethers.getContractFactory(
@@ -64,6 +67,7 @@ describe('L2Migrator', function() {
         mockL1MigratorEOA.address,
         mockDelegatorPoolEOA.address,
         mockBondingManagerEOA.address,
+        mockTicketBrokerEOA.address,
     );
     await l2Migrator.deployed();
 
@@ -71,6 +75,13 @@ describe('L2Migrator', function() {
         'contracts/L2/gateway/L2Migrator.sol:IBondingManager',
         {
           address: mockBondingManagerEOA.address,
+        },
+    );
+
+    ticketBrokerMock = await smock.fake(
+        'contracts/L2/gateway/L2Migrator.sol:ITicketBroker',
+        {
+          address: mockTicketBrokerEOA.address,
         },
     );
 
@@ -91,6 +102,8 @@ describe('L2Migrator', function() {
       expect(delegatorPoolImpl).to.equal(mockDelegatorPoolEOA.address);
       const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
       expect(bondingManagerAddr).to.equal(mockBondingManagerEOA.address);
+      const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
+      expect(ticketBrokerAddr).to.equal(mockTicketBrokerEOA.address);
     });
   });
 
@@ -298,20 +311,45 @@ describe('L2Migrator', function() {
       // msg.sender = some invalid address
       let tx = l2Migrator
           .connect(notL1MigratorEOA)
-          .finalizeMigrateSender(mockMigrateSenderParams);
+          .finalizeMigrateSender(mockMigrateSenderParams());
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
 
       // msg.sender = L1Migrator (no alias)
       tx = l2Migrator
           .connect(mockL1MigratorEOA)
-          .finalizeMigrateSender(mockMigrateSenderParams);
+          .finalizeMigrateSender(mockMigrateSenderParams());
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
-    it('finalizes migration', async () => {
+    it('reverts when l1Addr already migrated', async () => {
+      await l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateSender(mockMigrateSenderParams());
+
       const tx = l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
-          .finalizeMigrateSender(mockMigrateSenderParams);
+          .finalizeMigrateSender(mockMigrateSenderParams());
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateSender: ALREADY_MIGRATED',
+      );
+    });
+
+    it('finalizes migration', async () => {
+      const params = mockMigrateSenderParams();
+      params.l1Addr = l1AddrEOA.address;
+      params.l2Addr = l2AddrEOA.address;
+
+      const tx = await l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateSender(params);
+
+      expect(await l2Migrator.migratedSenders(params.l1Addr)).to.be.true;
+
+      expect(ticketBrokerMock.fundDepositAndReserveFor).to.be.calledOnceWith(
+          params.l2Addr,
+          params.deposit,
+          params.reserve,
+      );
 
       await expect(tx).to.emit(l2Migrator, 'MigrateSenderFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
