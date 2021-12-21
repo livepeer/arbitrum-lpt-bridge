@@ -138,9 +138,12 @@ describe('L1Migrator', function() {
       address: mockBridgeEOA.address,
     });
 
-    bondingManagerMock = await smock.fake('IBondingManager', {
-      address: mockBondingManagerEOA.address,
-    });
+    bondingManagerMock = await smock.fake(
+        'contracts/L1/gateway/L1Migrator.sol:IBondingManager',
+        {
+          address: mockBondingManagerEOA.address,
+        },
+    );
 
     ticketBrokerMock = await smock.fake('ITicketBroker', {
       address: mockTicketBrokerEOA.address,
