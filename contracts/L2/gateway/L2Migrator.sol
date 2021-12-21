@@ -26,6 +26,8 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
     mapping(address => bool) public migratedDelegators;
     mapping(address => address) public delegatorPools;
+    mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
+    mapping(address => bool) public migratedSenders;
 
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
@@ -82,7 +84,17 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     function finalizeMigrateUnbondingLocks(
         MigrateUnbondingLocksParams memory _params
     ) external onlyL1Counterpart(l1Migrator) {
-        // TODO: Fill logic
+        for (uint256 i = 0; i < _params.unbondingLockIds.length; i++) {
+            uint256 id = _params.unbondingLockIds[i];
+            require(
+                !migratedUnbondingLocks[_params.l1Addr][id],
+                "L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED"
+            );
+            migratedUnbondingLocks[_params.l1Addr][id] = true;
+        }
+
+        bondFor(_params.total, _params.l2Addr, _params.delegate);
+
         emit MigrateUnbondingLocksFinalized(_params);
     }
 

@@ -32,12 +32,13 @@ describe('L2Migrator', function() {
     delegate: ethers.constants.AddressZero,
   });
 
-  const mockMigrateUnbondingLocksParams = {
+  const mockMigrateUnbondingLocksParams = () => ({
     l1Addr: ethers.constants.AddressZero,
     l2Addr: ethers.constants.AddressZero,
     total: 100,
-    unbondingLockIds: [1, 2],
-  };
+    unbondingLockIds: [1, 2, 3],
+    delegate: ethers.constants.AddressZero,
+  });
 
   const mockMigrateSenderParams = {
     l1Addr: ethers.constants.AddressZero,
@@ -214,20 +215,77 @@ describe('L2Migrator', function() {
       // msg.sender = some invalid address
       let tx = l2Migrator
           .connect(notL1MigratorEOA)
-          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
+          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams());
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
 
       // msg.sender = L1Migrator (no alias)
       tx = l2Migrator
           .connect(mockL1MigratorEOA)
-          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
+          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams());
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
-    it('finalizes migration', async () => {
-      const tx = l2Migrator
+    it('reverts if any unbonding lock ids have been migrated', async () => {
+      const params = mockMigrateUnbondingLocksParams();
+      await l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
-          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
+          .finalizeMigrateUnbondingLocks(params);
+
+      // First id migrated
+      params.unbondingLockIds = [1, 7, 8];
+      let tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(params);
+
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
+      );
+
+      // Middle id migrated
+      params.unbondingLockIds = [7, 2, 8];
+      tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(params);
+
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
+      );
+
+      // Last id migrated
+      params.unbondingLockIds = [7, 8, 3];
+      tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(params);
+
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
+      );
+    });
+
+    it('finalizes migration', async () => {
+      const params = mockMigrateUnbondingLocksParams();
+      params.l1Addr = l1AddrEOA.address;
+      params.l2Addr = l2AddrEOA.address;
+      params.delegate = l2AddrEOA.address;
+
+      const tx = await l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(params);
+
+      for (const id of params.unbondingLockIds) {
+        expect(await l2Migrator.migratedUnbondingLocks(params.l1Addr, id)).to.be
+            .true;
+      }
+
+      expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
+          params.total,
+          params.l2Addr,
+          params.delegate,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+      );
 
       await expect(tx).to.emit(l2Migrator, 'MigrateUnbondingLocksFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed

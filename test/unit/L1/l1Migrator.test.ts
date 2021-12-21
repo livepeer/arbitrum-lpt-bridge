@@ -414,6 +414,7 @@ describe('L1Migrator', function() {
       const unbondingLockIds = [1, 2];
       const lock1Amount = 100;
       const lock2Amount = 200;
+      const delegate = notL1EOA.address;
 
       inboxMock.createRetryableTicket.returns(seqNo);
       bondingManagerMock.getDelegatorUnbondingLock
@@ -422,6 +423,7 @@ describe('L1Migrator', function() {
       bondingManagerMock.getDelegatorUnbondingLock
           .whenCalledWith(l1EOA.address, 2)
           .returns([lock2Amount, 0]);
+      bondingManagerMock.getDelegator.returns([0, 0, delegate, 0, 0, 0, 0]);
 
       const maxGas = 111;
       const gasPriceBid = 222;
@@ -433,6 +435,7 @@ describe('L1Migrator', function() {
         l2Addr: l1EOA.address,
         total: lock1Amount + lock2Amount,
         unbondingLockIds,
+        delegate,
       };
       const l2Calldata =
         IL2Migrator__factory.createInterface().encodeFunctionData(
