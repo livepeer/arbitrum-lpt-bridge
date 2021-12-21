@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A bridge to move LPT between Ethereum and Arbitrum",
   "scripts": {
+    "prepare": "husky install",
     "deploy": "npx hardhat deploy",
     "lint": "yarn eslint && yarn solhint",
     "eslint:fix": "eslint . --ext .ts --fix",
