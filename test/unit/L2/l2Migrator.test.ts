@@ -1,5 +1,4 @@
 import {FakeContract, smock} from '@defi-wonderland/smock';
-import {Signer} from '@ethersproject/abstract-signer';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import {expect, use} from 'chai';
 
@@ -20,7 +19,7 @@ describe('L2Migrator', function() {
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
-  let mockL1MigratorL2AliasEOA: Signer;
+  let mockL1MigratorL2AliasEOA: SignerWithAddress;
   let mockDelegatorPoolEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
@@ -85,11 +84,9 @@ describe('L2Migrator', function() {
         },
     );
 
-    // TODO: Modify getL2SignerFromL1 to return Promise<SignerWithAddress> instead of
-    // Promise<Signer>?
     mockL1MigratorL2AliasEOA = await getL2SignerFromL1(mockL1MigratorEOA);
     await mockL1MigratorEOA.sendTransaction({
-      to: await mockL1MigratorL2AliasEOA.getAddress(),
+      to: mockL1MigratorL2AliasEOA.address,
       value: ethers.utils.parseUnits('1', 'ether'),
     });
   });
