@@ -28,6 +28,8 @@ interface IMigrator {
         uint256 total;
         // IDs of unbonding locks being migrated
         uint256[] unbondingLockIds;
+        // Delegate of l1Addr on L1
+        address delegate;
     }
 
     struct MigrateSenderParams {

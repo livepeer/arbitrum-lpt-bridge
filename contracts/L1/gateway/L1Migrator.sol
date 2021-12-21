@@ -304,6 +304,10 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
             total += amount;
         }
 
+        (, , address delegateAddress, , , , ) = bondingManager.getDelegator(
+            _l1Addr
+        );
+
         // We do not prevent migration replays here to minimize L1 gas costs
         // The L2Migrator is responsible for rejecting migration replays
 
@@ -312,7 +316,8 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
             l1Addr: _l1Addr,
             l2Addr: _l2Addr,
             total: total,
-            unbondingLockIds: _unbondingLockIds
+            unbondingLockIds: _unbondingLockIds,
+            delegate: delegateAddress
         });
 
         data = abi.encodeWithSelector(
