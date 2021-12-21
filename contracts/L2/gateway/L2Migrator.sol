@@ -7,17 +7,11 @@ import {IMigrator} from "../../interfaces/IMigrator.sol";
 contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     address public l1Migrator;
 
-    event MigrateDelegatorFinalized(
-        MigrateDelegatorParams params
-    );
+    event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
-    event MigrateUnbondingLocksFinalized(
-        MigrateUnbondingLocksParams params
-    );
+    event MigrateUnbondingLocksFinalized(MigrateUnbondingLocksParams params);
 
-    event MigrateSenderFinalized(
-        MigrateSenderParams params
-    );
+    event MigrateSenderFinalized(MigrateSenderParams params);
 
     constructor(address _l1Migrator) {
         l1Migrator = _l1Migrator;
@@ -36,10 +30,9 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         emit MigrateDelegatorFinalized(_params);
     }
 
-    function finalizeMigrateUnbondingLocks(MigrateUnbondingLocksParams memory _params)
-        external
-        onlyL1Counterpart(l1Migrator)
-    {
+    function finalizeMigrateUnbondingLocks(
+        MigrateUnbondingLocksParams memory _params
+    ) external onlyL1Counterpart(l1Migrator) {
         // TODO: Fill logic
         emit MigrateUnbondingLocksFinalized(_params);
     }
