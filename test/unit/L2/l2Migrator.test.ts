@@ -29,7 +29,7 @@ describe('L2Migrator', function() {
     l2Addr: ethers.constants.AddressZero,
     stake: 100,
     delegatedStake: 200,
-    fees: 300,
+    fees: 0,
     delegate: ethers.constants.AddressZero,
   });
 
@@ -140,6 +140,16 @@ describe('L2Migrator', function() {
       );
     });
 
+    it('reverts if fee transfer fails', async () => {
+      const params = mockMigrateDelegatorParams();
+      params.fees = 300;
+
+      const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
+          params,
+      );
+      await expect(tx).to.revertedWith('L2Migrator#finalizeMigrateDelegator: FAIL_FEE');
+    });
+
     describe('finalizes migration', () => {
       it('no delegator pool if l1Addr != delegate', async () => {
         const params = mockMigrateDelegatorParams();
@@ -216,6 +226,24 @@ describe('L2Migrator', function() {
         await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
         // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
         // .withArgs(seqNo, params)
+      });
+
+      it('transfers fees if > 0', async () => {
+        const params = mockMigrateDelegatorParams();
+        params.l1Addr = l1AddrEOA.address;
+        params.l2Addr = l2AddrEOA.address;
+        params.delegate = l2AddrEOA.address;
+        params.fees = 300;
+
+        await mockL1MigratorEOA.sendTransaction({
+          to: l2Migrator.address,
+          value: ethers.utils.parseUnits('1', 'ether'),
+        });
+
+        const tx = await l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
+            params,
+        );
+        await expect(tx).to.changeEtherBalance(l2AddrEOA, params.fees);
       });
     });
   });
@@ -351,6 +379,18 @@ describe('L2Migrator', function() {
       await expect(tx).to.emit(l2Migrator, 'MigrateSenderFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, mockMigrateSenderParams)
+    });
+  });
+
+  describe('receive', () => {
+    it('receives ETH', async () => {
+      const value = ethers.utils.parseUnits('1', 'ether');
+      const tx = await mockL1MigratorEOA.sendTransaction({
+        to: l2Migrator.address,
+        value,
+      });
+
+      await expect(tx).to.changeEtherBalance(l2Migrator, value);
     });
   });
 });
