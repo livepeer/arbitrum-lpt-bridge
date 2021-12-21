@@ -18,8 +18,17 @@ interface IBondingManager {
     ) external;
 }
 
+interface ITicketBroker {
+    function fundDepositAndReserveFor(
+        address _addr,
+        uint256 _depositAmount,
+        uint256 _reserveAmount
+    ) external;
+}
+
 contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     address public immutable bondingManagerAddr;
+    address public immutable ticketBrokerAddr;
 
     address public l1Migrator;
     address public delegatorPoolImpl;
@@ -40,11 +49,13 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     constructor(
         address _l1Migrator,
         address _delegatorPoolImpl,
-        address _bondingManagerAddr
+        address _bondingManagerAddr,
+        address _ticketBrokerAddr
     ) {
         l1Migrator = _l1Migrator;
         delegatorPoolImpl = _delegatorPoolImpl;
         bondingManagerAddr = _bondingManagerAddr;
+        ticketBrokerAddr = _ticketBrokerAddr;
     }
 
     // TODO: Add auth
@@ -102,7 +113,19 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         external
         onlyL1Counterpart(l1Migrator)
     {
-        // TODO: Fill logic
+        require(
+            !migratedSenders[_params.l1Addr],
+            "L2Migrator#finalizeMigrateSender: ALREADY_MIGRATED"
+        );
+
+        migratedSenders[_params.l1Addr] = true;
+
+        ITicketBroker(ticketBrokerAddr).fundDepositAndReserveFor(
+            _params.l2Addr,
+            _params.deposit,
+            _params.reserve
+        );
+
         emit MigrateSenderFinalized(_params);
     }
 
