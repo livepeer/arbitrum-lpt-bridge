@@ -246,6 +246,46 @@ describe('L2Migrator', function() {
         // .withArgs(seqNo, params)
       });
 
+      it('subtracted claimed delegated stake when staking for delegator pool', async () => {
+        const delegator = l2AddrEOA.address;
+        const delegate = l1AddrEOA.address;
+        const stake = 50;
+        const fees = 0;
+
+        await l2Migrator.connect(l2AddrEOA).claimStake(
+            delegator,
+            delegate,
+            stake,
+            fees,
+            [],
+            ethers.constants.AddressZero,
+        );
+
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(stake);
+
+        const params = mockMigrateDelegatorParams();
+        params.l1Addr = delegate;
+        params.l2Addr = delegate;
+        params.delegate = delegate;
+
+        bondingManagerMock.bondForWithHint.reset();
+
+        await l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
+            params,
+        );
+
+        const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
+        expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
+            params.delegatedStake - stake,
+            delegatorPool,
+            params.delegate,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+        );
+      });
+
       it('transfers fees if > 0', async () => {
         const params = {
           ...mockMigrateDelegatorParams(),

@@ -105,8 +105,11 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
             address poolAddr = Clones.clone(delegatorPoolImpl);
             delegatorPools[_params.l1Addr] = poolAddr;
 
-            // TODO: Subtract already claimed delegated stake
-            bondFor(_params.delegatedStake, poolAddr, _params.delegate);
+            bondFor(
+                _params.delegatedStake - claimedDelegatedStake[_params.l1Addr],
+                poolAddr,
+                _params.delegate
+            );
 
             emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
         }
