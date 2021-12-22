@@ -26,15 +26,29 @@ interface ITicketBroker {
     ) external;
 }
 
+interface IMerkleSnapshot {
+    function verify(
+        bytes32 _id,
+        bytes32[] memory _proof,
+        bytes32 _leaf
+    ) external view returns (bool);
+}
+
+interface IDelegatorPool {
+    function claim(address _addr, uint256 _stake) external;
+}
+
 contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
+    address public immutable merkleSnapshotAddr;
 
     address public l1Migrator;
     address public delegatorPoolImpl;
 
     mapping(address => bool) public migratedDelegators;
     mapping(address => address) public delegatorPools;
+    mapping(address => uint256) public claimedDelegatedStake;
     mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
     mapping(address => bool) public migratedSenders;
 
@@ -46,16 +60,25 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
     event DelegatorPoolCreated(address indexed l1Addr, address delegatorPool);
 
+    event StakeClaimed(
+        address indexed delegator,
+        address delegate,
+        uint256 stake,
+        uint256 fees
+    );
+
     constructor(
         address _l1Migrator,
         address _delegatorPoolImpl,
         address _bondingManagerAddr,
-        address _ticketBrokerAddr
+        address _ticketBrokerAddr,
+        address _merkleSnapshotAddr
     ) {
         l1Migrator = _l1Migrator;
         delegatorPoolImpl = _delegatorPoolImpl;
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
+        merkleSnapshotAddr = _merkleSnapshotAddr;
     }
 
     // TODO: Add auth
@@ -138,6 +161,58 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     }
 
     receive() external payable {}
+
+    // Assume that only EOAs are included in the snapshot
+    // Regardless of the caller of this function, the EOA from L1 will be able to access its stake on L2
+    function claimStake(
+        address _delegator,
+        address _delegate,
+        uint256 _stake,
+        uint256 _fees,
+        bytes32[] calldata _proof,
+        address _newDelegate
+    ) external {
+        IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
+
+        bytes32 leaf = keccak256(
+            abi.encodePacked(_delegator, _delegate, _stake, _fees)
+        );
+
+        require(
+            merkleSnapshot.verify(keccak256("LIP-73"), _proof, leaf),
+            "L2Migrator#claimStake: INVALID_PROOF"
+        );
+
+        require(
+            !migratedDelegators[_delegator],
+            "L2Migrator#claimStake: ALREADY_MIGRATED"
+        );
+
+        migratedDelegators[_delegator] = true;
+        claimedDelegatedStake[_delegate] += _stake;
+
+        address pool = delegatorPools[_delegate];
+
+        address delegate = _delegate;
+        if (_newDelegate != address(0)) {
+            delegate = _newDelegate;
+        }
+
+        if (pool != address(0)) {
+            // Claim stake that is held by the delegator pool
+            IDelegatorPool(pool).claim(_delegator, _stake);
+        } else {
+            bondFor(_stake, _delegator, delegate);
+        }
+
+        // Only EOAs are included in the snapshot so we do not need to worry about
+        // the insufficeint gas stipend with transfer()
+        if (_fees > 0) {
+            payable(_delegator).transfer(_fees);
+        }
+
+        emit StakeClaimed(_delegator, delegate, _stake, _fees);
+    }
 
     function bondFor(
         uint256 _amount,

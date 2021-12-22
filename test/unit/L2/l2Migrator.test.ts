@@ -18,11 +18,13 @@ describe('L2Migrator', function() {
   // mocks
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
+  let merkleSnapshotMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
   let mockL1MigratorL2AliasEOA: SignerWithAddress;
   let mockDelegatorPoolEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
+  let mockMerkleSnapshotEOA: SignerWithAddress;
 
   const mockMigrateDelegatorParams = () => ({
     l1Addr: ethers.constants.AddressZero,
@@ -57,6 +59,7 @@ describe('L2Migrator', function() {
       mockDelegatorPoolEOA,
       mockBondingManagerEOA,
       mockTicketBrokerEOA,
+      mockMerkleSnapshotEOA,
     ] = await ethers.getSigners();
 
     const L2Migrator: L2Migrator__factory = await ethers.getContractFactory(
@@ -67,6 +70,7 @@ describe('L2Migrator', function() {
         mockDelegatorPoolEOA.address,
         mockBondingManagerEOA.address,
         mockTicketBrokerEOA.address,
+        mockMerkleSnapshotEOA.address,
     );
     await l2Migrator.deployed();
 
@@ -84,11 +88,17 @@ describe('L2Migrator', function() {
         },
     );
 
+    merkleSnapshotMock = await smock.fake('IMerkleSnapshot', {
+      address: mockMerkleSnapshotEOA.address,
+    });
+
     mockL1MigratorL2AliasEOA = await getL2SignerFromL1(mockL1MigratorEOA);
     await mockL1MigratorEOA.sendTransaction({
       to: mockL1MigratorL2AliasEOA.address,
       value: ethers.utils.parseUnits('1', 'ether'),
     });
+
+    merkleSnapshotMock.verify.returns(true);
   });
 
   describe('constructor', () => {
@@ -403,6 +413,186 @@ describe('L2Migrator', function() {
       });
 
       await expect(tx).to.changeEtherBalance(l2Migrator, value);
+    });
+  });
+
+  describe('claimStake', () => {
+    it('reverts for invalid proof', async () => {
+      merkleSnapshotMock.verify.returns(false);
+
+      const tx = l2Migrator.connect(l1AddrEOA).claimStake(
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          0,
+          0,
+          [],
+          ethers.constants.AddressZero,
+      );
+      await expect(tx).to.revertedWith('L2Migrator#claimStake: INVALID_PROOF');
+    });
+
+    it('reverts if delegator is already migrated', async () => {
+      await l2Migrator.connect(l1AddrEOA).claimStake(
+          l1AddrEOA.address,
+          l2AddrEOA.address,
+          100,
+          0,
+          [],
+          ethers.constants.AddressZero,
+      );
+
+      const tx = l2Migrator.connect(l1AddrEOA).claimStake(
+          l1AddrEOA.address,
+          l2AddrEOA.address,
+          100,
+          0,
+          [],
+          ethers.constants.AddressZero,
+      );
+      expect(tx).to.revertedWith('L2Migrator#claimStake: ALREADY_MIGRATED');
+    });
+
+    it('reverts if fee transfer fails', async () => {
+      const tx = l2Migrator.connect(l1AddrEOA).claimStake(
+          l1AddrEOA.address,
+          l2AddrEOA.address,
+          100,
+          200,
+          [],
+          ethers.constants.AddressZero,
+      );
+      expect(tx).to.be.reverted;
+    });
+
+    describe('claims stake', () => {
+      it('claims stake from delegator pool if it exists', async () => {
+        const params = mockMigrateDelegatorParams();
+        params.l1Addr = l1AddrEOA.address;
+        params.l2Addr = l1AddrEOA.address;
+        params.delegate = l1AddrEOA.address;
+
+        await l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(params);
+
+        const delegatorPoolAddr = await l2Migrator.delegatorPools(params.l1Addr);
+        expect(delegatorPoolAddr).to.not.be.equal(ethers.constants.AddressZero);
+
+        const delegatorPoolMock: FakeContract = await smock.fake('IDelegatorPool', {
+          address: delegatorPoolAddr,
+        });
+
+        const delegator = l2AddrEOA.address;
+        const delegate = l1AddrEOA.address;
+        const stake = 100;
+        const fees = 0;
+
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(0);
+
+        const tx = await l2Migrator.connect(l2AddrEOA).claimStake(
+            delegator,
+            delegate,
+            stake,
+            fees,
+            [],
+            ethers.constants.AddressZero,
+        );
+
+        expect(await l2Migrator.migratedDelegators(delegator)).to.be.true;
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(stake);
+        expect(delegatorPoolMock.claim).to.be.calledOnceWith(l2AddrEOA.address, 100);
+
+        await expect(tx)
+            .to.emit(l2Migrator, 'StakeClaimed')
+            .withArgs(delegator, delegate, stake, fees);
+      });
+
+      it('stakes in BondingManager if delegator pool does not exist', async () => {
+        const delegator = l1AddrEOA.address;
+        const delegate = l2AddrEOA.address;
+        const stake = 100;
+        const fees = 0;
+
+        expect(await l2Migrator.delegatorPools(delegate)).to.be.equal(ethers.constants.AddressZero);
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(0);
+
+        const tx = await l2Migrator.connect(l1AddrEOA).claimStake(
+            delegator,
+            delegate,
+            stake,
+            fees,
+            [],
+            ethers.constants.AddressZero,
+        );
+
+        expect(await l2Migrator.migratedDelegators(delegator)).to.be.true;
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(stake);
+        expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
+            stake,
+            delegator,
+            delegate,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+        );
+
+        await expect(tx)
+            .to.emit(l2Migrator, 'StakeClaimed')
+            .withArgs(delegator, delegate, stake, fees);
+      });
+
+      it('stakes in BondingManager with specified new delegate', async () => {
+        const delegator = l1AddrEOA.address;
+        const delegate = l2AddrEOA.address;
+        const stake = 100;
+        const fees = 0;
+        const newDelegate = l2Migrator.address;
+
+        const tx = await l2Migrator.connect(l1AddrEOA).claimStake(
+            delegator,
+            delegate,
+            stake,
+            fees,
+            [],
+            newDelegate,
+        );
+
+        expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
+            stake,
+            delegator,
+            newDelegate,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+        );
+
+        await expect(tx)
+            .to.emit(l2Migrator, 'StakeClaimed')
+            .withArgs(delegator, newDelegate, stake, fees);
+      });
+
+      it('transfers if fees > 0', async () => {
+        const delegator = l1AddrEOA.address;
+        const delegate = l2AddrEOA.address;
+        const stake = 100;
+        const fees = 200;
+
+        await mockL1MigratorEOA.sendTransaction({
+          to: l2Migrator.address,
+          value: ethers.utils.parseUnits('1', 'ether'),
+        });
+
+        const tx = await l2Migrator.connect(l1AddrEOA).claimStake(
+            delegator,
+            delegate,
+            stake,
+            fees,
+            [],
+            ethers.constants.AddressZero,
+        );
+
+        await expect(tx).to.changeEtherBalance(l1AddrEOA, fees);
+      });
     });
   });
 });
