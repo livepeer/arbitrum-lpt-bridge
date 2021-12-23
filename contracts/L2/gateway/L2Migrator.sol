@@ -90,9 +90,8 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
         // Use .call() since l2Addr could be a contract that needs more gas than
         // the stipend provided by .transfer()
-        // TODO: Consider re-entrancy guard?
-        // All state updates occur before external calls in this function, but might be safer.
-        // Should consider what happens in the external calls if the next call re-enters this function.
+        // The .call() is safe without a re-entrancy guard because this function cannot be re-entered
+        // by _params.l2Addr since the function can only be called by the L1Migrator via a cross-chain retryable ticket
         if (_params.fees > 0) {
             (bool ok, ) = _params.l2Addr.call{value: _params.fees}("");
             require(ok, "L2Migrator#finalizeMigrateDelegator: FAIL_FEE");
