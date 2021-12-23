@@ -168,7 +168,6 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     // Assume that only EOAs are included in the snapshot
     // Regardless of the caller of this function, the EOA from L1 will be able to access its stake on L2
     function claimStake(
-        address _delegator,
         address _delegate,
         uint256 _stake,
         uint256 _fees,
@@ -177,8 +176,9 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     ) external {
         IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
 
+        address delegator = msg.sender;
         bytes32 leaf = keccak256(
-            abi.encodePacked(_delegator, _delegate, _stake, _fees)
+            abi.encodePacked(delegator, _delegate, _stake, _fees)
         );
 
         require(
@@ -187,11 +187,11 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         );
 
         require(
-            !migratedDelegators[_delegator],
+            !migratedDelegators[delegator],
             "L2Migrator#claimStake: ALREADY_MIGRATED"
         );
 
-        migratedDelegators[_delegator] = true;
+        migratedDelegators[delegator] = true;
         claimedDelegatedStake[_delegate] += _stake;
 
         address pool = delegatorPools[_delegate];
@@ -203,18 +203,18 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
         if (pool != address(0)) {
             // Claim stake that is held by the delegator pool
-            IDelegatorPool(pool).claim(_delegator, _stake);
+            IDelegatorPool(pool).claim(delegator, _stake);
         } else {
-            bondFor(_stake, _delegator, delegate);
+            bondFor(_stake, delegator, delegate);
         }
 
         // Only EOAs are included in the snapshot so we do not need to worry about
         // the insufficeint gas stipend with transfer()
         if (_fees > 0) {
-            payable(_delegator).transfer(_fees);
+            payable(delegator).transfer(_fees);
         }
 
-        emit StakeClaimed(_delegator, delegate, _stake, _fees);
+        emit StakeClaimed(delegator, delegate, _stake, _fees);
     }
 
     function bondFor(
