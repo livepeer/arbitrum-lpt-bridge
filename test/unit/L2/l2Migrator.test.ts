@@ -3,10 +3,7 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import {expect} from 'chai';
 
 import {ethers} from 'hardhat';
-import {
-  L2Migrator,
-  L2Migrator__factory,
-} from '../../../typechain';
+import {L2Migrator, L2Migrator__factory} from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
 
 describe('L2Migrator', function() {
@@ -42,15 +39,12 @@ describe('L2Migrator', function() {
   };
 
   beforeEach(async function() {
-    [
-      notL1MigratorEOA,
-      mockL1MigratorEOA,
-    ] = await ethers.getSigners();
+    [notL1MigratorEOA, mockL1MigratorEOA] = await ethers.getSigners();
 
-    const L2Migrator: L2Migrator__factory = await ethers.getContractFactory('L2Migrator');
-    l2Migrator = await L2Migrator.deploy(
-        mockL1MigratorEOA.address,
+    const L2Migrator: L2Migrator__factory = await ethers.getContractFactory(
+        'L2Migrator',
     );
+    l2Migrator = await L2Migrator.deploy(mockL1MigratorEOA.address);
     await l2Migrator.deployed();
 
     // TODO: Modify getL2SignerFromL1 to return Promise<SignerWithAddress> instead of
@@ -80,25 +74,24 @@ describe('L2Migrator', function() {
   describe('finalizeMigrateDelegator', () => {
     it('reverts if msg.sender is not L1Migrator L2 alias', async () => {
       // msg.sender = some invalid address
-      let tx = l2Migrator.connect(notL1MigratorEOA).finalizeMigrateDelegator(
-          mockMigrateDelegatorParams,
-      );
+      let tx = l2Migrator
+          .connect(notL1MigratorEOA)
+          .finalizeMigrateDelegator(mockMigrateDelegatorParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
 
       // msg.sender = L1Migrator (no alias)
-      tx = l2Migrator.connect(mockL1MigratorEOA).finalizeMigrateDelegator(
-          mockMigrateDelegatorParams,
-      );
+      tx = l2Migrator
+          .connect(mockL1MigratorEOA)
+          .finalizeMigrateDelegator(mockMigrateDelegatorParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
     it('finalizes migration', async () => {
-      const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
-          mockMigrateDelegatorParams,
-      );
+      const tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateDelegator(mockMigrateDelegatorParams);
 
-      await expect(tx)
-          .to.emit(l2Migrator, 'MigrateDelegatorFinalized');
+      await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, mockMigrateDelegatorParams)
     });
@@ -107,25 +100,24 @@ describe('L2Migrator', function() {
   describe('finalizeMigrateUnbondingLocks', () => {
     it('reverts if msg.sender is not L1Migrator L2 alias', async () => {
       // msg.sender = some invalid address
-      let tx = l2Migrator.connect(notL1MigratorEOA).finalizeMigrateUnbondingLocks(
-          mockMigrateUnbondingLocksParams,
-      );
+      let tx = l2Migrator
+          .connect(notL1MigratorEOA)
+          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
 
       // msg.sender = L1Migrator (no alias)
-      tx = l2Migrator.connect(mockL1MigratorEOA).finalizeMigrateUnbondingLocks(
-          mockMigrateUnbondingLocksParams,
-      );
+      tx = l2Migrator
+          .connect(mockL1MigratorEOA)
+          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
     it('finalizes migration', async () => {
-      const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateUnbondingLocks(
-          mockMigrateUnbondingLocksParams,
-      );
+      const tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(mockMigrateUnbondingLocksParams);
 
-      await expect(tx)
-          .to.emit(l2Migrator, 'MigrateUnbondingLocksFinalized');
+      await expect(tx).to.emit(l2Migrator, 'MigrateUnbondingLocksFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, mockMigrateUnbondingLocksParams)
     });
@@ -134,25 +126,24 @@ describe('L2Migrator', function() {
   describe('finalizeMigrateSender', () => {
     it('reverts if msg.sender is not L1Migrator L2 alias', async () => {
       // msg.sender = some invalid address
-      let tx = l2Migrator.connect(notL1MigratorEOA).finalizeMigrateSender(
-          mockMigrateSenderParams,
-      );
+      let tx = l2Migrator
+          .connect(notL1MigratorEOA)
+          .finalizeMigrateSender(mockMigrateSenderParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
 
       // msg.sender = L1Migrator (no alias)
-      tx = l2Migrator.connect(mockL1MigratorEOA).finalizeMigrateSender(
-          mockMigrateSenderParams,
-      );
+      tx = l2Migrator
+          .connect(mockL1MigratorEOA)
+          .finalizeMigrateSender(mockMigrateSenderParams);
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
     it('finalizes migration', async () => {
-      const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateSender(
-          mockMigrateSenderParams,
-      );
+      const tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateSender(mockMigrateSenderParams);
 
-      await expect(tx)
-          .to.emit(l2Migrator, 'MigrateSenderFinalized');
+      await expect(tx).to.emit(l2Migrator, 'MigrateSenderFinalized');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, mockMigrateSenderParams)
     });

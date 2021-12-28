@@ -115,7 +115,7 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external {
+    ) external payable {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -150,7 +150,7 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external {
+    ) external payable {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -189,7 +189,7 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external {
+    ) external payable {
         requireValidMigration(
             _l1Addr,
             _l2Addr,

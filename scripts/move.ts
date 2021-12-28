@@ -1,31 +1,18 @@
-import {ethers as ethers2, Wallet} from 'ethers';
+import {Wallet} from 'ethers';
 import {ethers} from 'hardhat';
 import {ARBITRUM_NETWORK} from '../deploy/constants';
+import {L1LPTGateway__factory} from '../typechain';
 import {
-  ArbRetryableTx__factory,
-  L1LPTGateway__factory,
-  NodeInterface__factory,
-} from '../typechain';
-import {waitForTx, waitToRelayTxsToL2} from '../test/utils/messaging';
-
-export function getArbitrumCoreContracts(l2: ethers2.providers.BaseProvider) {
-  return {
-    arbRetryableTx: new ethers.Contract(
-        ARBITRUM_NETWORK.rinkeby.arbRetryableTx,
-        ArbRetryableTx__factory.createInterface(),
-        l2,
-    ),
-    nodeInterface: new ethers.Contract(
-        ARBITRUM_NETWORK.rinkeby.nodeInterface,
-        NodeInterface__factory.createInterface(),
-        l2,
-    ),
-  };
-}
+  getArbitrumCoreContracts,
+  waitForTx,
+  waitToRelayTxsToL2,
+} from '../test/utils/messaging';
+import hre from 'hardhat';
 
 async function main(): Promise<void> {
-  const l1GatewayAddress = '0x637D3cFE2FdB2ADb743D85C6Ed54E10b2A91ba75';
-  const l1LPTAddress = '0x3d0dB674f6912c369995E82328187A9221b3efa5';
+  const {deployments} = hre;
+  const l1GatewayAddress = (await deployments.get('L1LPTGateway')).address;
+  const l1LPTAddress = (await deployments.get('L1_LPT')).address;
 
   const amount = ethers.utils.parseEther('10000');
 

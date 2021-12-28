@@ -11,7 +11,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const l1LPT = await deployments.get('L1_LPT');
   const l2LPT = await hre.companionNetworks['l2'].deployments.get('L2_LPT');
-  const escrow = await deployments.get('L1LPTEscrow');
+  const escrow = await deployments.get('L1Escrow');
 
   const l1Gateway = await deploy('L1LPTGateway', {
     from: deployer,
@@ -25,15 +25,20 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log: true,
   });
 
+  const DEFAULT_ADMIN_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['DEFAULT_ADMIN_ROLE'],
+  );
   await execute(
-      'L1LPTEscrow',
+      'L1Escrow',
       {from: deployer, log: true},
-      'allow',
-      l1Gateway.address,
+      'grantRole',
+      DEFAULT_ADMIN_ROLE,
+      deployer,
   );
 
   await execute(
-      'L1LPTEscrow',
+      'L1Escrow',
       {from: deployer, log: true},
       'approve',
       l1LPT.address,
