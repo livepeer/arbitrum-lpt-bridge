@@ -146,10 +146,12 @@ describe('L2Migrator', function() {
         fees: 300,
       };
 
-      const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
-          params,
+      const tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateDelegator(params);
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateDelegator: FAIL_FEE',
       );
-      await expect(tx).to.revertedWith('L2Migrator#finalizeMigrateDelegator: FAIL_FEE');
     });
 
     describe('finalizes migration', () => {
@@ -248,9 +250,9 @@ describe('L2Migrator', function() {
           value: ethers.utils.parseUnits('1', 'ether'),
         });
 
-        const tx = await l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
-            params,
-        );
+        const tx = await l2Migrator
+            .connect(mockL1MigratorL2AliasEOA)
+            .finalizeMigrateDelegator(params);
         await expect(tx).to.changeEtherBalance(l2AddrEOA, params.fees);
       });
     });
