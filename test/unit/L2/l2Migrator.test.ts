@@ -141,8 +141,10 @@ describe('L2Migrator', function() {
     });
 
     it('reverts if fee transfer fails', async () => {
-      const params = mockMigrateDelegatorParams();
-      params.fees = 300;
+      const params = {
+        ...mockMigrateDelegatorParams(),
+        fees: 300,
+      };
 
       const tx = l2Migrator.connect(mockL1MigratorL2AliasEOA).finalizeMigrateDelegator(
           params,
@@ -152,10 +154,12 @@ describe('L2Migrator', function() {
 
     describe('finalizes migration', () => {
       it('no delegator pool if l1Addr != delegate', async () => {
-        const params = mockMigrateDelegatorParams();
-        params.l1Addr = l1AddrEOA.address;
-        params.l2Addr = l2AddrEOA.address;
-        params.delegate = l2AddrEOA.address;
+        const params = {
+          ...mockMigrateDelegatorParams(),
+          l1Addr: l1AddrEOA.address,
+          l2Addr: l2AddrEOA.address,
+          delegate: l2AddrEOA.address,
+        };
 
         const tx = await l2Migrator
             .connect(mockL1MigratorL2AliasEOA)
@@ -185,10 +189,12 @@ describe('L2Migrator', function() {
       });
 
       it('creates delegator pool if l1Addr == delegate', async () => {
-        const params = mockMigrateDelegatorParams();
-        params.l1Addr = l1AddrEOA.address;
-        params.l2Addr = l2AddrEOA.address;
-        params.delegate = l1AddrEOA.address;
+        const params = {
+          ...mockMigrateDelegatorParams(),
+          l1Addr: l1AddrEOA.address,
+          l2Addr: l2AddrEOA.address,
+          delegate: l1AddrEOA.address,
+        };
 
         const tx = await l2Migrator
             .connect(mockL1MigratorL2AliasEOA)
@@ -229,11 +235,13 @@ describe('L2Migrator', function() {
       });
 
       it('transfers fees if > 0', async () => {
-        const params = mockMigrateDelegatorParams();
-        params.l1Addr = l1AddrEOA.address;
-        params.l2Addr = l2AddrEOA.address;
-        params.delegate = l2AddrEOA.address;
-        params.fees = 300;
+        const params = {
+          ...mockMigrateDelegatorParams(),
+          l1Addr: l1AddrEOA.address,
+          l2Addr: l2AddrEOA.address,
+          delegate: l2AddrEOA.address,
+          fees: 300,
+        };
 
         await mockL1MigratorEOA.sendTransaction({
           to: l2Migrator.address,
@@ -360,9 +368,11 @@ describe('L2Migrator', function() {
     });
 
     it('finalizes migration', async () => {
-      const params = mockMigrateSenderParams();
-      params.l1Addr = l1AddrEOA.address;
-      params.l2Addr = l2AddrEOA.address;
+      const params = {
+        ...mockMigrateSenderParams(),
+        l1Addr: l1AddrEOA.address,
+        l2Addr: l2AddrEOA.address,
+      };
 
       const tx = await l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
