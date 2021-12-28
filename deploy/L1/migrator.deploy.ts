@@ -8,8 +8,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  const bondingManager = '0x595ab11a0bffbca8134d2105bcf985e85732af5c';
-  const ticketBroker = '0xbc10683cf0d6c1152f80e9954701bec1e7dd1648';
+  const bondingManager = '0xf71b1fb1bd297ddb4e92c9ab89d5f57ffcc899f9';
+  const ticketBroker = '0x940D5630bBc300cCCF4BEaBAFfC300F7787d5b1f';
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
       'L2Migrator',
   );

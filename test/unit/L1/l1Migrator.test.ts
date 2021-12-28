@@ -31,11 +31,15 @@ describe('L1Migrator', function() {
   let mockL2MigratorEOA: SignerWithAddress;
 
   class L1MigratorSigner {
-    signer: SignerWithAddress
-    l1Migrator: string
-    chainId: number
+    signer: SignerWithAddress;
+    l1Migrator: string;
+    chainId: number;
 
-    constructor(signer: SignerWithAddress, l1Migrator: string, chainId: number) {
+    constructor(
+        signer: SignerWithAddress,
+        l1Migrator: string,
+        chainId: number,
+    ) {
       this.signer = signer;
       this.l1Migrator = l1Migrator;
       this.chainId = chainId;
@@ -49,10 +53,17 @@ describe('L1Migrator', function() {
         ],
       };
 
-      return this.signer._signTypedData(this.domain(), types, {l1Addr, l2Addr});
+      return this.signer._signTypedData(this.domain(), types, {
+        l1Addr,
+        l2Addr,
+      });
     }
 
-    signMigrateUnbondingLocks(l1Addr: string, l2Addr: string, unbondingLockIds: number[]) {
+    signMigrateUnbondingLocks(
+        l1Addr: string,
+        l2Addr: string,
+        unbondingLockIds: number[],
+    ) {
       const types = {
         MigrateUnbondingLocks: [
           {name: 'l1Addr', type: 'address'},
@@ -61,7 +72,11 @@ describe('L1Migrator', function() {
         ],
       };
 
-      return this.signer._signTypedData(this.domain(), types, {l1Addr, l2Addr, unbondingLockIds});
+      return this.signer._signTypedData(this.domain(), types, {
+        l1Addr,
+        l2Addr,
+        unbondingLockIds,
+      });
     }
 
     signMigrateSender(l1Addr: string, l2Addr: string): Promise<string> {
@@ -72,7 +87,10 @@ describe('L1Migrator', function() {
         ],
       };
 
-      return this.signer._signTypedData(this.domain(), types, {l1Addr, l2Addr});
+      return this.signer._signTypedData(this.domain(), types, {
+        l1Addr,
+        l2Addr,
+      });
     }
 
     domain(): any {
@@ -97,7 +115,9 @@ describe('L1Migrator', function() {
       mockL2MigratorEOA,
     ] = await ethers.getSigners();
 
-    const L1Migrator: L1Migrator__factory = await ethers.getContractFactory('L1Migrator');
+    const L1Migrator: L1Migrator__factory = await ethers.getContractFactory(
+        'L1Migrator',
+    );
     l1Migrator = await L1Migrator.deploy(
         mockInboxEOA.address,
         mockBondingManagerEOA.address,
@@ -148,66 +168,72 @@ describe('L1Migrator', function() {
 
   describe('migrateDelegator', () => {
     it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator.connect(l1EOA).migrateDelegator(
-          l1EOA.address,
-          ethers.constants.AddressZero,
-          '0x',
-          0,
-          0,
-          0,
+      const tx = l1Migrator
+          .connect(l1EOA)
+          .migrateDelegator(
+              l1EOA.address,
+              ethers.constants.AddressZero,
+              '0x',
+              0,
+              0,
+              0,
+              {
+                value: ethers.utils.parseEther('1'),
+              },
+          );
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: INVALID_L2_ADDR');
     });
 
     it('reverts for failed auth', async () => {
       // Invalid msg.sender + invalid non-null signature
       const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator.connect(notL1EOA).migrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-          sig,
-          0,
-          0,
-          0,
+      let tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
 
       // Invalid msg.sender + null signature
-      tx = l1Migrator.connect(notL1EOA).migrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          0,
-          0,
-          0,
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
     });
 
     it('does not revert for successful auth', async () => {
       // Valid msg.sender
-      let tx = l1Migrator.connect(l1EOA).migrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          0,
-          0,
-          0,
-      );
+      let tx = l1Migrator
+          .connect(l1EOA)
+          .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
       await expect(tx).to.not.reverted;
 
       // Invalid msg.sender + valid signature
       const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(l1EOA, l1Migrator.address, network.chainId);
-      const sig = await l1MigratorSigner.signMigrateDelegator(l1EOA.address, l1EOA.address);
-      tx = l1Migrator.connect(notL1EOA).migrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-          sig,
-          0,
-          0,
-          0,
+      const l1MigratorSigner = new L1MigratorSigner(
+          l1EOA,
+          l1Migrator.address,
+          network.chainId,
       );
+      const sig = await l1MigratorSigner.signMigrateDelegator(
+          l1EOA.address,
+          l1EOA.address,
+      );
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
       await expect(tx).to.not.reverted;
     });
 
@@ -244,19 +270,25 @@ describe('L1Migrator', function() {
         fees,
         delegate,
       };
-      const l2Calldata = IL2Migrator__factory.createInterface().encodeFunctionData(
-          'finalizeMigrateDelegator',
-          [migrateDelegatorParams],
-      );
+      const l2Calldata =
+        IL2Migrator__factory.createInterface().encodeFunctionData(
+            'finalizeMigrateDelegator',
+            [migrateDelegatorParams],
+        );
 
-      const tx = await l1Migrator.connect(l1EOA).migrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          maxGas,
-          gasPriceBid,
-          maxSubmissionCost,
-      );
+      const tx = await l1Migrator
+          .connect(l1EOA)
+          .migrateDelegator(
+              l1EOA.address,
+              l1EOA.address,
+              '0x',
+              maxGas,
+              gasPriceBid,
+              maxSubmissionCost,
+              {
+                value: maxSubmissionCost + maxGas * gasPriceBid,
+              },
+          );
 
       expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
           mockL2MigratorEOA.address,
@@ -270,8 +302,7 @@ describe('L1Migrator', function() {
       );
 
       // MigrateDelegatorInitiated Event
-      await expect(tx)
-          .to.emit(l1Migrator, 'MigrateDelegatorInitiated');
+      await expect(tx).to.emit(l1Migrator, 'MigrateDelegatorInitiated');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, migrateDelegatorParams)
     });
@@ -279,71 +310,98 @@ describe('L1Migrator', function() {
 
   describe('migrateUnbondingLocks', () => {
     it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator.connect(l1EOA).migrateUnbondingLocks(
-          l1EOA.address,
-          ethers.constants.AddressZero,
-          [],
-          '0x',
-          0,
-          0,
-          0,
+      const tx = l1Migrator
+          .connect(l1EOA)
+          .migrateUnbondingLocks(
+              l1EOA.address,
+              ethers.constants.AddressZero,
+              [],
+              '0x',
+              0,
+              0,
+              0,
+              {
+                value: ethers.utils.parseEther('1'),
+              },
+          );
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: INVALID_L2_ADDR');
     });
 
     it('reverts for failed auth', async () => {
       // Invalid msg.sender + invalid non-null signature
       const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
-          l1EOA.address,
-          l1EOA.address,
-          [],
-          sig,
-          0,
-          0,
-          0,
+      let tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateUnbondingLocks(l1EOA.address, l1EOA.address, [], sig, 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
 
       // Invalid msg.sender + null signature
-      tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
-          l1EOA.address,
-          l1EOA.address,
-          [],
-          '0x',
-          0,
-          0,
-          0,
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateUnbondingLocks(
+              l1EOA.address,
+              l1EOA.address,
+              [],
+              '0x',
+              0,
+              0,
+              0,
+              {
+                value: ethers.utils.parseEther('1'),
+              },
+          );
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
     });
 
     it('does not revert for successful auth', async () => {
       // Valid msg.sender
-      let tx = l1Migrator.connect(l1EOA).migrateUnbondingLocks(
-          l1EOA.address,
-          l1EOA.address,
-          [],
-          '0x',
-          0,
-          0,
-          0,
-      );
+      let tx = l1Migrator
+          .connect(l1EOA)
+          .migrateUnbondingLocks(
+              l1EOA.address,
+              l1EOA.address,
+              [],
+              '0x',
+              0,
+              0,
+              0,
+              {
+                value: ethers.utils.parseEther('1'),
+              },
+          );
       await expect(tx).to.not.reverted;
 
       // Invalid msg.sender + valid signature
       const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(l1EOA, l1Migrator.address, network.chainId);
-      const sig = await l1MigratorSigner.signMigrateUnbondingLocks(l1EOA.address, l1EOA.address, [1, 2]);
-      tx = l1Migrator.connect(notL1EOA).migrateUnbondingLocks(
+      const l1MigratorSigner = new L1MigratorSigner(
+          l1EOA,
+          l1Migrator.address,
+          network.chainId,
+      );
+      const sig = await l1MigratorSigner.signMigrateUnbondingLocks(
           l1EOA.address,
           l1EOA.address,
           [1, 2],
-          sig,
-          0,
-          0,
-          0,
       );
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateUnbondingLocks(
+              l1EOA.address,
+              l1EOA.address,
+              [1, 2],
+              sig,
+              0,
+              0,
+              0,
+          );
       // await tx
       await expect(tx).to.not.reverted;
     });
@@ -355,8 +413,12 @@ describe('L1Migrator', function() {
       const lock2Amount = 200;
 
       inboxMock.createRetryableTicket.returns(seqNo);
-      bondingManagerMock.getDelegatorUnbondingLock.whenCalledWith(l1EOA.address, 1).returns([lock1Amount, 0]);
-      bondingManagerMock.getDelegatorUnbondingLock.whenCalledWith(l1EOA.address, 2).returns([lock2Amount, 0]);
+      bondingManagerMock.getDelegatorUnbondingLock
+          .whenCalledWith(l1EOA.address, 1)
+          .returns([lock1Amount, 0]);
+      bondingManagerMock.getDelegatorUnbondingLock
+          .whenCalledWith(l1EOA.address, 2)
+          .returns([lock2Amount, 0]);
 
       const maxGas = 111;
       const gasPriceBid = 222;
@@ -369,20 +431,26 @@ describe('L1Migrator', function() {
         total: lock1Amount + lock2Amount,
         unbondingLockIds,
       };
-      const l2Calldata = IL2Migrator__factory.createInterface().encodeFunctionData(
-          'finalizeMigrateUnbondingLocks',
-          [migrateUnbondingLocksParams],
-      );
+      const l2Calldata =
+        IL2Migrator__factory.createInterface().encodeFunctionData(
+            'finalizeMigrateUnbondingLocks',
+            [migrateUnbondingLocksParams],
+        );
 
-      const tx = await l1Migrator.connect(l1EOA).migrateUnbondingLocks(
-          l1EOA.address,
-          l1EOA.address,
-          unbondingLockIds,
-          '0x',
-          maxGas,
-          gasPriceBid,
-          maxSubmissionCost,
-      );
+      const tx = await l1Migrator
+          .connect(l1EOA)
+          .migrateUnbondingLocks(
+              l1EOA.address,
+              l1EOA.address,
+              unbondingLockIds,
+              '0x',
+              maxGas,
+              gasPriceBid,
+              maxSubmissionCost,
+              {
+                value: maxSubmissionCost + maxGas * gasPriceBid,
+              },
+          );
 
       expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
           mockL2MigratorEOA.address,
@@ -396,8 +464,7 @@ describe('L1Migrator', function() {
       );
 
       // MigrateUnbondingLocksInitiated Event
-      await expect(tx)
-          .to.emit(l1Migrator, 'MigrateUnbondingLocksInitiated');
+      await expect(tx).to.emit(l1Migrator, 'MigrateUnbondingLocksInitiated');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, migrateUnbondingLocksParams)
     });
@@ -405,66 +472,72 @@ describe('L1Migrator', function() {
 
   describe('migrateSender', () => {
     it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator.connect(l1EOA).migrateSender(
-          l1EOA.address,
-          ethers.constants.AddressZero,
-          '0x',
-          0,
-          0,
-          0,
+      const tx = l1Migrator
+          .connect(l1EOA)
+          .migrateSender(
+              l1EOA.address,
+              ethers.constants.AddressZero,
+              '0x',
+              0,
+              0,
+              0,
+              {
+                value: ethers.utils.parseEther('1'),
+              },
+          );
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: INVALID_L2_ADDR');
     });
 
     it('reverts for failed auth', async () => {
       // Invalid msg.sender + invalid non-null signature
       const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator.connect(notL1EOA).migrateSender(
-          l1EOA.address,
-          l1EOA.address,
-          sig,
-          0,
-          0,
-          0,
+      let tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
 
       // Invalid msg.sender + null signature
-      tx = l1Migrator.connect(notL1EOA).migrateSender(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          0,
-          0,
-          0,
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#requireValidMigration: FAIL_AUTH',
       );
-      await expect(tx).to.be.revertedWith('L1Migrator#requireValidMigration: FAIL_AUTH');
     });
 
     it('does not revert for successful auth', async () => {
       // Valid msg.sender
-      let tx = l1Migrator.connect(l1EOA).migrateSender(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          0,
-          0,
-          0,
-      );
+      let tx = l1Migrator
+          .connect(l1EOA)
+          .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
       await expect(tx).to.not.reverted;
 
       // Invalid msg.sender + valid signature
       const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(l1EOA, l1Migrator.address, network.chainId);
-      const sig = await l1MigratorSigner.signMigrateSender(l1EOA.address, l1EOA.address);
-      tx = l1Migrator.connect(notL1EOA).migrateSender(
-          l1EOA.address,
-          l1EOA.address,
-          sig,
-          0,
-          0,
-          0,
+      const l1MigratorSigner = new L1MigratorSigner(
+          l1EOA,
+          l1Migrator.address,
+          network.chainId,
       );
+      const sig = await l1MigratorSigner.signMigrateSender(
+          l1EOA.address,
+          l1EOA.address,
+      );
+      tx = l1Migrator
+          .connect(notL1EOA)
+          .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+            value: ethers.utils.parseEther('1'),
+          });
       await expect(tx).to.not.reverted;
     });
 
@@ -496,19 +569,25 @@ describe('L1Migrator', function() {
         deposit,
         reserve,
       };
-      const l2Calldata = IL2Migrator__factory.createInterface().encodeFunctionData(
-          'finalizeMigrateSender',
-          [migrateSenderParams],
-      );
+      const l2Calldata =
+        IL2Migrator__factory.createInterface().encodeFunctionData(
+            'finalizeMigrateSender',
+            [migrateSenderParams],
+        );
 
-      const tx = await l1Migrator.connect(l1EOA).migrateSender(
-          l1EOA.address,
-          l1EOA.address,
-          '0x',
-          maxGas,
-          gasPriceBid,
-          maxSubmissionCost,
-      );
+      const tx = await l1Migrator
+          .connect(l1EOA)
+          .migrateSender(
+              l1EOA.address,
+              l1EOA.address,
+              '0x',
+              maxGas,
+              gasPriceBid,
+              maxSubmissionCost,
+              {
+                value: maxSubmissionCost + maxGas * gasPriceBid,
+              },
+          );
 
       expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
           mockL2MigratorEOA.address,
@@ -522,8 +601,7 @@ describe('L1Migrator', function() {
       );
 
       // MigrateSenderInitiated Event
-      await expect(tx)
-          .to.emit(l1Migrator, 'MigrateSenderInitiated');
+      await expect(tx).to.emit(l1Migrator, 'MigrateSenderInitiated');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, migrateSenderParams)
     });
