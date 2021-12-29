@@ -257,7 +257,7 @@ describe('L2Migrator', function() {
         // .withArgs(seqNo, params)
       });
 
-      it('subtracted claimed delegated stake when staking for delegator pool', async () => {
+      it('subtracts claimed delegated stake via claimStake() when staking for delegator pool', async () => {
         const delegator = l2AddrEOA;
         const delegate = l1AddrEOA.address;
         const stake = 50;
@@ -287,6 +287,51 @@ describe('L2Migrator', function() {
             params.delegatedStake - stake,
             delegatorPool,
             params.delegate,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+            ethers.constants.AddressZero,
+        );
+      });
+
+      it('subtracts claimed delegated stake via finalizeMigrateDelegator() when staking for delegator pool', async () => {
+        const delegator = l2AddrEOA.address;
+        const delegate = l1AddrEOA.address;
+        const stake = 50;
+
+        const params1 = {
+          ...mockMigrateDelegatorParams(),
+          l1Addr: delegator,
+          l2Addr: delegator,
+          delegate,
+          stake,
+        };
+        await l2Migrator
+            .connect(mockL1MigratorL2AliasEOA)
+            .finalizeMigrateDelegator(params1);
+
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+            stake,
+        );
+
+        const params2 = {
+          ...mockMigrateDelegatorParams(),
+          l1Addr: delegate,
+          l2Addr: delegate,
+          delegate,
+        };
+
+        bondingManagerMock.bondForWithHint.reset();
+
+        await l2Migrator
+            .connect(mockL1MigratorL2AliasEOA)
+            .finalizeMigrateDelegator(params2);
+
+        const delegatorPool = await l2Migrator.delegatorPools(params2.l1Addr);
+        expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
+            params2.delegatedStake - stake,
+            delegatorPool,
+            params2.delegate,
             ethers.constants.AddressZero,
             ethers.constants.AddressZero,
             ethers.constants.AddressZero,
@@ -561,7 +606,9 @@ describe('L2Migrator', function() {
         const stake = 100;
         const fees = 0;
 
-        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(0);
+        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+            params.stake,
+        );
 
         const tx = await l2Migrator
             .connect(delegator)
@@ -570,7 +617,7 @@ describe('L2Migrator', function() {
         expect(await l2Migrator.migratedDelegators(delegator.address)).to.be
             .true;
         expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
-            stake,
+            params.stake + stake,
         );
         expect(delegatorPoolMock.claim).to.be.calledOnceWith(
             l2AddrEOA.address,
