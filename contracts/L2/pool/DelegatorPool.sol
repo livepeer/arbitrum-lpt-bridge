@@ -29,7 +29,8 @@ interface IBondingManager {
 }
 
 contract DelegatorPool is Initializable {
-    uint256 public totalClaimedStake;
+    uint256 public remainingStake;
+    uint256 public cumulativeIncreaseRatio = 1;
 
     address public bondingManager;
     address public migrator;
@@ -41,54 +42,62 @@ contract DelegatorPool is Initializable {
         _;
     }
 
-    function initialize(address _migrator, address _bondingManager)
-        public
-        initializer
-    {
-        migrator = _migrator;
+    function initialize(address _bondingManager) public initializer {
         bondingManager = _bondingManager;
+        migrator = msg.sender;
+        remainingStake = pendingStake();
     }
+
+    receive() external payable {}
 
     function claim(address _delegator, uint256 _stake) external onlyMigrator {
         // Calculate original total stake
-        uint256 currTotalStake = IBondingManager(bondingManager).pendingStake(
-            address(this),
-            0
-        );
-        uint256 totalStake = currTotalStake + totalClaimedStake;
+        uint256 currTotalStake = pendingStake();
 
-        // Calculate stake owed to delegator
-        uint256 owedStake = MathUtils.percOf(
-            currTotalStake,
-            _stake,
-            totalStake
-        );
+        require(_stake <= currTotalStake, "DelegatorPool#claim: INVALID_STAKE");
+
+        // Calculate Overall Increase ratio
+        cumulativeIncreaseRatio *= currTotalStake / remainingStake;
+
+        // Calculate Stake owed to delegator
+        uint256 owedStake = cumulativeIncreaseRatio * _stake;
+
+        // Calculate fees owed to delegator
+        uint256 currTotalFees = pendingFees();
+        uint256 owedFees = (cumulativeIncreaseRatio *
+            currTotalFees *
+            owedStake) / remainingStake;
+
+        remainingStake = currTotalStake - owedStake;
 
         // Transfer owed stake to the delegator
+        transferBond(_delegator, owedStake);
+
+        // Transfer owed fees to the delegator
+        IBondingManager(bondingManager).withdrawFees();
+
+        (bool ok, ) = payable(_delegator).call{value: owedFees}("");
+        require(ok, "DelegatorPool#claim: FAIL_FEE");
+
+        emit Claimed(_delegator, _stake, owedFees);
+    }
+
+    function transferBond(address _delegator, uint256 _stake) public {
         IBondingManager(bondingManager).transferBond(
             _delegator,
-            owedStake,
+            _stake,
             address(0),
             address(0),
             address(0),
             address(0)
         );
+    }
 
-        // Calculate fees owed to delegator
-        uint256 totalFees = IBondingManager(bondingManager).pendingFees(
-            address(this),
-            0
-        );
-        uint256 owedFees = MathUtils.percOf(totalFees, _stake, totalStake);
+    function pendingStake() public view returns (uint256) {
+        return IBondingManager(bondingManager).pendingStake(address(this), 0);
+    }
 
-        // Transfer owed fees to the delegator
-        IBondingManager(bondingManager).withdrawFees();
-
-        (bool ok, ) = _delegator.call{value: owedFees}("");
-        require(ok, "DelegatorPool#claim: FAIL_FEE");
-
-        totalClaimedStake += _stake;
-
-        emit Claimed(_delegator, _stake, owedFees);
+    function pendingFees() public view returns (uint256) {
+        return IBondingManager(bondingManager).pendingFees(address(this), 0);
     }
 }

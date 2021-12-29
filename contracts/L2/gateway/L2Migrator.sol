@@ -35,7 +35,7 @@ interface IMerkleSnapshot {
 }
 
 interface IDelegatorPool {
-    function initialize(address _migrator, address _bondingManager) external;
+    function initialize(address _bondingManager) external;
 
     function claim(address _addr, uint256 _stake) external;
 }
@@ -111,10 +111,6 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
         if (_params.l1Addr == _params.delegate) {
             address poolAddr = Clones.clone(delegatorPoolImpl);
-            IDelegatorPool(poolAddr).initialize(
-                address(this),
-                bondingManagerAddr
-            );
 
             delegatorPools[_params.l1Addr] = poolAddr;
 
@@ -123,6 +119,8 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
                 poolAddr,
                 _params.delegate
             );
+
+            IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
 
             emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
         }
