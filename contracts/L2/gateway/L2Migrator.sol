@@ -45,6 +45,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
     address public l1Migrator;
     address public delegatorPoolImpl;
+    bool public claimStakeEnabled;
 
     mapping(address => bool) public migratedDelegators;
     mapping(address => address) public delegatorPools;
@@ -87,6 +88,11 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     }
 
     // TODO: Setter for delegatorPoolImpl?
+
+    // TODO: Add auth
+    function setClaimStakeEnabled(bool _enabled) external {
+        claimStakeEnabled = _enabled;
+    }
 
     function finalizeMigrateDelegator(MigrateDelegatorParams memory _params)
         external
@@ -174,6 +180,11 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         bytes32[] calldata _proof,
         address _newDelegate
     ) external {
+        require(
+            claimStakeEnabled,
+            "L2Migrator#claimStake: CLAIM_STAKE_DISABLED"
+        );
+
         IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
 
         address delegator = msg.sender;
