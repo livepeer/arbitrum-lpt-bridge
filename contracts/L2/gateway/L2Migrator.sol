@@ -114,6 +114,8 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
             emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
         }
 
+        claimedDelegatedStake[_params.delegate] += _params.stake;
+
         // Use .call() since l2Addr could be a contract that needs more gas than
         // the stipend provided by .transfer()
         // The .call() is safe without a re-entrancy guard because this function cannot be re-entered
