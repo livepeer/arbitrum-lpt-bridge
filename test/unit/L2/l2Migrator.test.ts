@@ -74,6 +74,8 @@ describe('L2Migrator', function() {
     );
     await l2Migrator.deployed();
 
+    await l2Migrator.setClaimStakeEnabled(true);
+
     bondingManagerMock = await smock.fake(
         'contracts/L2/gateway/L2Migrator.sol:IBondingManager',
         {
@@ -119,6 +121,15 @@ describe('L2Migrator', function() {
       await l2Migrator.setL1Migrator(notL1MigratorEOA.address);
       const l1MigratorAddr = await l2Migrator.l1Migrator();
       expect(l1MigratorAddr).to.equal(notL1MigratorEOA.address);
+    });
+  });
+
+  describe('setClaimStakeEnabled', () => {
+    it('sets claimStakeEnabled', async () => {
+      await l2Migrator.setClaimStakeEnabled(true);
+      expect(await l2Migrator.claimStakeEnabled()).to.be.true;
+      await l2Migrator.setClaimStakeEnabled(false);
+      expect(await l2Migrator.claimStakeEnabled()).to.be.false;
     });
   });
 
@@ -454,6 +465,23 @@ describe('L2Migrator', function() {
   });
 
   describe('claimStake', () => {
+    it('reverts if !claimStakeEnabled', async () => {
+      await l2Migrator.setClaimStakeEnabled(false);
+
+      const tx = l2Migrator
+          .connect(l1AddrEOA)
+          .claimStake(
+              ethers.constants.AddressZero,
+              0,
+              0,
+              [],
+              ethers.constants.AddressZero,
+          );
+      await expect(tx).to.revertedWith(
+          'L2Migrator#claimStake: CLAIM_STAKE_DISABLED',
+      );
+    });
+
     it('reverts for invalid proof', async () => {
       merkleSnapshotMock.verify.returns(false);
 
