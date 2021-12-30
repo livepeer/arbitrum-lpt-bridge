@@ -24,6 +24,8 @@ describe('L1Migrator', function() {
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
   let bridgeMinterMock: FakeContract;
+  let tokenMock: FakeContract;
+  let l1LPTGatewayMock: FakeContract;
   let mockInboxEOA: SignerWithAddress;
   let mockOutboxEOA: SignerWithAddress;
   let mockBridgeEOA: SignerWithAddress;
@@ -31,6 +33,8 @@ describe('L1Migrator', function() {
   let mockTicketBrokerEOA: SignerWithAddress;
   let mockL2MigratorEOA: SignerWithAddress;
   let mockBridgeMinterEOA: SignerWithAddress;
+  let mockTokenEOA: SignerWithAddress;
+  let mockL1LPTGatewayEOA: SignerWithAddress;
 
   class L1MigratorSigner {
     signer: SignerWithAddress;
@@ -116,6 +120,8 @@ describe('L1Migrator', function() {
       mockTicketBrokerEOA,
       mockL2MigratorEOA,
       mockBridgeMinterEOA,
+      mockTokenEOA,
+      mockL1LPTGatewayEOA,
     ] = await ethers.getSigners();
 
     const L1Migrator: L1Migrator__factory = await ethers.getContractFactory(
@@ -126,6 +132,8 @@ describe('L1Migrator', function() {
         mockBondingManagerEOA.address,
         mockTicketBrokerEOA.address,
         mockBridgeMinterEOA.address,
+        mockTokenEOA.address,
+        mockL1LPTGatewayEOA.address,
         mockL2MigratorEOA.address,
     );
     await l1Migrator.deployed();
@@ -158,6 +166,17 @@ describe('L1Migrator', function() {
 
     bridgeMinterMock = await smock.fake('IBridgeMinter', {
       address: mockBridgeMinterEOA.address,
+    });
+
+    tokenMock = await smock.fake(
+        'contracts/L1/gateway/L1Migrator.sol:ApproveLike',
+        {
+          address: mockTokenEOA.address,
+        },
+    );
+
+    l1LPTGatewayMock = await smock.fake('IL1LPTGateway', {
+      address: mockL1LPTGatewayEOA.address,
     });
 
     inboxMock.bridge.returns(bridgeMock.address);
@@ -669,12 +688,62 @@ describe('L1Migrator', function() {
 
       await expect(tx)
           .to.emit(l1Migrator, 'TxToL2')
-          .withArgs(
-              l1Migrator.address,
-              mockL2MigratorEOA.address,
-              seqNo,
-              '0x',
-          );
+          .withArgs(l1Migrator.address, mockL2MigratorEOA.address, seqNo, '0x');
+    });
+  });
+
+  describe('migrateLPT', () => {
+    it('reverts if LPT already migrated', async () => {
+      await l1Migrator.connect(l1EOA).migrateLPT(0, 0, 0, {value: 100});
+      expect(await l1Migrator.lptMigrated()).to.be.true;
+
+      const tx = l1Migrator.connect(l1EOA).migrateLPT(0, 0, 0, {value: 100});
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#migrateLPT: ALREADY_MIGRATED',
+      );
+    });
+
+    it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
+      const amount = 200;
+      const seqNo = 7;
+
+      bridgeMinterMock.withdrawLPTToL1Migrator.returns(amount);
+      inboxMock.createRetryableTicket.returns(seqNo);
+
+      const maxGas = 111;
+      const gasPriceBid = 222;
+      const maxSubmissionCost = 333;
+
+      const l1CallValue = 300;
+      const tx = await l1Migrator
+          .connect(l1EOA)
+          .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
+            value: l1CallValue,
+          });
+
+      expect(await l1Migrator.lptMigrated()).to.be.true;
+
+      expect(bridgeMinterMock.withdrawLPTToL1Migrator).to.be.calledOnce;
+      expect(tokenMock.approve).to.be.calledOnceWith(
+          mockL1LPTGatewayEOA.address,
+          amount,
+      );
+
+      const encodedData = ethers.utils.defaultAbiCoder.encode(
+          ['uint256', 'bytes'],
+          [maxSubmissionCost, '0x'],
+      );
+      expect(l1LPTGatewayMock.outboundTransfer).to.be.calledOnceWith(
+          mockTokenEOA.address,
+          mockL2MigratorEOA.address,
+          amount,
+          maxGas,
+          gasPriceBid,
+          encodedData,
+      );
+      // Check if the mock L1LPTGateway received the msg.value from migrateLPT()
+      // This confirms that the msg.value is forwarded to the outboundTransfer() call
+      await expect(tx).to.changeEtherBalance(mockL1LPTGatewayEOA, l1CallValue);
     });
   });
 });
