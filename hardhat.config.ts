@@ -40,7 +40,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       blockGasLimit: 12000000,
       accounts: {
-        count: 10,
+        count: 20,
       },
     },
     localhostl1: {

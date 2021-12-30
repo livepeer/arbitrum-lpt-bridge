@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {L1ArbitrumMessenger} from "./L1ArbitrumMessenger.sol";
+import {IL1LPTGateway} from "./IL1LPTGateway.sol";
 import {IMigrator} from "../../interfaces/IMigrator.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
@@ -57,6 +58,12 @@ interface ITicketBroker {
 
 interface IBridgeMinter {
     function withdrawETHToL1Migrator() external returns (uint256);
+
+    function withdrawLPTToL1Migrator() external returns (uint256);
+}
+
+interface ApproveLike {
+    function approve(address _addr, uint256 _amount) external;
 }
 
 interface IL2Migrator is IMigrator {
@@ -74,9 +81,12 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
     address public immutable bridgeMinterAddr;
+    address public immutable tokenAddr;
+    address public immutable l1LPTGatewayAddr;
     address public immutable l2MigratorAddr;
 
     bool public ethMigrated;
+    bool public lptMigrated;
 
     event MigrateDelegatorInitiated(
         uint256 indexed seqNo,
@@ -109,11 +119,15 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         address _bondingManagerAddr,
         address _ticketBrokerAddr,
         address _bridgeMinterAddr,
+        address _tokenAddr,
+        address _l1LPTGatewayAddr,
         address _l2MigratorAddr
     ) L1ArbitrumMessenger(_inbox) EIP712("Livepeer L1Migrator", "1") {
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
         bridgeMinterAddr = _bridgeMinterAddr;
+        tokenAddr = _tokenAddr;
+        l1LPTGatewayAddr = _l1LPTGatewayAddr;
         l2MigratorAddr = _l2MigratorAddr;
     }
 
@@ -249,6 +263,33 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
             _maxGas,
             _gasPriceBid,
             ""
+        );
+    }
+
+    // TODO: Add whenNotPaused modifier to prevent this function from being called until other contracts are ready
+    function migrateLPT(
+        uint256 _maxGas,
+        uint256 _gasPriceBid,
+        uint256 _maxSubmissionCost
+    ) external payable {
+        require(!lptMigrated, "L1Migrator#migrateLPT: ALREADY_MIGRATED");
+
+        lptMigrated = true;
+
+        uint256 amount = IBridgeMinter(bridgeMinterAddr)
+            .withdrawLPTToL1Migrator();
+
+        // Approve L1LPTGateway to pull tokens
+        ApproveLike(tokenAddr).approve(l1LPTGatewayAddr, amount);
+        // Trigger cross-chain transfer with L1LPTGateway which will pull and escrow tokens
+        // Forward msg.value to outboundTransfer() to be used for cross-chain tx
+        IL1LPTGateway(l1LPTGatewayAddr).outboundTransfer{value: msg.value}(
+            tokenAddr,
+            l2MigratorAddr,
+            amount,
+            _maxGas,
+            _gasPriceBid,
+            abi.encode(_maxSubmissionCost, "")
         );
     }
 
