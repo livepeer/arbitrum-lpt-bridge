@@ -23,12 +23,14 @@ describe('L1Migrator', function() {
   let bridgeMock: FakeContract;
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
+  let bridgeMinterMock: FakeContract;
   let mockInboxEOA: SignerWithAddress;
   let mockOutboxEOA: SignerWithAddress;
   let mockBridgeEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
   let mockL2MigratorEOA: SignerWithAddress;
+  let mockBridgeMinterEOA: SignerWithAddress;
 
   class L1MigratorSigner {
     signer: SignerWithAddress;
@@ -113,6 +115,7 @@ describe('L1Migrator', function() {
       mockBondingManagerEOA,
       mockTicketBrokerEOA,
       mockL2MigratorEOA,
+      mockBridgeMinterEOA,
     ] = await ethers.getSigners();
 
     const L1Migrator: L1Migrator__factory = await ethers.getContractFactory(
@@ -122,6 +125,7 @@ describe('L1Migrator', function() {
         mockInboxEOA.address,
         mockBondingManagerEOA.address,
         mockTicketBrokerEOA.address,
+        mockBridgeMinterEOA.address,
         mockL2MigratorEOA.address,
     );
     await l1Migrator.deployed();
@@ -151,6 +155,10 @@ describe('L1Migrator', function() {
           address: mockTicketBrokerEOA.address,
         },
     );
+
+    bridgeMinterMock = await smock.fake('IBridgeMinter', {
+      address: mockBridgeMinterEOA.address,
+    });
 
     inboxMock.bridge.returns(bridgeMock.address);
     bridgeMock.activeOutbox.returns(outboxMock.address);
@@ -613,6 +621,60 @@ describe('L1Migrator', function() {
       await expect(tx).to.emit(l1Migrator, 'MigrateSenderInitiated');
       // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
       // .withArgs(seqNo, migrateSenderParams)
+    });
+  });
+
+  describe('migrateETH', () => {
+    it('reverts if ETH already migrated', async () => {
+      await l1Migrator.connect(l1EOA).migrateETH(0, 0, 0, {value: 100});
+      expect(await l1Migrator.ethMigrated()).to.be.true;
+
+      const tx = l1Migrator.connect(l1EOA).migrateETH(0, 0, 0, {value: 100});
+      await expect(tx).to.be.revertedWith(
+          'L1Migrator#migrateETH: ALREADY_MIGRATED',
+      );
+    });
+
+    it('withdraws from BridgeMinter and sends tx to L2', async () => {
+      const amount = 200;
+      const seqNo = 7;
+
+      bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
+      inboxMock.createRetryableTicket.returns(seqNo);
+
+      const maxGas = 111;
+      const gasPriceBid = 222;
+      const maxSubmissionCost = 333;
+
+      const l1CallValue = 300;
+      const tx = await l1Migrator
+          .connect(l1EOA)
+          .migrateETH(maxGas, gasPriceBid, maxSubmissionCost, {
+            value: l1CallValue,
+          });
+
+      expect(await l1Migrator.ethMigrated()).to.be.true;
+
+      expect(bridgeMinterMock.withdrawETHToL1Migrator).to.be.calledOnce;
+      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+          mockL2MigratorEOA.address,
+          amount,
+          maxSubmissionCost,
+          l1Migrator.address,
+          l1Migrator.address,
+          maxGas,
+          gasPriceBid,
+          '0x',
+      );
+
+      await expect(tx)
+          .to.emit(l1Migrator, 'TxToL2')
+          .withArgs(
+              l1Migrator.address,
+              mockL2MigratorEOA.address,
+              seqNo,
+              '0x',
+          );
     });
   });
 });

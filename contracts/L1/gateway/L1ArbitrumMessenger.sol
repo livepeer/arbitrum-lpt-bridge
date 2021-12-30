@@ -39,9 +39,32 @@ abstract contract L1ArbitrumMessenger {
         uint256 gasPriceBid,
         bytes memory data
     ) internal returns (uint256) {
-        uint256 seqNum = inbox.createRetryableTicket{value: msg.value}(
+        return
+            sendTxToL2(
+                target,
+                user,
+                msg.value,
+                0, // we always assume that l2CallValue = 0
+                maxSubmissionCost,
+                maxGas,
+                gasPriceBid,
+                data
+            );
+    }
+
+    function sendTxToL2(
+        address target,
+        address user,
+        uint256 _l1CallValue,
+        uint256 _l2CallValue,
+        uint256 maxSubmissionCost,
+        uint256 maxGas,
+        uint256 gasPriceBid,
+        bytes memory data
+    ) internal returns (uint256) {
+        uint256 seqNum = inbox.createRetryableTicket{value: _l1CallValue}(
             target,
-            0, // we always assume that l2CallValue = 0
+            _l2CallValue,
             maxSubmissionCost,
             user,
             user,
