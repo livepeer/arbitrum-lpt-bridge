@@ -55,6 +55,10 @@ interface ITicketBroker {
         returns (Sender memory sender, ReserveInfo memory reserve);
 }
 
+interface IBridgeMinter {
+    function withdrawETHToL1Migrator() external returns (uint256);
+}
+
 interface IL2Migrator is IMigrator {
     function finalizeMigrateDelegator(MigrateDelegatorParams memory _params)
         external;
@@ -69,7 +73,10 @@ interface IL2Migrator is IMigrator {
 contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
+    address public immutable bridgeMinterAddr;
     address public immutable l2MigratorAddr;
+
+    bool public ethMigrated;
 
     event MigrateDelegatorInitiated(
         uint256 indexed seqNo,
@@ -101,10 +108,12 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         address _inbox,
         address _bondingManagerAddr,
         address _ticketBrokerAddr,
+        address _bridgeMinterAddr,
         address _l2MigratorAddr
     ) L1ArbitrumMessenger(_inbox) EIP712("Livepeer L1Migrator", "1") {
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
+        bridgeMinterAddr = _bridgeMinterAddr;
         l2MigratorAddr = _l2MigratorAddr;
     }
 
@@ -212,6 +221,35 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         );
 
         emit MigrateSenderInitiated(seqNo, params);
+    }
+
+    // TODO: Add whenNotPaused modifier to prevent this function from being called until other contracts are ready
+    function migrateETH(
+        uint256 _maxGas,
+        uint256 _gasPriceBid,
+        uint256 _maxSubmissionCost
+    ) external payable {
+        require(!ethMigrated, "L1Migrator#migrateETH: ALREADY_MIGRATED");
+
+        ethMigrated = true;
+
+        uint256 amount = IBridgeMinter(bridgeMinterAddr)
+            .withdrawETHToL1Migrator();
+
+        // Any ETH refunded to the L2 alias of this contract can be used for
+        // other cross-chain txs sent by this contract.
+        // The retryable ticket created will not be cancellable since this contract
+        // currently does not support cross-chain txs to call ArbRetryableTx.cancel().
+        sendTxToL2(
+            l2MigratorAddr,
+            address(this), // L2 alias of this contract will receive refunds
+            msg.value,
+            amount,
+            _maxSubmissionCost,
+            _maxGas,
+            _gasPriceBid,
+            ""
+        );
     }
 
     function getMigrateDelegatorParams(address _l1Addr, address _l2Addr)
