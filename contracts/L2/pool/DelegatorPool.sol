@@ -76,7 +76,7 @@ contract DelegatorPool is Initializable {
             owedFees
         );
 
-        emit Claimed(_delegator, _stake, owedFees);
+        emit Claimed(_delegator, owedStake, owedFees);
     }
 
     function transferBond(address _delegator, uint256 _stake) public {

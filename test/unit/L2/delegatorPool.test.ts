@@ -18,8 +18,82 @@ describe('DelegatorPool', function() {
   let mockL2MigratorEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
 
-  const pendingStake = 900;
-  const pendingFees = 90;
+  class StakeAndFees {
+    public claimedStake = 0;
+    public pendingStake;
+    public pendingFees;
+
+    public sequence = 0;
+
+    constructor(
+      public readonly initialStake: number,
+      public readonly initialFees: number,
+    ) {
+      this.pendingStake = initialStake;
+      this.pendingFees = initialFees;
+    }
+
+    calculateClaim(stake: number) {
+      const owedStake =
+        (this.pendingStake * stake) / (this.initialStake - this.claimedStake);
+
+      const owedFees =
+        (this.pendingFees * stake) / (this.initialStake - this.claimedStake);
+
+      return {
+        owedStake,
+        owedFees,
+      };
+    }
+
+    addRewards(stake: number, fees: number) {
+      this.pendingStake += stake;
+      this.pendingFees += fees;
+    }
+
+    createTx(caller: SignerWithAddress, stake: number) {
+      const {owedStake, owedFees} = this.calculateClaim(stake);
+
+      bondingManagerMock.pendingStake.returns(this.pendingStake);
+      bondingManagerMock.pendingFees.returns(this.pendingFees);
+
+      const tx = delegatorPool
+          .connect(mockL2MigratorEOA)
+          .claim(caller.address, stake);
+
+      this.claimedStake += stake;
+
+      this.pendingStake -= owedStake;
+      this.pendingFees -= owedFees;
+
+      return {tx, seq: this.sequence++, owedStake, owedFees};
+    }
+
+    async testClaim(caller: SignerWithAddress, stake: number) {
+      const {tx, seq, owedStake, owedFees} = this.createTx(caller, stake);
+      const txRec = await tx;
+
+      expect(bondingManagerMock.withdrawFees.atCall(seq)).to.be.calledWith(
+          caller.address,
+          owedFees,
+      );
+
+      expect(bondingManagerMock.transferBond.atCall(seq)).to.be.calledWith(
+          caller.address,
+          owedStake,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+      );
+
+      expect(txRec.hash)
+          .to.emit(delegatorPool, 'Claimed')
+          .withArgs(caller.address, owedStake, owedFees);
+
+      return {owedStake, owedFees};
+    }
+  }
 
   beforeEach(async function() {
     [
@@ -42,6 +116,9 @@ describe('DelegatorPool', function() {
         },
     );
 
+    const pendingStake = 900;
+    const pendingFees = 90;
+
     bondingManagerMock.pendingStake.returns(pendingStake);
     bondingManagerMock.pendingFees.returns(pendingFees);
 
@@ -60,8 +137,8 @@ describe('DelegatorPool', function() {
     });
 
     it('sets initial balance correctly', async () => {
-      const remainingStake = await delegatorPool.remainingStake();
-      expect(remainingStake).to.equal(pendingStake);
+      const initialStake = await delegatorPool.initialStake();
+      expect(initialStake).to.equal(900);
     });
 
     it('should fail when already initialized', async () => {
@@ -87,55 +164,18 @@ describe('DelegatorPool', function() {
       const fees = 90;
 
       describe('full claim - only single delegator in pool', () => {
-        beforeEach(async function() {
-          // mimic bondingManager.withdrawFees()
-          await mockBondingManagerEOA.sendTransaction({
-            to: delegatorPool.address,
-            value: fees,
-          });
-        });
-
-        it('fails to transfer is fee higher than balance', async () => {
-          bondingManagerMock.pendingFees.returns(fees + 100);
+        it('fails if everything already claimed', async () => {
+          await delegatorPool
+              .connect(mockL2MigratorEOA)
+              .claim(delegator.address, stake);
 
           const tx = delegatorPool
               .connect(mockL2MigratorEOA)
               .claim(delegator.address, stake);
-
-          await expect(tx).to.be.revertedWith('DelegatorPool#claim: FAIL_FEE');
-        });
-
-        it('fails if incorrect stake is provided', async () => {
-          const invalidStake = stake + 100;
-
-          const tx = delegatorPool
-              .connect(mockL2MigratorEOA)
-              .claim(delegator.address, invalidStake);
 
           await expect(tx).to.be.revertedWith(
-              'DelegatorPool#claim: INVALID_STAKE',
+              'DelegatorPool#claim: FULLY_CLAIMED',
           );
-        });
-
-        it('claim stake and fee', async () => {
-          const tx = await delegatorPool
-              .connect(mockL2MigratorEOA)
-              .claim(delegator.address, stake);
-
-          expect(bondingManagerMock.transferBond).to.be.calledOnceWith(
-              delegator.address,
-              stake,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-          );
-
-          await expect(tx).to.changeEtherBalance(delegator, fees);
-
-          await expect(tx)
-              .to.emit(delegatorPool, 'Claimed')
-              .withArgs(delegator.address, stake, fees);
         });
 
         it('emits claimed event', async () => {
@@ -147,68 +187,58 @@ describe('DelegatorPool', function() {
               .to.emit(delegatorPool, 'Claimed')
               .withArgs(delegator.address, stake, fees);
         });
+
+        it('claim stake and fee', async () => {
+          const runner = new StakeAndFees(stake, fees);
+          await runner.testClaim(delegator, stake);
+        });
       });
 
       describe('proportional claim - multiple delegators in pool', () => {
+        const totalStake = 900;
+        const totalFees = 90;
+
+        const d0Stake = 200;
+        const d1Stake = 300;
+        const d2Stake = 400;
+        // sum(d1+d2+d3...+dn) must equal totalStake
+
         it('no rewards/no increase in stake', async () => {
-          await mockBondingManagerEOA.sendTransaction({
-            to: delegatorPool.address,
-            value: 90,
-          });
+          const runner = new StakeAndFees(totalStake, totalFees);
 
-          bondingManagerMock.pendingStake.returns(900);
-          bondingManagerMock.pendingFees.returns(90);
+          await runner.testClaim(delegator, d0Stake);
+          await runner.testClaim(delegator1, d1Stake);
+          await runner.testClaim(delegator2, d2Stake);
+        });
 
-          const tx1 = await delegatorPool
-              .connect(mockL2MigratorEOA)
-              .claim(delegator.address, 200);
+        it('adds rewards - rewards are added once', async () => {
+          const runner = new StakeAndFees(totalStake, totalFees);
+          expect(runner.pendingStake).to.equal(totalStake);
 
-          expect(bondingManagerMock.transferBond.atCall(0)).to.be.calledWith(
-              delegator.address,
-              200,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-          );
+          await runner.testClaim(delegator, d0Stake);
 
-          expect(tx1).to.changeEtherBalance(delegator, 20);
+          runner.addRewards(700, 70);
+          expect(runner.pendingStake).to.equal(1400);
 
-          bondingManagerMock.pendingStake.returns(700);
-          bondingManagerMock.pendingFees.returns(70);
+          await runner.testClaim(delegator1, d1Stake);
+          expect(runner.pendingStake).to.equal(800);
 
-          const tx2 = await delegatorPool
-              .connect(mockL2MigratorEOA)
-              .claim(delegator1.address, 300);
+          await runner.testClaim(delegator2, d2Stake);
+          expect(runner.pendingStake).to.equal(0);
+        });
 
-          expect(bondingManagerMock.transferBond.atCall(1)).to.be.calledWith(
-              delegator1.address,
-              300,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-          );
+        it('adds rewards - reward gets double after each claim', async () => {
+          const runner = new StakeAndFees(900, 90);
 
-          expect(tx2).to.changeEtherBalance(delegator1, 30);
+          await runner.testClaim(delegator, d0Stake);
 
-          bondingManagerMock.pendingStake.returns(400);
-          bondingManagerMock.pendingFees.returns(40);
+          runner.addRewards(runner.pendingStake, runner.pendingFees); // pending doubled
+          const {owedStake: d1} = await runner.testClaim(delegator1, d1Stake);
+          expect(d1).to.equal(d1Stake * 2);
 
-          const tx3 = await delegatorPool
-              .connect(mockL2MigratorEOA)
-              .claim(delegator2.address, 400);
-
-          expect(bondingManagerMock.transferBond.atCall(2)).to.be.calledWith(
-              delegator2.address,
-              400,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-              ethers.constants.AddressZero,
-          );
-
-          expect(tx3).to.changeEtherBalance(delegator2, 40);
+          runner.addRewards(runner.pendingStake, runner.pendingFees); // pending doubled
+          const {owedStake: d2} = await runner.testClaim(delegator2, d2Stake);
+          expect(d2).to.equal(d2Stake * 4);
         });
       });
     });
