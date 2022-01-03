@@ -95,6 +95,9 @@ describe('DelegatorPool', function() {
     }
   }
 
+  const pendingStake = 900;
+  const pendingFees = 90;
+
   beforeEach(async function() {
     [
       delegator,
@@ -116,9 +119,6 @@ describe('DelegatorPool', function() {
         },
     );
 
-    const pendingStake = 900;
-    const pendingFees = 90;
-
     bondingManagerMock.pendingStake.returns(pendingStake);
     bondingManagerMock.pendingFees.returns(pendingFees);
 
@@ -138,7 +138,7 @@ describe('DelegatorPool', function() {
 
     it('sets initial balance correctly', async () => {
       const initialStake = await delegatorPool.initialStake();
-      expect(initialStake).to.equal(900);
+      expect(initialStake).to.equal(pendingStake);
     });
 
     it('should fail when already initialized', async () => {
@@ -228,7 +228,7 @@ describe('DelegatorPool', function() {
         });
 
         it('adds rewards - reward gets double after each claim', async () => {
-          const runner = new StakeAndFees(900, 90);
+          const runner = new StakeAndFees(totalStake, totalFees);
 
           await runner.testClaim(delegator, d0Stake);
 
