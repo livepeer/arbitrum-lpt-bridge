@@ -25,7 +25,7 @@ interface IBondingManager {
         address _newDelegateNewPosNext
     ) external;
 
-    function withdrawFees() external;
+    function withdrawFees(address payable _recipient, uint256 _amount) external;
 }
 
 contract DelegatorPool is Initializable {
@@ -74,10 +74,10 @@ contract DelegatorPool is Initializable {
         transferBond(_delegator, owedStake);
 
         // Transfer owed fees to the delegator
-        IBondingManager(bondingManager).withdrawFees();
-
-        (bool ok, ) = payable(_delegator).call{value: owedFees}("");
-        require(ok, "DelegatorPool#claim: FAIL_FEE");
+        IBondingManager(bondingManager).withdrawFees(
+            payable(_delegator),
+            owedFees
+        );
 
         emit Claimed(_delegator, _stake, owedFees);
     }
