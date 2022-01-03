@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "./MathUtils.sol";
-
 interface IBondingManager {
     function pendingStake(address _addr, uint256 _endRound)
         external
@@ -29,8 +27,8 @@ interface IBondingManager {
 }
 
 contract DelegatorPool is Initializable {
-    uint256 public remainingStake;
-    uint256 public cumulativeIncreaseRatio = 1;
+    uint256 public initialStake;
+    uint256 public claimedInitialStake;
 
     address public bondingManager;
     address public migrator;
@@ -45,30 +43,29 @@ contract DelegatorPool is Initializable {
     function initialize(address _bondingManager) public initializer {
         bondingManager = _bondingManager;
         migrator = msg.sender;
-        remainingStake = pendingStake();
+        initialStake = pendingStake();
     }
-
-    receive() external payable {}
 
     function claim(address _delegator, uint256 _stake) external onlyMigrator {
         // Calculate original total stake
-        uint256 currTotalStake = pendingStake();
 
-        require(_stake <= currTotalStake, "DelegatorPool#claim: INVALID_STAKE");
-
-        // Calculate Overall Increase ratio
-        cumulativeIncreaseRatio *= currTotalStake / remainingStake;
+        require(
+            claimedInitialStake < initialStake,
+            "DelegatorPool#claim: FULLY_CLAIMED"
+        );
 
         // Calculate Stake owed to delegator
-        uint256 owedStake = cumulativeIncreaseRatio * _stake;
+        uint256 currTotalStake = pendingStake();
+        uint256 owedStake = (currTotalStake * _stake) /
+            (initialStake - claimedInitialStake);
 
         // Calculate fees owed to delegator
         uint256 currTotalFees = pendingFees();
-        uint256 owedFees = (cumulativeIncreaseRatio *
-            currTotalFees *
-            owedStake) / remainingStake;
+        uint256 owedFees = (currTotalFees * _stake) /
+            (initialStake - claimedInitialStake);
 
-        remainingStake = currTotalStake - owedStake;
+        // update claimed balance
+        claimedInitialStake += _stake;
 
         // Transfer owed stake to the delegator
         transferBond(_delegator, owedStake);
