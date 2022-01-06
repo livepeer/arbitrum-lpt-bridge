@@ -24,10 +24,12 @@ describe('L2 Gateway', function() {
 
   // mocks
   let arbSysMock: FakeContract;
+  let l2LPTDataCacheMock: FakeContract;
   let mockL2RouterEOA: SignerWithAddress;
   let mockL1GatewayEOA: SignerWithAddress;
   let mockL1GatewayL2Alias: Signer;
   let mockL1LptEOA: SignerWithAddress;
+  let mockL2LPTDataCacheEOA: SignerWithAddress;
 
   const BURNER_ROLE = ethers.utils.solidityKeccak256(
       ['string'],
@@ -48,6 +50,7 @@ describe('L2 Gateway', function() {
       mockL2RouterEOA,
       mockL1GatewayEOA,
       mockL1LptEOA,
+      mockL2LPTDataCacheEOA,
     ] = await ethers.getSigners();
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
@@ -63,6 +66,7 @@ describe('L2 Gateway', function() {
         mockL2RouterEOA.address,
         mockL1LptEOA.address,
         token.address,
+        mockL2LPTDataCacheEOA.address,
     );
     await l2Gateway.deployed();
 
@@ -85,9 +89,23 @@ describe('L2 Gateway', function() {
     arbSysMock = await smock.fake('IArbSys', {
       address: '0x0000000000000000000000000000000000000064',
     });
+
+    l2LPTDataCacheMock = await smock.fake(
+        'contracts/L2/gateway/L2LPTGateway.sol:IL2LPTDataCache',
+        {
+          address: mockL2LPTDataCacheEOA.address,
+        },
+    );
   });
 
   describe('constructor', () => {
+    it('sets addresses', async () => {
+      expect(await l2Gateway.l2Router()).to.be.equal(mockL2RouterEOA.address);
+      expect(await l2Gateway.l2LPTDataCache()).to.be.equal(
+          mockL2LPTDataCacheEOA.address,
+      );
+    });
+
     describe('l2 token', () => {
       it('should return correct l2 token', async function() {
         const lpt = await l2Gateway.calculateL2TokenAddress(
@@ -259,6 +277,22 @@ describe('L2 Gateway', function() {
                   receiver.address,
                   depositAmount,
               );
+        });
+
+        it('calls increaseL2SupplyFromL1() on L2LPTDataCache', async () => {
+          await l2Gateway
+              .connect(mockL1GatewayL2Alias)
+              .finalizeInboundTransfer(
+                  mockL1LptEOA.address,
+                  sender.address,
+                  receiver.address,
+                  depositAmount,
+                  defaultData,
+              );
+
+          expect(
+              l2LPTDataCacheMock.increaseL2SupplyFromL1,
+          ).to.be.calledOnceWith(depositAmount);
         });
       });
     });
@@ -517,6 +551,21 @@ describe('L2 Gateway', function() {
         expect(arbSysMock.sendTxToL1).to.be.calledOnceWith(
             mockL1GatewayEOA.address,
             calldata,
+        );
+      });
+
+      it('calls decreaseL2SupplyFromL1() on L2LPTDataCache', async () => {
+        await l2Gateway
+            .connect(sender)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                withdrawAmount,
+                defaultData,
+            );
+
+        expect(l2LPTDataCacheMock.decreaseL2SupplyFromL1).to.be.calledOnceWith(
+            withdrawAmount,
         );
       });
     });

@@ -12,16 +12,26 @@ interface Mintable {
     function burn(address _from, uint256 _amount) external;
 }
 
+interface IL2LPTDataCache {
+    function increaseL2SupplyFromL1(uint256 _amount) external;
+
+    function decreaseL2SupplyFromL1(uint256 _amount) external;
+}
+
 contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
     address public immutable l2Router;
+    address public immutable l2LPTDataCache;
+
     address public l1Counterpart;
 
     constructor(
         address _l2Router,
         address _l1Lpt,
-        address _l2Lpt
+        address _l2Lpt,
+        address _l2LPTDataCache
     ) ControlledGateway(_l1Lpt, _l2Lpt) {
         l2Router = _l2Router;
+        l2LPTDataCache = _l2LPTDataCache;
     }
 
     function setCounterpart(address _l1Counterpart)
@@ -43,6 +53,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         require(extraData.length == 0, "CALL_HOOK_DATA_NOT_ALLOWED");
 
         Mintable(l2Lpt).burn(from, _amount);
+        IL2LPTDataCache(l2LPTDataCache).decreaseL2SupplyFromL1(_amount);
 
         uint256 id = sendTxToL1(
             from,
@@ -66,6 +77,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         require(_l1Token == l1Lpt, "TOKEN_NOT_LPT");
 
         Mintable(l2Lpt).mint(_to, _amount);
+        IL2LPTDataCache(l2LPTDataCache).increaseL2SupplyFromL1(_amount);
 
         emit DepositFinalized(_l1Token, _from, _to, _amount);
     }
