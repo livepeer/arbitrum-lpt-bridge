@@ -766,7 +766,7 @@ describe('L1 LPT Gateway', function() {
             expect(token.transferFrom).to.be.calledOnceWith(
                 escrow.address,
                 owner.address,
-                1000,
+                escrowBalance,
             );
 
             expect(minterMock.bridgeMint).to.be.calledWith(
