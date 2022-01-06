@@ -737,6 +737,54 @@ describe('L1 LPT Gateway', function() {
                   escrowBalance + excessAmount,
               );
         });
+
+        describe('escrow has 0 balance', () => {
+          beforeEach(async function() {
+            // burn escrow balance
+            const balance = await token.balanceOf(escrow.address);
+            await escrow.approve(token.address, owner.address, balance);
+            await token.transferFrom(escrow.address, owner.address, balance);
+
+            expect(await token.balanceOf(escrow.address)).to.equal(0);
+          });
+
+          it('mints excess tokens', async () => {
+            const excessAmount = 200;
+
+            const finalizeWithdrawalTx = await l1Gateway
+                .connect(mockBridgeEOA)
+                .finalizeInboundTransfer(
+                    token.address,
+                    sender.address,
+                    sender.address,
+                    escrowBalance + excessAmount,
+                    defaultWithdrawData,
+                );
+
+            // the only time transfer was called was when tokens
+            // were taken out of escrow
+            expect(token.transferFrom).to.be.calledOnceWith(
+                escrow.address,
+                owner.address,
+                1000,
+            );
+
+            expect(minterMock.bridgeMint).to.be.calledWith(
+                sender.address,
+                escrowBalance + excessAmount,
+            );
+
+            await expect(finalizeWithdrawalTx)
+                .to.emit(l1Gateway, 'WithdrawalFinalized')
+                .withArgs(
+                    token.address,
+                    sender.address,
+                    sender.address,
+                    expectedTransferId,
+                    escrowBalance + excessAmount,
+                );
+          });
+        });
       });
     });
 

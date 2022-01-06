@@ -109,7 +109,9 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         if (amount <= escrowBalance) {
             TokenLike(l1Token).transferFrom(l1LPTEscrow, to, amount);
         } else {
-            TokenLike(l1Token).transferFrom(l1LPTEscrow, to, escrowBalance);
+            if (escrowBalance > 0) {
+                TokenLike(l1Token).transferFrom(l1LPTEscrow, to, escrowBalance);
+            }
             IMinter(minter).bridgeMint(to, amount - escrowBalance);
         }
 
