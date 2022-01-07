@@ -644,16 +644,6 @@ describe('L1Migrator', function() {
   });
 
   describe('migrateETH', () => {
-    it('reverts if ETH already migrated', async () => {
-      await l1Migrator.connect(l1EOA).migrateETH(0, 0, 0, {value: 100});
-      expect(await l1Migrator.ethMigrated()).to.be.true;
-
-      const tx = l1Migrator.connect(l1EOA).migrateETH(0, 0, 0, {value: 100});
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#migrateETH: ALREADY_MIGRATED',
-      );
-    });
-
     it('withdraws from BridgeMinter and sends tx to L2', async () => {
       const amount = 200;
       const seqNo = 7;
@@ -671,8 +661,6 @@ describe('L1Migrator', function() {
           .migrateETH(maxGas, gasPriceBid, maxSubmissionCost, {
             value: l1CallValue,
           });
-
-      expect(await l1Migrator.ethMigrated()).to.be.true;
 
       expect(bridgeMinterMock.withdrawETHToL1Migrator).to.be.calledOnce;
       expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
@@ -693,16 +681,6 @@ describe('L1Migrator', function() {
   });
 
   describe('migrateLPT', () => {
-    it('reverts if LPT already migrated', async () => {
-      await l1Migrator.connect(l1EOA).migrateLPT(0, 0, 0, {value: 100});
-      expect(await l1Migrator.lptMigrated()).to.be.true;
-
-      const tx = l1Migrator.connect(l1EOA).migrateLPT(0, 0, 0, {value: 100});
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#migrateLPT: ALREADY_MIGRATED',
-      );
-    });
-
     it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
       const amount = 200;
       const seqNo = 7;
@@ -720,8 +698,6 @@ describe('L1Migrator', function() {
           .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
             value: l1CallValue,
           });
-
-      expect(await l1Migrator.lptMigrated()).to.be.true;
 
       expect(bridgeMinterMock.withdrawLPTToL1Migrator).to.be.calledOnce;
       expect(tokenMock.approve).to.be.calledOnceWith(
