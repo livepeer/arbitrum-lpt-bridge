@@ -85,9 +85,6 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
     address public immutable l1LPTGatewayAddr;
     address public immutable l2MigratorAddr;
 
-    bool public ethMigrated;
-    bool public lptMigrated;
-
     event MigrateDelegatorInitiated(
         uint256 indexed seqNo,
         MigrateDelegatorParams params
@@ -243,10 +240,6 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
     ) external payable {
-        require(!ethMigrated, "L1Migrator#migrateETH: ALREADY_MIGRATED");
-
-        ethMigrated = true;
-
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawETHToL1Migrator();
 
@@ -272,10 +265,6 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
     ) external payable {
-        require(!lptMigrated, "L1Migrator#migrateLPT: ALREADY_MIGRATED");
-
-        lptMigrated = true;
-
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawLPTToL1Migrator();
 
