@@ -33,7 +33,7 @@ abstract contract L1ArbitrumMessenger {
 
     function sendTxToL2(
         address target,
-        address user,
+        address from,
         uint256 maxSubmissionCost,
         uint256 maxGas,
         uint256 gasPriceBid,
@@ -42,7 +42,7 @@ abstract contract L1ArbitrumMessenger {
         return
             sendTxToL2(
                 target,
-                user,
+                from,
                 msg.value,
                 0, // we always assume that l2CallValue = 0
                 maxSubmissionCost,
@@ -54,7 +54,7 @@ abstract contract L1ArbitrumMessenger {
 
     function sendTxToL2(
         address target,
-        address user,
+        address from,
         uint256 _l1CallValue,
         uint256 _l2CallValue,
         uint256 maxSubmissionCost,
@@ -66,13 +66,13 @@ abstract contract L1ArbitrumMessenger {
             target,
             _l2CallValue,
             maxSubmissionCost,
-            user,
-            user,
+            from,
+            from,
             maxGas,
             gasPriceBid,
             data
         );
-        emit TxToL2(user, target, seqNum, data);
+        emit TxToL2(from, target, seqNum, data);
         return seqNum;
     }
 }
