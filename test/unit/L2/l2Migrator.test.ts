@@ -3,13 +3,19 @@ import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import {expect, use} from 'chai';
 
 import {ethers} from 'hardhat';
-import {L2Migrator, L2Migrator__factory} from '../../../typechain';
+import {
+  DelegatorPool,
+  DelegatorPool__factory,
+  L2Migrator,
+  L2Migrator__factory,
+} from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
 
 use(smock.matchers);
 
 describe('L2Migrator', function() {
   let l2Migrator: L2Migrator;
+  let delegatorPool: DelegatorPool;
 
   let notL1MigratorEOA: SignerWithAddress;
   let l1AddrEOA: SignerWithAddress;
@@ -21,7 +27,6 @@ describe('L2Migrator', function() {
   let merkleSnapshotMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
   let mockL1MigratorL2AliasEOA: SignerWithAddress;
-  let mockDelegatorPoolEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
   let mockMerkleSnapshotEOA: SignerWithAddress;
@@ -56,18 +61,21 @@ describe('L2Migrator', function() {
       l1AddrEOA,
       l2AddrEOA,
       mockL1MigratorEOA,
-      mockDelegatorPoolEOA,
       mockBondingManagerEOA,
       mockTicketBrokerEOA,
       mockMerkleSnapshotEOA,
     ] = await ethers.getSigners();
+
+    const DelegatorPool: DelegatorPool__factory =
+      await ethers.getContractFactory('DelegatorPool');
+    delegatorPool = await DelegatorPool.deploy();
 
     const L2Migrator: L2Migrator__factory = await ethers.getContractFactory(
         'L2Migrator',
     );
     l2Migrator = await L2Migrator.deploy(
         mockL1MigratorEOA.address,
-        mockDelegatorPoolEOA.address,
+        delegatorPool.address,
         mockBondingManagerEOA.address,
         mockTicketBrokerEOA.address,
         mockMerkleSnapshotEOA.address,
@@ -76,8 +84,14 @@ describe('L2Migrator', function() {
 
     await l2Migrator.setClaimStakeEnabled(true);
 
+    const bondingManagerAbi = [
+      'function bondForWithHint(uint256,address,address,address,address,address,address)',
+      'function pendingStake(address,uint256) returns(uint256)',
+    ];
     bondingManagerMock = await smock.fake(
-        'contracts/L2/gateway/L2Migrator.sol:IBondingManager',
+        {
+          abi: bondingManagerAbi,
+        },
         {
           address: mockBondingManagerEOA.address,
         },
@@ -108,7 +122,7 @@ describe('L2Migrator', function() {
       const l1MigratorAddr = await l2Migrator.l1Migrator();
       expect(l1MigratorAddr).to.equal(mockL1MigratorEOA.address);
       const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
-      expect(delegatorPoolImpl).to.equal(mockDelegatorPoolEOA.address);
+      expect(delegatorPoolImpl).to.equal(delegatorPool.address);
       const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
       expect(bondingManagerAddr).to.equal(mockBondingManagerEOA.address);
       const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
@@ -227,6 +241,17 @@ describe('L2Migrator', function() {
 
         const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
         expect(delegatorPool).to.not.be.equal(ethers.constants.AddressZero);
+
+        const deployed: DelegatorPool = await ethers.getContractAt(
+            'DelegatorPool',
+            delegatorPool,
+        );
+
+        expect(await deployed.bondingManager()).to.equal(
+            bondingManagerMock.address,
+        );
+
+        expect(await deployed.migrator()).to.equal(l2Migrator.address);
 
         expect(bondingManagerMock.bondForWithHint.atCall(0)).to.be.calledWith(
             params.stake,
