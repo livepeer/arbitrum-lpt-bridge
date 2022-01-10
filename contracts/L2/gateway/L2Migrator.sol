@@ -107,9 +107,13 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
 
         migratedDelegators[_params.l1Addr] = true;
 
-        bondFor(_params.stake, _params.l2Addr, _params.delegate);
-
         if (_params.l1Addr == _params.delegate) {
+            // l1Addr is an orchestrator on L1:
+            // 1. Stake _params.stake on behalf of _params.l2Addr
+            // 2. Create delegator pool
+            // 3. Stake _params.delegatedStake on behalf of the delegator pool
+            bondFor(_params.stake, _params.l2Addr, _params.delegate);
+
             address poolAddr = Clones.clone(delegatorPoolImpl);
 
             delegatorPools[_params.l1Addr] = poolAddr;
@@ -123,6 +127,19 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
             IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
 
             emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
+        } else {
+            // l1Addr is a delegator on L1:
+            // If a delegator pool exists for _params.delegate claim stake which
+            // was already migrated by delegate on behalf of _params.l2Addr.
+            // Otherwise, stake _params.stake on behalf of _params.l2Addr.
+            address pool = delegatorPools[_params.delegate];
+
+            if (pool != address(0)) {
+                // Claim stake that is held by the delegator pool
+                IDelegatorPool(pool).claim(_params.l2Addr, _params.stake);
+            } else {
+                bondFor(_params.stake, _params.l2Addr, _params.delegate);
+            }
         }
 
         claimedDelegatedStake[_params.delegate] += _params.stake;
