@@ -190,178 +190,247 @@ describe('L2Migrator', function() {
     });
 
     describe('finalizes migration', () => {
-      it('no delegator pool if l1Addr != delegate', async () => {
-        const params = {
-          ...mockMigrateDelegatorParams(),
-          l1Addr: l1AddrEOA.address,
-          l2Addr: l2AddrEOA.address,
-          delegate: l2AddrEOA.address,
-        };
+      describe('l1Addr == delegate (is orchestrator on L1)', () => {
+        it('creates delegator pool', async () => {
+          const params = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: l1AddrEOA.address,
+            l2Addr: l2AddrEOA.address,
+            delegate: l1AddrEOA.address,
+          };
 
-        const tx = await l2Migrator
-            .connect(mockL1MigratorL2AliasEOA)
-            .finalizeMigrateDelegator(params);
+          const tx = await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params);
 
-        expect(await l2Migrator.migratedDelegators(params.l1Addr)).to.be.true;
+          expect(await l2Migrator.migratedDelegators(params.l1Addr)).to.be.true;
 
-        expect(await l2Migrator.delegatorPools(params.l1Addr)).to.be.equal(
-            ethers.constants.AddressZero,
-        );
+          const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
+          expect(delegatorPool).to.not.be.equal(ethers.constants.AddressZero);
 
-        expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
-            params.stake,
-            params.l2Addr,
-            params.delegate,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-        );
+          const deployed: DelegatorPool = await ethers.getContractAt(
+              'DelegatorPool',
+              delegatorPool,
+          );
 
-        await expect(tx).to.not.emit(l2Migrator, 'DelegatorPoolCreated');
+          expect(await deployed.bondingManager()).to.equal(
+              bondingManagerMock.address,
+          );
 
-        await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
-        // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
-        // .withArgs(seqNo, params)
-      });
+          expect(await deployed.migrator()).to.equal(l2Migrator.address);
 
-      it('creates delegator pool if l1Addr == delegate', async () => {
-        const params = {
-          ...mockMigrateDelegatorParams(),
-          l1Addr: l1AddrEOA.address,
-          l2Addr: l2AddrEOA.address,
-          delegate: l1AddrEOA.address,
-        };
+          expect(bondingManagerMock.bondForWithHint.atCall(0)).to.be.calledWith(
+              params.stake,
+              params.l2Addr,
+              params.delegate,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+          );
 
-        const tx = await l2Migrator
-            .connect(mockL1MigratorL2AliasEOA)
-            .finalizeMigrateDelegator(params);
+          expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
+              params.delegatedStake,
+              delegatorPool,
+              params.delegate,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+          );
 
-        expect(await l2Migrator.migratedDelegators(params.l1Addr)).to.be.true;
+          await expect(tx)
+              .to.emit(l2Migrator, 'DelegatorPoolCreated')
+              .withArgs(params.l1Addr, delegatorPool);
 
-        const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
-        expect(delegatorPool).to.not.be.equal(ethers.constants.AddressZero);
+          await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
+          // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+          // .withArgs(seqNo, params)
+        });
 
-        const deployed: DelegatorPool = await ethers.getContractAt(
-            'DelegatorPool',
-            delegatorPool,
-        );
+        it('subtracts claimed delegated stake via claimStake() when staking for delegator pool', async () => {
+          const delegator = l2AddrEOA;
+          const delegate = l1AddrEOA.address;
+          const stake = 50;
+          const fees = 0;
 
-        expect(await deployed.bondingManager()).to.equal(
-            bondingManagerMock.address,
-        );
+          await l2Migrator
+              .connect(delegator)
+              .claimStake(
+                  delegate,
+                  stake,
+                  fees,
+                  [],
+                  ethers.constants.AddressZero,
+              );
 
-        expect(await deployed.migrator()).to.equal(l2Migrator.address);
+          expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+              stake,
+          );
 
-        expect(bondingManagerMock.bondForWithHint.atCall(0)).to.be.calledWith(
-            params.stake,
-            params.l2Addr,
-            params.delegate,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-        );
+          const params = mockMigrateDelegatorParams();
+          params.l1Addr = delegate;
+          params.l2Addr = delegate;
+          params.delegate = delegate;
 
-        expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-            params.delegatedStake,
-            delegatorPool,
-            params.delegate,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-        );
+          bondingManagerMock.bondForWithHint.reset();
 
-        await expect(tx)
-            .to.emit(l2Migrator, 'DelegatorPoolCreated')
-            .withArgs(params.l1Addr, delegatorPool);
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params);
 
-        await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
-        // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
-        // .withArgs(seqNo, params)
-      });
+          const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
+          expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
+              params.delegatedStake - stake,
+              delegatorPool,
+              params.delegate,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+          );
+        });
 
-      it('subtracts claimed delegated stake via claimStake() when staking for delegator pool', async () => {
-        const delegator = l2AddrEOA;
-        const delegate = l1AddrEOA.address;
-        const stake = 50;
-        const fees = 0;
+        it('subtracts claimed delegated stake via finalizeMigrateDelegator() when staking for delegator pool', async () => {
+          const delegator = l2AddrEOA.address;
+          const delegate = l1AddrEOA.address;
+          const stake = 50;
 
-        await l2Migrator
-            .connect(delegator)
-            .claimStake(delegate, stake, fees, [], ethers.constants.AddressZero);
-
-        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+          const params1 = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: delegator,
+            l2Addr: delegator,
+            delegate,
             stake,
-        );
+          };
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params1);
 
-        const params = mockMigrateDelegatorParams();
-        params.l1Addr = delegate;
-        params.l2Addr = delegate;
-        params.delegate = delegate;
+          expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+              stake,
+          );
 
-        bondingManagerMock.bondForWithHint.reset();
+          const params2 = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: delegate,
+            l2Addr: delegate,
+            delegate,
+          };
 
-        await l2Migrator
-            .connect(mockL1MigratorL2AliasEOA)
-            .finalizeMigrateDelegator(params);
+          bondingManagerMock.bondForWithHint.reset();
 
-        const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
-        expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-            params.delegatedStake - stake,
-            delegatorPool,
-            params.delegate,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-        );
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params2);
+
+          const delegatorPool = await l2Migrator.delegatorPools(params2.l1Addr);
+          expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
+              params2.delegatedStake - stake,
+              delegatorPool,
+              params2.delegate,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+          );
+        });
       });
 
-      it('subtracts claimed delegated stake via finalizeMigrateDelegator() when staking for delegator pool', async () => {
-        const delegator = l2AddrEOA.address;
-        const delegate = l1AddrEOA.address;
-        const stake = 50;
+      describe('l1Addr != delegate (is delegator on L1)', () => {
+        it('does not create delegator pool', async () => {
+          const params = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: l1AddrEOA.address,
+            l2Addr: l2AddrEOA.address,
+            delegate: l2AddrEOA.address,
+          };
 
-        const params1 = {
-          ...mockMigrateDelegatorParams(),
-          l1Addr: delegator,
-          l2Addr: delegator,
-          delegate,
-          stake,
-        };
-        await l2Migrator
-            .connect(mockL1MigratorL2AliasEOA)
-            .finalizeMigrateDelegator(params1);
+          const tx = await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params);
 
-        expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
-            stake,
-        );
+          expect(await l2Migrator.delegatorPools(params.l1Addr)).to.be.equal(
+              ethers.constants.AddressZero,
+          );
 
-        const params2 = {
-          ...mockMigrateDelegatorParams(),
-          l1Addr: delegate,
-          l2Addr: delegate,
-          delegate,
-        };
+          await expect(tx).to.not.emit(l2Migrator, 'DelegatorPoolCreated');
+        });
 
-        bondingManagerMock.bondForWithHint.reset();
+        it('stakes in BondingManager if delegator pool does not exist', async () => {
+          const params = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: l1AddrEOA.address,
+            l2Addr: l2AddrEOA.address,
+            delegate: l2AddrEOA.address,
+          };
 
-        await l2Migrator
-            .connect(mockL1MigratorL2AliasEOA)
-            .finalizeMigrateDelegator(params2);
+          const tx = await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params);
 
-        const delegatorPool = await l2Migrator.delegatorPools(params2.l1Addr);
-        expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-            params2.delegatedStake - stake,
-            delegatorPool,
-            params2.delegate,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-            ethers.constants.AddressZero,
-        );
+          expect(await l2Migrator.migratedDelegators(params.l1Addr)).to.be.true;
+
+          expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
+              params.stake,
+              params.l2Addr,
+              params.delegate,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+              ethers.constants.AddressZero,
+          );
+
+          await expect(tx).to.emit(l2Migrator, 'MigrateDelegatorFinalized');
+          // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+          // .withArgs(seqNo, params)
+        });
+
+        it('claims stake from delegator pool if it exists', async () => {
+          const paramsDelegate = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: l1AddrEOA.address,
+            l2Addr: l1AddrEOA.address,
+            delegate: l1AddrEOA.address,
+          };
+
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(paramsDelegate);
+
+          const delegatorPoolAddr = await l2Migrator.delegatorPools(
+              paramsDelegate.l1Addr,
+          );
+          expect(delegatorPoolAddr).to.not.be.equal(
+              ethers.constants.AddressZero,
+          );
+
+          const delegatorPoolMock: FakeContract = await smock.fake(
+              'IDelegatorPool',
+              {
+                address: delegatorPoolAddr,
+              },
+          );
+
+          const paramsDelegator = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: l2AddrEOA.address,
+            l2Addr: l2AddrEOA.address,
+            delegate: l1AddrEOA.address,
+          };
+
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(paramsDelegator);
+
+          expect(
+              await l2Migrator.claimedDelegatedStake(paramsDelegator.delegate),
+          ).to.be.equal(paramsDelegate.stake + paramsDelegator.stake);
+          expect(delegatorPoolMock.claim).to.be.calledOnceWith(
+              l2AddrEOA.address,
+              paramsDelegator.stake,
+          );
+        });
       });
 
       it('transfers fees if > 0', async () => {
