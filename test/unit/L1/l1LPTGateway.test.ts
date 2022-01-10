@@ -739,16 +739,8 @@ describe('L1 LPT Gateway', function() {
         });
 
         describe('escrow has 0 balance', () => {
-          beforeEach(async function() {
-            // burn escrow balance
-            const balance = await token.balanceOf(escrow.address);
-            await escrow.approve(token.address, owner.address, balance);
-            await token.transferFrom(escrow.address, owner.address, balance);
-
-            expect(await token.balanceOf(escrow.address)).to.equal(0);
-          });
-
           it('mints excess tokens', async () => {
+            token.balanceOf.whenCalledWith(escrow.address).returns(0);
             const excessAmount = 200;
 
             const finalizeWithdrawalTx = await l1Gateway
@@ -761,13 +753,7 @@ describe('L1 LPT Gateway', function() {
                     defaultWithdrawData,
                 );
 
-            // the only time transfer was called was when tokens
-            // were taken out of escrow
-            expect(token.transferFrom).to.be.calledOnceWith(
-                escrow.address,
-                owner.address,
-                escrowBalance,
-            );
+            expect(token.transferFrom).to.not.be.called;
 
             expect(minterMock.bridgeMint).to.be.calledWith(
                 sender.address,
