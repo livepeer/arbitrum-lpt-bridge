@@ -7,9 +7,6 @@ import {getL2SignerFromL1} from '../../utils/messaging';
 
 use(smock.matchers);
 
-const UNDERFLOW_ERR =
-  'panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)';
-
 describe('L2LPTDataCache', () => {
   let l2LPTDataCache: L2LPTDataCache;
 
@@ -113,10 +110,21 @@ describe('L2LPTDataCache', () => {
       );
     });
 
-    it('reverts if specified amount > l2SupplyFromL1', async () => {
+    it('sets l2SupplyFromL1 to 0 if amount > l2SupplyFromL1', async () => {
+      // l2SupplyFromL1 = 0
       await expect(
           l2LPTDataCache.connect(mockL2LPTGatewayEOA).decreaseL2SupplyFromL1(100),
-      ).to.be.revertedWith(UNDERFLOW_ERR);
+      ).to.not.be.reverted;
+      expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(0);
+
+      // l2SupplyFromL1 > 0
+      await l2LPTDataCache
+          .connect(mockL2LPTGatewayEOA)
+          .increaseL2SupplyFromL1(99);
+      await expect(
+          l2LPTDataCache.connect(mockL2LPTGatewayEOA).decreaseL2SupplyFromL1(100),
+      ).to.not.be.reverted;
+      expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(0);
     });
 
     it('decreases l2SupplyFromL1 by specified amount', async () => {
