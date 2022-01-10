@@ -46,7 +46,7 @@ describe('DelegatorPool', function() {
       };
     }
 
-    addRewards(stake: number, fees: number) {
+    updateStakeAndFees(stake: number, fees: number) {
       this.pendingStake += stake;
       this.pendingFees += fees;
     }
@@ -136,7 +136,7 @@ describe('DelegatorPool', function() {
       expect(migratorAddr).to.equal(mockL2MigratorEOA.address);
     });
 
-    it('sets initial balance correctly', async () => {
+    it('sets initial stake correctly', async () => {
       const initialStake = await delegatorPool.initialStake();
       expect(initialStake).to.equal(pendingStake);
     });
@@ -217,7 +217,7 @@ describe('DelegatorPool', function() {
 
           await runner.testClaim(delegator, d0Stake);
 
-          runner.addRewards(700, 70);
+          runner.updateStakeAndFees(700, 70);
           expect(runner.pendingStake).to.equal(1400);
 
           await runner.testClaim(delegator1, d1Stake);
@@ -232,11 +232,11 @@ describe('DelegatorPool', function() {
 
           await runner.testClaim(delegator, d0Stake);
 
-          runner.addRewards(runner.pendingStake, runner.pendingFees); // pending doubled
+          runner.updateStakeAndFees(runner.pendingStake, runner.pendingFees); // pending doubled
           const {owedStake: d1} = await runner.testClaim(delegator1, d1Stake);
           expect(d1).to.equal(d1Stake * 2);
 
-          runner.addRewards(runner.pendingStake, runner.pendingFees); // pending doubled
+          runner.updateStakeAndFees(runner.pendingStake, runner.pendingFees); // pending doubled
           const {owedStake: d2} = await runner.testClaim(delegator2, d2Stake);
           expect(d2).to.equal(d2Stake * 4);
         });
