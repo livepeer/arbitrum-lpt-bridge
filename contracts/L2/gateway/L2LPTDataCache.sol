@@ -55,7 +55,15 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
      * @param _amount Amount to decrease l2SupplyFromL1
      */
     function decreaseL2SupplyFromL1(uint256 _amount) external onlyL2LPTGateway {
-        l2SupplyFromL1 -= _amount;
+        // If there is a mass withdrawal from L2, _amount could exceed l2SupplyFromL1.
+        // In this case, we just set l2SupplyFromL1 = 0 because there will be no more supply on L2
+        // that is from L1 and the excess (_amount - l2SupplyFromL1) is inflationary LPT that was
+        // never from L1 in the first place.
+        if (_amount > l2SupplyFromL1) {
+            l2SupplyFromL1 = 0;
+        } else {
+            l2SupplyFromL1 -= _amount;
+        }
 
         // No event because the L2LPTGateway events are sufficient
     }
