@@ -247,6 +247,9 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         // other cross-chain txs sent by this contract.
         // The retryable ticket created will not be cancellable since this contract
         // currently does not support cross-chain txs to call ArbRetryableTx.cancel().
+        // Regarding the comment below on this contract receiving refunds:
+        // msg.sender also cannot be the address to receive refunds as beneficiary because otherwise
+        // msg.sender could cancel the ticket before it is executed on L2 to receive the L2 call value.
         sendTxToL2(
             l2MigratorAddr,
             address(this), // L2 alias of this contract will receive refunds
