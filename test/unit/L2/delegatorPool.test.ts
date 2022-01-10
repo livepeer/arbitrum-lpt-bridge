@@ -51,13 +51,13 @@ describe('DelegatorPool', function() {
       this.pendingFees += fees;
     }
 
-    createTx(caller: SignerWithAddress, stake: number) {
+    async createTx(caller: SignerWithAddress, stake: number) {
       const {owedStake, owedFees} = this.calculateClaim(stake);
 
       bondingManagerMock.pendingStake.returns(this.pendingStake);
       bondingManagerMock.pendingFees.returns(this.pendingFees);
 
-      const tx = delegatorPool
+      const tx = await delegatorPool
           .connect(mockL2MigratorEOA)
           .claim(caller.address, stake);
 
@@ -70,8 +70,10 @@ describe('DelegatorPool', function() {
     }
 
     async testClaim(caller: SignerWithAddress, stake: number) {
-      const {tx, seq, owedStake, owedFees} = this.createTx(caller, stake);
-      const txRec = await tx;
+      const {tx, seq, owedStake, owedFees} = await this.createTx(
+          caller,
+          stake,
+      );
 
       expect(bondingManagerMock.withdrawFees.atCall(seq)).to.be.calledWith(
           caller.address,
@@ -87,7 +89,7 @@ describe('DelegatorPool', function() {
           ethers.constants.AddressZero,
       );
 
-      expect(txRec.hash)
+      await expect(tx)
           .to.emit(delegatorPool, 'Claimed')
           .withArgs(caller.address, owedStake, owedFees);
 
