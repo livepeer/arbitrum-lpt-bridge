@@ -242,15 +242,6 @@ describe('L2Migrator', function() {
         const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
         expect(delegatorPool).to.not.be.equal(ethers.constants.AddressZero);
 
-        // const delegatorPoolMock: FakeContract = await smock.fake(
-        //     'IDelegatorPool',
-        //     {
-        //       address: delegatorPool,
-        //     },
-        // );
-
-        // expect(delegatorPoolMock.initialize).to.be.called;
-
         const deployed: DelegatorPool = await ethers.getContractAt(
             'DelegatorPool',
             delegatorPool,
