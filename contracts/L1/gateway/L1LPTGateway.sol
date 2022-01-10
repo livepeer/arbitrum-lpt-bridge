@@ -12,12 +12,19 @@ interface TokenLike {
         address _to,
         uint256 _value
     ) external returns (bool success);
+
+    function balanceOf(address account) external view returns (uint256);
+}
+
+interface IMinter {
+    function bridgeMint(address _to, uint256 _amount) external;
 }
 
 contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
     address public immutable l1Router;
     address public immutable l1LPTEscrow;
     address public l2Counterpart;
+    address public minter;
 
     constructor(
         address _l1Router,
@@ -35,6 +42,10 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         onlyRole(GOVERNOR_ROLE)
     {
         l2Counterpart = _l2Counterpart;
+    }
+
+    function setMinter(address _minter) external onlyRole(GOVERNOR_ROLE) {
+        minter = _minter;
     }
 
     function outboundTransfer(
@@ -92,7 +103,17 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         require(l1Token == l1Lpt, "TOKEN_NOT_LPT");
         (uint256 exitNum, ) = abi.decode(data, (uint256, bytes));
 
-        TokenLike(l1Token).transferFrom(l1LPTEscrow, to, amount);
+        uint256 escrowBalance = TokenLike(l1Token).balanceOf(l1LPTEscrow);
+
+        // mint additional tokens if requested amount exceeds escrowed amount
+        if (amount <= escrowBalance) {
+            TokenLike(l1Token).transferFrom(l1LPTEscrow, to, amount);
+        } else {
+            if (escrowBalance > 0) {
+                TokenLike(l1Token).transferFrom(l1LPTEscrow, to, escrowBalance);
+            }
+            IMinter(minter).bridgeMint(to, amount - escrowBalance);
+        }
 
         emit WithdrawalFinalized(l1Token, from, to, exitNum, amount);
     }

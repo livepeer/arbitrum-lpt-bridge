@@ -11,12 +11,12 @@ import {
   LivepeerToken,
   LivepeerToken__factory,
 } from '../../../typechain';
-import {FakeContract, smock} from '@defi-wonderland/smock';
+import {FakeContract, MockContract, smock} from '@defi-wonderland/smock';
 
 use(smock.matchers);
 
 describe('L1 LPT Gateway', function() {
-  let token: LivepeerToken;
+  let token: MockContract<LivepeerToken>;
   let escrow: L1Escrow;
   let l1Gateway: L1LPTGateway;
   let owner: SignerWithAddress;
@@ -28,12 +28,14 @@ describe('L1 LPT Gateway', function() {
   let inboxMock: FakeContract;
   let outboxMock: FakeContract;
   let bridgeMock: FakeContract;
+  let minterMock: FakeContract;
   let mockInboxEOA: SignerWithAddress;
   let mockOutboxEOA: SignerWithAddress;
   let mockBridgeEOA: SignerWithAddress;
   let mockL1RouterEOA: SignerWithAddress;
   let mockL2GatewayEOA: SignerWithAddress;
   let mockL2LptEOA: SignerWithAddress;
+  let mockMinterEOA: SignerWithAddress;
 
   const initialTotalL1Supply = 3000;
   const depositAmount = 100;
@@ -55,11 +57,10 @@ describe('L1 LPT Gateway', function() {
       mockL1RouterEOA,
       mockL2GatewayEOA,
       mockL2LptEOA,
+      mockMinterEOA,
     ] = await ethers.getSigners();
 
-    const Token: LivepeerToken__factory = await ethers.getContractFactory(
-        'LivepeerToken',
-    );
+    const Token = await smock.mock<LivepeerToken__factory>('LivepeerToken');
     token = await Token.deploy();
     await token.deployed();
 
@@ -99,6 +100,7 @@ describe('L1 LPT Gateway', function() {
 
     await l1Gateway.grantRole(GOVERNOR_ROLE, governor.address);
     await l1Gateway.connect(governor).setCounterpart(mockL2GatewayEOA.address);
+    await l1Gateway.connect(governor).setMinter(mockMinterEOA.address);
 
     inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
@@ -111,6 +113,13 @@ describe('L1 LPT Gateway', function() {
     bridgeMock = await smock.fake('IBridge', {
       address: mockBridgeEOA.address,
     });
+
+    minterMock = await smock.fake(
+        'contracts/L1/gateway/L1LPTGateway.sol:IMinter',
+        {
+          address: mockMinterEOA.address,
+        },
+    );
 
     outboxMock.l2ToL1Sender.returns(mockL2GatewayEOA.address);
     inboxMock.bridge.returns(bridgeMock.address);
@@ -161,6 +170,30 @@ describe('L1 LPT Gateway', function() {
         await l1Gateway.connect(governor).setCounterpart(newAddress);
         const counterpart = await l1Gateway.counterpartGateway();
         expect(counterpart).to.equal(newAddress);
+      });
+    });
+  });
+
+  describe('setMinter', () => {
+    const newAddress = ethers.utils.getAddress(
+        ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
+    );
+
+    describe('caller not governor', () => {
+      it('should fail to change minter address', async function() {
+        const tx = l1Gateway.connect(owner).setMinter(newAddress);
+        expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        );
+      });
+    });
+
+    describe('caller is governor', () => {
+      it('should change counterpart address', async function() {
+        await l1Gateway.connect(governor).setMinter(newAddress);
+        const minter = await l1Gateway.minter();
+        expect(minter).to.equal(newAddress);
       });
     });
   });
@@ -516,13 +549,14 @@ describe('L1 LPT Gateway', function() {
   describe('finalizeInboundTransfer', () => {
     const withdrawAmount = 100;
     const expectedTransferId = 1;
+    const escrowBalance = 1000;
     const defaultWithdrawData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
         [expectedTransferId, '0x'],
     );
 
     beforeEach(async function() {
-      await token.connect(owner).mint(escrow.address, 10000);
+      await token.connect(owner).mint(escrow.address, escrowBalance);
     });
 
     it('reverts when called with a different token', async () => {
@@ -631,6 +665,112 @@ describe('L1 LPT Gateway', function() {
                 expectedTransferId,
                 withdrawAmount,
             );
+      });
+
+      describe('escrow does not have sufficient funds', () => {
+        it('mints excess tokens', async () => {
+          const excessAmount = 200;
+
+          const finalizeWithdrawalTx = await l1Gateway
+              .connect(mockBridgeEOA)
+              .finalizeInboundTransfer(
+                  token.address,
+                  sender.address,
+                  sender.address,
+                  escrowBalance + excessAmount,
+                  defaultWithdrawData,
+              );
+
+          expect(token.transferFrom).to.be.calledWith(
+              escrow.address,
+              sender.address,
+              escrowBalance,
+          );
+
+          expect(minterMock.bridgeMint).to.be.calledWith(
+              sender.address,
+              excessAmount,
+          );
+
+          await expect(finalizeWithdrawalTx)
+              .to.emit(l1Gateway, 'WithdrawalFinalized')
+              .withArgs(
+                  token.address,
+                  sender.address,
+                  sender.address,
+                  expectedTransferId,
+                  escrowBalance + excessAmount,
+              );
+        });
+
+        it('mints excess tokens to 3rd Party', async () => {
+          const excessAmount = 200;
+
+          const finalizeWithdrawalTx = await l1Gateway
+              .connect(mockBridgeEOA)
+              .finalizeInboundTransfer(
+                  token.address,
+                  sender.address,
+                  receiver.address,
+                  escrowBalance + excessAmount,
+                  defaultWithdrawData,
+              );
+
+          expect(token.transferFrom).to.be.calledWith(
+              escrow.address,
+              receiver.address,
+              escrowBalance,
+          );
+
+          expect(minterMock.bridgeMint).to.be.calledWith(
+              receiver.address,
+              excessAmount,
+          );
+
+          await expect(finalizeWithdrawalTx)
+              .to.emit(l1Gateway, 'WithdrawalFinalized')
+              .withArgs(
+                  token.address,
+                  sender.address,
+                  receiver.address,
+                  expectedTransferId,
+                  escrowBalance + excessAmount,
+              );
+        });
+
+        describe('escrow has 0 balance', () => {
+          it('mints excess tokens', async () => {
+            token.balanceOf.whenCalledWith(escrow.address).returns(0);
+            const excessAmount = 200;
+
+            const finalizeWithdrawalTx = await l1Gateway
+                .connect(mockBridgeEOA)
+                .finalizeInboundTransfer(
+                    token.address,
+                    sender.address,
+                    sender.address,
+                    escrowBalance + excessAmount,
+                    defaultWithdrawData,
+                );
+
+            expect(token.transferFrom).to.not.be.called;
+
+            expect(minterMock.bridgeMint).to.be.calledWith(
+                sender.address,
+                escrowBalance + excessAmount,
+            );
+
+            await expect(finalizeWithdrawalTx)
+                .to.emit(l1Gateway, 'WithdrawalFinalized')
+                .withArgs(
+                    token.address,
+                    sender.address,
+                    sender.address,
+                    expectedTransferId,
+                    escrowBalance + excessAmount,
+                );
+          });
+        });
       });
     });
 
