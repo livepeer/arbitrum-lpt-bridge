@@ -150,7 +150,7 @@ contract L1Migrator is
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable {
+    ) external payable whenNotPaused {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -185,7 +185,7 @@ contract L1Migrator is
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable {
+    ) external payable whenNotPaused {
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -224,7 +224,7 @@ contract L1Migrator is
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable {
+    ) external payable whenNotPaused {
         requireValidMigration(
             _l1Addr,
             _l2Addr,

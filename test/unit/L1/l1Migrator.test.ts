@@ -150,6 +150,8 @@ describe('L1Migrator', function() {
     );
     await l1Migrator.deployed();
 
+    await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+
     inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
     });
@@ -245,10 +247,6 @@ describe('L1Migrator', function() {
     });
 
     describe('unpause', async function() {
-      beforeEach(async function() {
-        await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
-      });
-
       describe('caller is not governor', async function() {
         it('should not be able to unpause system', async function() {
           const tx = l1Migrator.unpause();
@@ -272,7 +270,6 @@ describe('L1Migrator', function() {
 
     describe('pause', async function() {
       beforeEach(async function() {
-        await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
         await l1Migrator.connect(governor).unpause();
       });
 
@@ -299,446 +296,511 @@ describe('L1Migrator', function() {
   });
 
   describe('migrateDelegator', () => {
-    it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator
-          .connect(l1EOA)
-          .migrateDelegator(
-              l1EOA.address,
-              ethers.constants.AddressZero,
-              '0x',
-              0,
-              0,
-              0,
-              {
-                value: ethers.utils.parseEther('1'),
-              },
-          );
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
-      );
+    describe('migrator is paused', () => {
+      it('reverts tx', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateDelegator(
+                l1EOA.address,
+                ethers.constants.AddressZero,
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith('Pausable: paused');
+      });
     });
 
-    it('reverts for failed auth', async () => {
-      // Invalid msg.sender + invalid non-null signature
-      const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
+    describe('migrator is unpaused', () => {
+      beforeEach(async function() {
+        await l1Migrator.connect(governor).unpause();
+      });
 
-      // Invalid msg.sender + null signature
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
-    });
+      it('reverts for null l2Addr', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateDelegator(
+                l1EOA.address,
+                ethers.constants.AddressZero,
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
+        );
+      });
 
-    it('does not revert for successful auth', async () => {
-      // Valid msg.sender
-      let tx = l1Migrator
-          .connect(l1EOA)
-          .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.not.reverted;
-
-      // Invalid msg.sender + valid signature
-      const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(
-          l1EOA,
-          l1Migrator.address,
-          network.chainId,
-      );
-      const sig = await l1MigratorSigner.signMigrateDelegator(
-          l1EOA.address,
-          l1EOA.address,
-      );
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.not.reverted;
-    });
-
-    it('reads BondingManager state and creates a retryable ticket', async () => {
-      const seqNo = 7;
-      const stake = 100;
-      const fees = 200;
-      const delegatedStake = 300;
-      const delegate = notL1EOA.address;
-
-      inboxMock.createRetryableTicket.returns(seqNo);
-      bondingManagerMock.pendingStake.returns(stake);
-      bondingManagerMock.pendingFees.returns(fees);
-      bondingManagerMock.getDelegator.returns([
-        0,
-        0,
-        delegate,
-        delegatedStake,
-        0,
-        0,
-        0,
-      ]);
-
-      const maxGas = 111;
-      const gasPriceBid = 222;
-      const maxSubmissionCost = 333;
-
-      // createRetryableTicket()
-      const migrateDelegatorParams = {
-        l1Addr: l1EOA.address,
-        l2Addr: l1EOA.address,
-        stake,
-        delegatedStake,
-        fees,
-        delegate,
-      };
-      const l2Calldata =
-        IL2Migrator__factory.createInterface().encodeFunctionData(
-            'finalizeMigrateDelegator',
-            [migrateDelegatorParams],
+      it('reverts for failed auth', async () => {
+        // Invalid msg.sender + invalid non-null signature
+        const sig = await notL1EOA.signMessage('foo');
+        let tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
         );
 
-      const tx = await l1Migrator
-          .connect(l1EOA)
-          .migrateDelegator(
-              l1EOA.address,
-              l1EOA.address,
-              '0x',
-              maxGas,
-              gasPriceBid,
-              maxSubmissionCost,
-              {
-                value: maxSubmissionCost + maxGas * gasPriceBid,
-              },
+        // Invalid msg.sender + null signature
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
+        );
+      });
+
+      it('does not revert for successful auth', async () => {
+        // Valid msg.sender
+        let tx = l1Migrator
+            .connect(l1EOA)
+            .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.not.reverted;
+
+        // Invalid msg.sender + valid signature
+        const network = await ethers.provider.getNetwork();
+        const l1MigratorSigner = new L1MigratorSigner(
+            l1EOA,
+            l1Migrator.address,
+            network.chainId,
+        );
+        const sig = await l1MigratorSigner.signMigrateDelegator(
+            l1EOA.address,
+            l1EOA.address,
+        );
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateDelegator(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.not.reverted;
+      });
+
+      it('reads BondingManager state and creates a retryable ticket', async () => {
+        const seqNo = 7;
+        const stake = 100;
+        const fees = 200;
+        const delegatedStake = 300;
+        const delegate = notL1EOA.address;
+
+        inboxMock.createRetryableTicket.returns(seqNo);
+        bondingManagerMock.pendingStake.returns(stake);
+        bondingManagerMock.pendingFees.returns(fees);
+        bondingManagerMock.getDelegator.returns([
+          0,
+          0,
+          delegate,
+          delegatedStake,
+          0,
+          0,
+          0,
+        ]);
+
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        // createRetryableTicket()
+        const migrateDelegatorParams = {
+          l1Addr: l1EOA.address,
+          l2Addr: l1EOA.address,
+          stake,
+          delegatedStake,
+          fees,
+          delegate,
+        };
+        const l2Calldata =
+          IL2Migrator__factory.createInterface().encodeFunctionData(
+              'finalizeMigrateDelegator',
+              [migrateDelegatorParams],
           );
 
-      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
-          mockL2MigratorEOA.address,
-          0,
-          maxSubmissionCost,
-          l1EOA.address,
-          l1EOA.address,
-          maxGas,
-          gasPriceBid,
-          l2Calldata,
-      );
+        const tx = await l1Migrator
+            .connect(l1EOA)
+            .migrateDelegator(
+                l1EOA.address,
+                l1EOA.address,
+                '0x',
+                maxGas,
+                gasPriceBid,
+                maxSubmissionCost,
+                {
+                  value: maxSubmissionCost + maxGas * gasPriceBid,
+                },
+            );
 
-      // MigrateDelegatorInitiated Event
-      await expect(tx).to.emit(l1Migrator, 'MigrateDelegatorInitiated');
-      // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
-      // .withArgs(seqNo, migrateDelegatorParams)
+        expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+            mockL2MigratorEOA.address,
+            0,
+            maxSubmissionCost,
+            l1EOA.address,
+            l1EOA.address,
+            maxGas,
+            gasPriceBid,
+            l2Calldata,
+        );
+
+        // MigrateDelegatorInitiated Event
+        await expect(tx).to.emit(l1Migrator, 'MigrateDelegatorInitiated');
+        // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+        // .withArgs(seqNo, migrateDelegatorParams)
+      });
     });
   });
 
   describe('migrateUnbondingLocks', () => {
-    it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator
-          .connect(l1EOA)
-          .migrateUnbondingLocks(
-              l1EOA.address,
-              ethers.constants.AddressZero,
-              [],
-              '0x',
-              0,
-              0,
-              0,
-              {
-                value: ethers.utils.parseEther('1'),
-              },
-          );
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
-      );
+    describe('migrator is paused', () => {
+      it('reverts tx', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                ethers.constants.AddressZero,
+                [],
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith('Pausable: paused');
+      });
     });
 
-    it('reverts for failed auth', async () => {
-      // Invalid msg.sender + invalid non-null signature
-      const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateUnbondingLocks(l1EOA.address, l1EOA.address, [], sig, 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
+    describe('migrator is unpaused', () => {
+      beforeEach(async function() {
+        await l1Migrator.connect(governor).unpause();
+      });
 
-      // Invalid msg.sender + null signature
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateUnbondingLocks(
-              l1EOA.address,
-              l1EOA.address,
-              [],
-              '0x',
-              0,
-              0,
-              0,
-              {
-                value: ethers.utils.parseEther('1'),
-              },
-          );
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
-    });
-
-    it('does not revert for successful auth', async () => {
-      // Valid msg.sender
-      let tx = l1Migrator
-          .connect(l1EOA)
-          .migrateUnbondingLocks(
-              l1EOA.address,
-              l1EOA.address,
-              [],
-              '0x',
-              0,
-              0,
-              0,
-              {
-                value: ethers.utils.parseEther('1'),
-              },
-          );
-      await expect(tx).to.not.reverted;
-
-      // Invalid msg.sender + valid signature
-      const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(
-          l1EOA,
-          l1Migrator.address,
-          network.chainId,
-      );
-      const sig = await l1MigratorSigner.signMigrateUnbondingLocks(
-          l1EOA.address,
-          l1EOA.address,
-          [1, 2],
-      );
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateUnbondingLocks(
-              l1EOA.address,
-              l1EOA.address,
-              [1, 2],
-              sig,
-              0,
-              0,
-              0,
-          );
-      // await tx
-      await expect(tx).to.not.reverted;
-    });
-
-    it('reads BondingManager state and creates a retryable ticket', async () => {
-      const seqNo = 7;
-      const unbondingLockIds = [1, 2];
-      const lock1Amount = 100;
-      const lock2Amount = 200;
-      const delegate = notL1EOA.address;
-
-      inboxMock.createRetryableTicket.returns(seqNo);
-      bondingManagerMock.getDelegatorUnbondingLock
-          .whenCalledWith(l1EOA.address, 1)
-          .returns([lock1Amount, 0]);
-      bondingManagerMock.getDelegatorUnbondingLock
-          .whenCalledWith(l1EOA.address, 2)
-          .returns([lock2Amount, 0]);
-      bondingManagerMock.getDelegator.returns([0, 0, delegate, 0, 0, 0, 0]);
-
-      const maxGas = 111;
-      const gasPriceBid = 222;
-      const maxSubmissionCost = 333;
-
-      // createRetryableTicket()
-      const migrateUnbondingLocksParams = {
-        l1Addr: l1EOA.address,
-        l2Addr: l1EOA.address,
-        total: lock1Amount + lock2Amount,
-        unbondingLockIds,
-        delegate,
-      };
-      const l2Calldata =
-        IL2Migrator__factory.createInterface().encodeFunctionData(
-            'finalizeMigrateUnbondingLocks',
-            [migrateUnbondingLocksParams],
+      it('reverts for failed auth', async () => {
+        // Invalid msg.sender + invalid non-null signature
+        const sig = await notL1EOA.signMessage('foo');
+        let tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                l1EOA.address,
+                [],
+                sig,
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
         );
 
-      const tx = await l1Migrator
-          .connect(l1EOA)
-          .migrateUnbondingLocks(
-              l1EOA.address,
-              l1EOA.address,
-              unbondingLockIds,
-              '0x',
-              maxGas,
-              gasPriceBid,
-              maxSubmissionCost,
-              {
-                value: maxSubmissionCost + maxGas * gasPriceBid,
-              },
+        // Invalid msg.sender + null signature
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                l1EOA.address,
+                [],
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
+        );
+      });
+
+      it('does not revert for successful auth', async () => {
+        // Valid msg.sender
+        let tx = l1Migrator
+            .connect(l1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                l1EOA.address,
+                [],
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.not.reverted;
+
+        // Invalid msg.sender + valid signature
+        const network = await ethers.provider.getNetwork();
+        const l1MigratorSigner = new L1MigratorSigner(
+            l1EOA,
+            l1Migrator.address,
+            network.chainId,
+        );
+        const sig = await l1MigratorSigner.signMigrateUnbondingLocks(
+            l1EOA.address,
+            l1EOA.address,
+            [1, 2],
+        );
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                l1EOA.address,
+                [1, 2],
+                sig,
+                0,
+                0,
+                0,
+            );
+        // await tx
+        await expect(tx).to.not.reverted;
+      });
+
+      it('reads BondingManager state and creates a retryable ticket', async () => {
+        const seqNo = 7;
+        const unbondingLockIds = [1, 2];
+        const lock1Amount = 100;
+        const lock2Amount = 200;
+        const delegate = notL1EOA.address;
+
+        inboxMock.createRetryableTicket.returns(seqNo);
+        bondingManagerMock.getDelegatorUnbondingLock
+            .whenCalledWith(l1EOA.address, 1)
+            .returns([lock1Amount, 0]);
+        bondingManagerMock.getDelegatorUnbondingLock
+            .whenCalledWith(l1EOA.address, 2)
+            .returns([lock2Amount, 0]);
+        bondingManagerMock.getDelegator.returns([0, 0, delegate, 0, 0, 0, 0]);
+
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        // createRetryableTicket()
+        const migrateUnbondingLocksParams = {
+          l1Addr: l1EOA.address,
+          l2Addr: l1EOA.address,
+          total: lock1Amount + lock2Amount,
+          unbondingLockIds,
+          delegate,
+        };
+        const l2Calldata =
+          IL2Migrator__factory.createInterface().encodeFunctionData(
+              'finalizeMigrateUnbondingLocks',
+              [migrateUnbondingLocksParams],
           );
 
-      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
-          mockL2MigratorEOA.address,
-          0,
-          maxSubmissionCost,
-          l1EOA.address,
-          l1EOA.address,
-          maxGas,
-          gasPriceBid,
-          l2Calldata,
-      );
+        const tx = await l1Migrator
+            .connect(l1EOA)
+            .migrateUnbondingLocks(
+                l1EOA.address,
+                l1EOA.address,
+                unbondingLockIds,
+                '0x',
+                maxGas,
+                gasPriceBid,
+                maxSubmissionCost,
+                {
+                  value: maxSubmissionCost + maxGas * gasPriceBid,
+                },
+            );
 
-      // MigrateUnbondingLocksInitiated Event
-      await expect(tx).to.emit(l1Migrator, 'MigrateUnbondingLocksInitiated');
-      // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
-      // .withArgs(seqNo, migrateUnbondingLocksParams)
+        expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+            mockL2MigratorEOA.address,
+            0,
+            maxSubmissionCost,
+            l1EOA.address,
+            l1EOA.address,
+            maxGas,
+            gasPriceBid,
+            l2Calldata,
+        );
+
+        // MigrateUnbondingLocksInitiated Event
+        await expect(tx).to.emit(l1Migrator, 'MigrateUnbondingLocksInitiated');
+        // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+        // .withArgs(seqNo, migrateUnbondingLocksParams)
+      });
     });
   });
 
   describe('migrateSender', () => {
-    it('reverts for null l2Addr', async () => {
-      const tx = l1Migrator
-          .connect(l1EOA)
-          .migrateSender(
-              l1EOA.address,
-              ethers.constants.AddressZero,
-              '0x',
-              0,
-              0,
-              0,
-              {
-                value: ethers.utils.parseEther('1'),
-              },
-          );
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
-      );
+    describe('migrator is paused', () => {
+      it('reverts tx', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateSender(
+                l1EOA.address,
+                ethers.constants.AddressZero,
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith('Pausable: paused');
+      });
     });
 
-    it('reverts for failed auth', async () => {
-      // Invalid msg.sender + invalid non-null signature
-      const sig = await notL1EOA.signMessage('foo');
-      let tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
+    describe('migrator is unpaused', () => {
+      beforeEach(async function() {
+        await l1Migrator.connect(governor).unpause();
+      });
 
-      // Invalid msg.sender + null signature
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.be.revertedWith(
-          'L1Migrator#requireValidMigration: FAIL_AUTH',
-      );
-    });
+      it('reverts for null l2Addr', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateSender(
+                l1EOA.address,
+                ethers.constants.AddressZero,
+                '0x',
+                0,
+                0,
+                0,
+                {
+                  value: ethers.utils.parseEther('1'),
+                },
+            );
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: INVALID_L2_ADDR',
+        );
+      });
 
-    it('does not revert for successful auth', async () => {
-      // Valid msg.sender
-      let tx = l1Migrator
-          .connect(l1EOA)
-          .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.not.reverted;
-
-      // Invalid msg.sender + valid signature
-      const network = await ethers.provider.getNetwork();
-      const l1MigratorSigner = new L1MigratorSigner(
-          l1EOA,
-          l1Migrator.address,
-          network.chainId,
-      );
-      const sig = await l1MigratorSigner.signMigrateSender(
-          l1EOA.address,
-          l1EOA.address,
-      );
-      tx = l1Migrator
-          .connect(notL1EOA)
-          .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
-            value: ethers.utils.parseEther('1'),
-          });
-      await expect(tx).to.not.reverted;
-    });
-
-    it('reads TicketBroker state and creates a retryable ticket', async () => {
-      const seqNo = 7;
-      const deposit = 100;
-      const reserve = 200;
-
-      inboxMock.createRetryableTicket.returns(seqNo);
-      ticketBrokerMock.getSenderInfo.returns([
-        {
-          deposit,
-          withdrawRound: 0,
-        },
-        {
-          fundsRemaining: reserve,
-          claimedInCurrentRound: 0,
-        },
-      ]);
-
-      const maxGas = 111;
-      const gasPriceBid = 222;
-      const maxSubmissionCost = 333;
-
-      // createRetryableTicket()
-      const migrateSenderParams = {
-        l1Addr: l1EOA.address,
-        l2Addr: l1EOA.address,
-        deposit,
-        reserve,
-      };
-      const l2Calldata =
-        IL2Migrator__factory.createInterface().encodeFunctionData(
-            'finalizeMigrateSender',
-            [migrateSenderParams],
+      it('reverts for failed auth', async () => {
+        // Invalid msg.sender + invalid non-null signature
+        const sig = await notL1EOA.signMessage('foo');
+        let tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
         );
 
-      const tx = await l1Migrator
-          .connect(l1EOA)
-          .migrateSender(
-              l1EOA.address,
-              l1EOA.address,
-              '0x',
-              maxGas,
-              gasPriceBid,
-              maxSubmissionCost,
-              {
-                value: maxSubmissionCost + maxGas * gasPriceBid,
-              },
+        // Invalid msg.sender + null signature
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.be.revertedWith(
+            'L1Migrator#requireValidMigration: FAIL_AUTH',
+        );
+      });
+
+      it('does not revert for successful auth', async () => {
+        // Valid msg.sender
+        let tx = l1Migrator
+            .connect(l1EOA)
+            .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.not.reverted;
+
+        // Invalid msg.sender + valid signature
+        const network = await ethers.provider.getNetwork();
+        const l1MigratorSigner = new L1MigratorSigner(
+            l1EOA,
+            l1Migrator.address,
+            network.chainId,
+        );
+        const sig = await l1MigratorSigner.signMigrateSender(
+            l1EOA.address,
+            l1EOA.address,
+        );
+        tx = l1Migrator
+            .connect(notL1EOA)
+            .migrateSender(l1EOA.address, l1EOA.address, sig, 0, 0, 0, {
+              value: ethers.utils.parseEther('1'),
+            });
+        await expect(tx).to.not.reverted;
+      });
+
+      it('reads TicketBroker state and creates a retryable ticket', async () => {
+        const seqNo = 7;
+        const deposit = 100;
+        const reserve = 200;
+
+        inboxMock.createRetryableTicket.returns(seqNo);
+        ticketBrokerMock.getSenderInfo.returns([
+          {
+            deposit,
+            withdrawRound: 0,
+          },
+          {
+            fundsRemaining: reserve,
+            claimedInCurrentRound: 0,
+          },
+        ]);
+
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        // createRetryableTicket()
+        const migrateSenderParams = {
+          l1Addr: l1EOA.address,
+          l2Addr: l1EOA.address,
+          deposit,
+          reserve,
+        };
+        const l2Calldata =
+          IL2Migrator__factory.createInterface().encodeFunctionData(
+              'finalizeMigrateSender',
+              [migrateSenderParams],
           );
 
-      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
-          mockL2MigratorEOA.address,
-          0,
-          maxSubmissionCost,
-          l1EOA.address,
-          l1EOA.address,
-          maxGas,
-          gasPriceBid,
-          l2Calldata,
-      );
+        const tx = await l1Migrator
+            .connect(l1EOA)
+            .migrateSender(
+                l1EOA.address,
+                l1EOA.address,
+                '0x',
+                maxGas,
+                gasPriceBid,
+                maxSubmissionCost,
+                {
+                  value: maxSubmissionCost + maxGas * gasPriceBid,
+                },
+            );
 
-      // MigrateSenderInitiated Event
-      await expect(tx).to.emit(l1Migrator, 'MigrateSenderInitiated');
-      // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
-      // .withArgs(seqNo, migrateSenderParams)
+        expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+            mockL2MigratorEOA.address,
+            0,
+            maxSubmissionCost,
+            l1EOA.address,
+            l1EOA.address,
+            maxGas,
+            gasPriceBid,
+            l2Calldata,
+        );
+
+        // MigrateSenderInitiated Event
+        await expect(tx).to.emit(l1Migrator, 'MigrateSenderInitiated');
+        // The assertion below does not work until https://github.com/EthWorks/Waffle/issues/245 is fixed
+        // .withArgs(seqNo, migrateSenderParams)
+      });
     });
   });
 
@@ -766,42 +828,45 @@ describe('L1Migrator', function() {
       });
     });
 
-    it('withdraws from BridgeMinter and sends tx to L2', async () => {
-      await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
-      await l1Migrator.connect(governor).unpause();
+    describe('migrator is unpaused', () => {
+      beforeEach(async function() {
+        await l1Migrator.connect(governor).unpause();
+      });
 
-      const amount = 200;
-      const seqNo = 7;
+      it('withdraws from BridgeMinter and sends tx to L2', async () => {
+        const amount = 200;
+        const seqNo = 7;
 
-      bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
-      inboxMock.createRetryableTicket.returns(seqNo);
+        bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
+        inboxMock.createRetryableTicket.returns(seqNo);
 
-      const maxGas = 111;
-      const gasPriceBid = 222;
-      const maxSubmissionCost = 333;
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
 
-      const l1CallValue = 300;
-      const tx = await l1Migrator
-          .connect(l1EOA)
-          .migrateETH(maxGas, gasPriceBid, maxSubmissionCost, {
-            value: l1CallValue,
-          });
+        const l1CallValue = 300;
+        const tx = await l1Migrator
+            .connect(l1EOA)
+            .migrateETH(maxGas, gasPriceBid, maxSubmissionCost, {
+              value: l1CallValue,
+            });
 
-      expect(bridgeMinterMock.withdrawETHToL1Migrator).to.be.calledOnce;
-      expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
-          mockL2MigratorEOA.address,
-          amount,
-          maxSubmissionCost,
-          l1Migrator.address,
-          l1Migrator.address,
-          maxGas,
-          gasPriceBid,
-          '0x',
-      );
+        expect(bridgeMinterMock.withdrawETHToL1Migrator).to.be.calledOnce;
+        expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
+            mockL2MigratorEOA.address,
+            amount,
+            maxSubmissionCost,
+            l1Migrator.address,
+            l1Migrator.address,
+            maxGas,
+            gasPriceBid,
+            '0x',
+        );
 
-      await expect(tx)
-          .to.emit(l1Migrator, 'TxToL2')
-          .withArgs(l1Migrator.address, mockL2MigratorEOA.address, seqNo, '0x');
+        await expect(tx)
+            .to.emit(l1Migrator, 'TxToL2')
+            .withArgs(l1Migrator.address, mockL2MigratorEOA.address, seqNo, '0x');
+      });
     });
   });
 
@@ -829,48 +894,54 @@ describe('L1Migrator', function() {
       });
     });
 
-    it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
-      await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
-      await l1Migrator.connect(governor).unpause();
+    describe('migrator is unpaused', () => {
+      beforeEach(async function() {
+        await l1Migrator.connect(governor).unpause();
+      });
 
-      const amount = 200;
-      const seqNo = 7;
+      it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
+        const amount = 200;
+        const seqNo = 7;
 
-      bridgeMinterMock.withdrawLPTToL1Migrator.returns(amount);
-      inboxMock.createRetryableTicket.returns(seqNo);
+        bridgeMinterMock.withdrawLPTToL1Migrator.returns(amount);
+        inboxMock.createRetryableTicket.returns(seqNo);
 
-      const maxGas = 111;
-      const gasPriceBid = 222;
-      const maxSubmissionCost = 333;
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
 
-      const l1CallValue = 300;
-      const tx = await l1Migrator
-          .connect(l1EOA)
-          .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
-            value: l1CallValue,
-          });
+        const l1CallValue = 300;
+        const tx = await l1Migrator
+            .connect(l1EOA)
+            .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
+              value: l1CallValue,
+            });
 
-      expect(bridgeMinterMock.withdrawLPTToL1Migrator).to.be.calledOnce;
-      expect(tokenMock.approve).to.be.calledOnceWith(
-          mockL1LPTGatewayEOA.address,
-          amount,
-      );
+        expect(bridgeMinterMock.withdrawLPTToL1Migrator).to.be.calledOnce;
+        expect(tokenMock.approve).to.be.calledOnceWith(
+            mockL1LPTGatewayEOA.address,
+            amount,
+        );
 
-      const encodedData = ethers.utils.defaultAbiCoder.encode(
-          ['uint256', 'bytes'],
-          [maxSubmissionCost, '0x'],
-      );
-      expect(l1LPTGatewayMock.outboundTransfer).to.be.calledOnceWith(
-          mockTokenEOA.address,
-          mockL2MigratorEOA.address,
-          amount,
-          maxGas,
-          gasPriceBid,
-          encodedData,
-      );
-      // Check if the mock L1LPTGateway received the msg.value from migrateLPT()
-      // This confirms that the msg.value is forwarded to the outboundTransfer() call
-      await expect(tx).to.changeEtherBalance(mockL1LPTGatewayEOA, l1CallValue);
+        const encodedData = ethers.utils.defaultAbiCoder.encode(
+            ['uint256', 'bytes'],
+            [maxSubmissionCost, '0x'],
+        );
+        expect(l1LPTGatewayMock.outboundTransfer).to.be.calledOnceWith(
+            mockTokenEOA.address,
+            mockL2MigratorEOA.address,
+            amount,
+            maxGas,
+            gasPriceBid,
+            encodedData,
+        );
+        // Check if the mock L1LPTGateway received the msg.value from migrateLPT()
+        // This confirms that the msg.value is forwarded to the outboundTransfer() call
+        await expect(tx).to.changeEtherBalance(
+            mockL1LPTGatewayEOA,
+            l1CallValue,
+        );
+      });
     });
   });
 });
