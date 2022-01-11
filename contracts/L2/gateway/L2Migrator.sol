@@ -5,6 +5,7 @@ import {L2ArbitrumMessenger} from "./L2ArbitrumMessenger.sol";
 import {IMigrator} from "../../interfaces/IMigrator.sol";
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IBondingManager {
     function bondForWithHint(
@@ -40,7 +41,7 @@ interface IDelegatorPool {
     function claim(address _addr, uint256 _stake) external;
 }
 
-contract L2Migrator is L2ArbitrumMessenger, IMigrator {
+contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
     address public immutable merkleSnapshotAddr;
@@ -54,6 +55,8 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
     mapping(address => uint256) public claimedDelegatedStake;
     mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
     mapping(address => bool) public migratedSenders;
+
+    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
 
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
@@ -77,6 +80,9 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         address _ticketBrokerAddr,
         address _merkleSnapshotAddr
     ) {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
+
         l1Migrator = _l1Migrator;
         delegatorPoolImpl = _delegatorPoolImpl;
         bondingManagerAddr = _bondingManagerAddr;
@@ -84,15 +90,24 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator {
         merkleSnapshotAddr = _merkleSnapshotAddr;
     }
 
-    // TODO: Add auth
-    function setL1Migrator(address _l1Migrator) external {
+    function setL1Migrator(address _l1Migrator)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         l1Migrator = _l1Migrator;
     }
 
-    // TODO: Setter for delegatorPoolImpl?
+    function setDelegatorPoolImpl(address _delegatorPoolImpl)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        delegatorPoolImpl = _delegatorPoolImpl;
+    }
 
-    // TODO: Add auth
-    function setClaimStakeEnabled(bool _enabled) external {
+    function setClaimStakeEnabled(bool _enabled)
+        external
+        onlyRole(GOVERNOR_ROLE)
+    {
         claimStakeEnabled = _enabled;
     }
 
