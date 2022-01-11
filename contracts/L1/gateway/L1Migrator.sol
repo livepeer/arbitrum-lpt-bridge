@@ -6,6 +6,8 @@ import {IL1LPTGateway} from "./IL1LPTGateway.sol";
 import {IMigrator} from "../../interfaces/IMigrator.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IBondingManager {
     function isRegisteredTranscoder(address _addr) external view returns (bool);
@@ -77,7 +79,13 @@ interface IL2Migrator is IMigrator {
     function finalizeMigrateSender(MigrateSenderParams memory _params) external;
 }
 
-contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
+contract L1Migrator is
+    L1ArbitrumMessenger,
+    IMigrator,
+    EIP712,
+    AccessControl,
+    Pausable
+{
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
     address public immutable bridgeMinterAddr;
@@ -100,6 +108,8 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         MigrateSenderParams params
     );
 
+    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
+
     bytes32 private constant MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
 
@@ -120,12 +130,17 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         address _l1LPTGatewayAddr,
         address _l2MigratorAddr
     ) L1ArbitrumMessenger(_inbox) EIP712("Livepeer L1Migrator", "1") {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
+
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
         bridgeMinterAddr = _bridgeMinterAddr;
         tokenAddr = _tokenAddr;
         l1LPTGatewayAddr = _l1LPTGatewayAddr;
         l2MigratorAddr = _l2MigratorAddr;
+
+        _pause();
     }
 
     function migrateDelegator(
@@ -234,12 +249,11 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         emit MigrateSenderInitiated(seqNo, params);
     }
 
-    // TODO: Add whenNotPaused modifier to prevent this function from being called until other contracts are ready
     function migrateETH(
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable {
+    ) external payable whenNotPaused {
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawETHToL1Migrator();
 
@@ -262,12 +276,11 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
         );
     }
 
-    // TODO: Add whenNotPaused modifier to prevent this function from being called until other contracts are ready
     function migrateLPT(
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable {
+    ) external payable whenNotPaused {
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawLPTToL1Migrator();
 
@@ -283,6 +296,14 @@ contract L1Migrator is L1ArbitrumMessenger, IMigrator, EIP712 {
             _gasPriceBid,
             abi.encode(_maxSubmissionCost, "")
         );
+    }
+
+    function pause() external onlyRole(GOVERNOR_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(GOVERNOR_ROLE) {
+        _unpause();
     }
 
     function getMigrateDelegatorParams(address _l1Addr, address _l2Addr)

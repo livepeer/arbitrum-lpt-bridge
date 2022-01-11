@@ -16,6 +16,8 @@ describe('L1Migrator', function() {
 
   let l1EOA: SignerWithAddress;
   let notL1EOA: SignerWithAddress;
+  let governor: SignerWithAddress;
+  let owner: SignerWithAddress;
 
   // mocks
   let inboxMock: FakeContract;
@@ -35,6 +37,14 @@ describe('L1Migrator', function() {
   let mockBridgeMinterEOA: SignerWithAddress;
   let mockTokenEOA: SignerWithAddress;
   let mockL1LPTGatewayEOA: SignerWithAddress;
+
+  const ADMIN_ROLE =
+    '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
+      ['string'],
+      ['GOVERNOR_ROLE'],
+  );
 
   class L1MigratorSigner {
     signer: SignerWithAddress;
@@ -111,6 +121,8 @@ describe('L1Migrator', function() {
 
   beforeEach(async function() {
     [
+      owner,
+      governor,
       l1EOA,
       notL1EOA,
       mockInboxEOA,
@@ -196,6 +208,93 @@ describe('L1Migrator', function() {
 
       const l2MigratorAddr = await l1Migrator.l2MigratorAddr();
       expect(l2MigratorAddr).to.equal(mockL2MigratorEOA.address);
+
+      const initialPaused = await l1Migrator.paused();
+      expect(initialPaused).to.be.true;
+    });
+  });
+
+  describe('AccessControl', async function() {
+    describe('add governor', async function() {
+      describe('caller is not admin', async function() {
+        it('should not be able to set governor', async function() {
+          const tx = l1Migrator
+              .connect(l1EOA)
+              .grantRole(GOVERNOR_ROLE, governor.address);
+
+          await expect(tx).to.be.revertedWith(
+              // eslint-disable-next-line
+            `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+          );
+        });
+      });
+
+      describe('caller is admin', async function() {
+        it('should set governor', async function() {
+          await l1Migrator
+              .connect(owner)
+              .grantRole(GOVERNOR_ROLE, governor.address);
+
+          const hasControllerRole = await l1Migrator.hasRole(
+              GOVERNOR_ROLE,
+              governor.address,
+          );
+          expect(hasControllerRole).to.be.true;
+        });
+      });
+    });
+
+    describe('unpause', async function() {
+      beforeEach(async function() {
+        await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+      });
+
+      describe('caller is not governor', async function() {
+        it('should not be able to unpause system', async function() {
+          const tx = l1Migrator.unpause();
+
+          await expect(tx).to.be.revertedWith(
+              // eslint-disable-next-line
+            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          );
+        });
+      });
+
+      describe('caller is governor', async function() {
+        it('should unpause system', async function() {
+          await l1Migrator.connect(governor).unpause();
+
+          const isPaused = await l1Migrator.paused();
+          expect(isPaused).to.be.false;
+        });
+      });
+    });
+
+    describe('pause', async function() {
+      beforeEach(async function() {
+        await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+        await l1Migrator.connect(governor).unpause();
+      });
+
+      describe('caller is not governor', async function() {
+        it('should not be able to pause system', async function() {
+          const tx = l1Migrator.connect(owner).pause();
+
+          await expect(tx).to.be.revertedWith(
+              // eslint-disable-next-line
+            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          );
+        });
+      });
+
+      describe('caller is governor', async function() {
+        it('should pause system', async function() {
+          await l1Migrator.connect(governor).pause();
+
+          const isPaused = await l1Migrator.paused();
+          expect(isPaused).to.be.true;
+        });
+      });
     });
   });
 
@@ -644,7 +743,33 @@ describe('L1Migrator', function() {
   });
 
   describe('migrateETH', () => {
+    describe('migrator is paused', () => {
+      it('fails to send tx to L2', async () => {
+        const amount = 200;
+        const seqNo = 7;
+
+        bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
+        inboxMock.createRetryableTicket.returns(seqNo);
+
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        const l1CallValue = 300;
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateETH(maxGas, gasPriceBid, maxSubmissionCost, {
+              value: l1CallValue,
+            });
+
+        await expect(tx).to.be.revertedWith('Pausable: paused');
+      });
+    });
+
     it('withdraws from BridgeMinter and sends tx to L2', async () => {
+      await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+      await l1Migrator.connect(governor).unpause();
+
       const amount = 200;
       const seqNo = 7;
 
@@ -681,7 +806,33 @@ describe('L1Migrator', function() {
   });
 
   describe('migrateLPT', () => {
+    describe('migrator is paused', () => {
+      it('fails to send tx to L2', async () => {
+        const amount = 200;
+        const seqNo = 7;
+
+        bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
+        inboxMock.createRetryableTicket.returns(seqNo);
+
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        const l1CallValue = 300;
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
+              value: l1CallValue,
+            });
+
+        await expect(tx).to.be.revertedWith('Pausable: paused');
+      });
+    });
+
     it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
+      await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+      await l1Migrator.connect(governor).unpause();
+
       const amount = 200;
       const seqNo = 7;
 
