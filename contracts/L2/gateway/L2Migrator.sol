@@ -90,6 +90,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         merkleSnapshotAddr = _merkleSnapshotAddr;
     }
 
+    /**
+     * @notice Sets L1Migrator
+     * @param _l1Migrator L1Migrator address
+     */
     function setL1Migrator(address _l1Migrator)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -97,6 +101,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         l1Migrator = _l1Migrator;
     }
 
+    /**
+     * @notice Sets DelegatorPool implementation contract
+     * @param _delegatorPoolImpl DelegatorPool implementation contract
+     */
     function setDelegatorPoolImpl(address _delegatorPoolImpl)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -104,6 +112,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         delegatorPoolImpl = _delegatorPoolImpl;
     }
 
+    /**
+     * @notice Enable/disable claimStake()
+     * @param _enabled True/false indicating claimStake() enabled/disabled
+     */
     function setClaimStakeEnabled(bool _enabled)
         external
         onlyRole(GOVERNOR_ROLE)
@@ -111,6 +123,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         claimStakeEnabled = _enabled;
     }
 
+    /**
+     * @notice Called by L1Migrator to complete transcoder/delegator state migration
+     * @param _params L1 state relevant for migration
+     */
     function finalizeMigrateDelegator(MigrateDelegatorParams memory _params)
         external
         onlyL1Counterpart(l1Migrator)
@@ -171,6 +187,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         emit MigrateDelegatorFinalized(_params);
     }
 
+    /**
+     * @notice Called by L1Migrator to complete unbonding locks migration
+     * @param _params L1 state relevant for migration
+     */
     function finalizeMigrateUnbondingLocks(
         MigrateUnbondingLocksParams memory _params
     ) external onlyL1Counterpart(l1Migrator) {
@@ -188,6 +208,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         emit MigrateUnbondingLocksFinalized(_params);
     }
 
+    /**
+     * @notice Called by L1Migrator to complete sender deposit/reserve migration
+     * @param _params L1 state relevant for migration
+     */
     function finalizeMigrateSender(MigrateSenderParams memory _params)
         external
         onlyL1Counterpart(l1Migrator)
@@ -210,8 +234,17 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
 
     receive() external payable {}
 
-    // Assume that only EOAs are included in the snapshot
-    // Regardless of the caller of this function, the EOA from L1 will be able to access its stake on L2
+    /**
+     * @notice Completes delegator migration using a Merkle proof that a delegator's state was included in a state
+     * snapshot represented by a Merkle tree root
+     * @dev Assume that only EOAs are included in the snapshot
+     * Regardless of the caller of this function, the EOA from L1 will be able to access its stake on L2
+     * @param _delegate Address that is migrating
+     * @param _stake Stake of delegator on L1
+     * @param _fees Fees of delegator on L1
+     * @param _proof Merkle proof of inclusion in Merkle tree state snapshot
+     * @param _newDelegate Optional address of a new delegate on L2
+     */
     function claimStake(
         address _delegate,
         uint256 _stake,
