@@ -20,6 +20,12 @@ interface IMinter {
     function bridgeMint(address _to, uint256 _amount) external;
 }
 
+/**
+ * @title L1LPTGateway
+ * @notice Manages inbound and outbound transfers of LPT between L1 and Arbitrum Rollup
+ * @dev the contract can be paused by the governor which will prevent any outbound transfers
+ * but pausing the contract does not affect inbound transfers (tokens coming from L2)
+ */
 contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
     address public immutable l1Router;
     address public immutable l1LPTEscrow;
@@ -37,6 +43,11 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         l1LPTEscrow = _l1LPTEscrow;
     }
 
+    /**
+     * @notice Sets address of companion L2LPTGateway
+     * @dev Only address with the governor role is allowed to change the value of l2Counterpart
+     * @param _l2Counterpart L2 Address of the counterpart
+     */
     function setCounterpart(address _l2Counterpart)
         external
         onlyRole(GOVERNOR_ROLE)
@@ -44,10 +55,28 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         l2Counterpart = _l2Counterpart;
     }
 
+    /**
+     * @notice Sets address of Minter
+     * @dev Only address with the governor role is allowed to change the value of minter
+     * @param _minter L1 Address of minter
+     */
     function setMinter(address _minter) external onlyRole(GOVERNOR_ROLE) {
         minter = _minter;
     }
 
+    /**
+     * @notice Creates and sends a retryable ticket to migrate LPT to L2 using arbitrum Inbox.
+     * The tokens are sent to the Escrow contract for safekeeping until they are withdrawn
+     * The ticket must be redeemed on L2 to receive tokens at the specified address.
+     * @dev maxGas and gasPriceBid must be set using arbitrum's Inbox.estimateRetryableTicket method.
+     * @param _l1Token L1 Address of LPT
+     * @param _to Recepient address on L2
+     * @param _amount Amount of tokens to tranfer
+     * @param _maxGas Gas limit for L2 execution of the ticket
+     * @param _gasPriceBid Price per gas on L2
+     * @param _data Encoded maxSubmission cost and sender address along with additional calldata
+     * @return seqNum Sequence number of the retryable ticket created by Inbox
+     */
     function outboundTransfer(
         address _l1Token,
         address _to,
@@ -93,6 +122,17 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         return abi.encode(seqNum);
     }
 
+    /**
+     * @notice Receives withdrawn token amount from L2
+     * The equivalent tokens are released from the Escrow contract and sent to the destination
+     * In case the escrow doesn't have enough balance, new tokens are minted
+     * @dev can only accept txs coming directly from L2 LPT Gateway
+     * @param l1Token L1 Address of LPT
+     * @param from Address of the sender
+     * @param to Recepient address on L1
+     * @param amount Amount of tokens transferred
+     * @param data Contains exitNum which is always set to 0
+     */
     function finalizeInboundTransfer(
         address l1Token,
         address from,
@@ -118,6 +158,14 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         emit WithdrawalFinalized(l1Token, from, to, exitNum, amount);
     }
 
+    /**
+     * @notice decodes calldata required for migration of tokens
+     * @dev data must include maxSubmissionCost, extraData can be left empty
+     * @param data encoded callhook data
+     * @return from sender of the tx
+     * @return maxSubmissionCost base ether value required to keep retyrable ticket alive
+     * @return extraData any other data sent to L2
+     */
     function parseOutboundData(bytes memory data)
         internal
         view
@@ -141,10 +189,16 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         );
     }
 
+    /**
+     * @notice returns address of L2 LPT Gateway
+     */
     function counterpartGateway() external view override returns (address) {
         return l2Counterpart;
     }
 
+    /**
+     * @notice returns address of L2 version of LPT
+     */
     function calculateL2TokenAddress(address l1Token)
         external
         view
@@ -158,6 +212,11 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         return l2Lpt;
     }
 
+    /**
+     * @notice Creates calldata required to create a retryable ticket
+     * @dev encodes the target function with its params which
+     * will be called on L2 when the retryable ticket is redeemed
+     */
     function getOutboundCalldata(
         address l1Token,
         address from,
