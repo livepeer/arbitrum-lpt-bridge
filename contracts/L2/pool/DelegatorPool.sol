@@ -79,7 +79,7 @@ contract DelegatorPool is Initializable {
         emit Claimed(_delegator, owedStake, owedFees);
     }
 
-    function transferBond(address _delegator, uint256 _stake) public {
+    function transferBond(address _delegator, uint256 _stake) internal {
         IBondingManager(bondingManager).transferBond(
             _delegator,
             _stake,
@@ -90,11 +90,11 @@ contract DelegatorPool is Initializable {
         );
     }
 
-    function pendingStake() public view returns (uint256) {
+    function pendingStake() internal view returns (uint256) {
         return IBondingManager(bondingManager).pendingStake(address(this), 0);
     }
 
-    function pendingFees() public view returns (uint256) {
+    function pendingFees() internal view returns (uint256) {
         return IBondingManager(bondingManager).pendingFees(address(this), 0);
     }
 }
