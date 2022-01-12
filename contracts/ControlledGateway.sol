@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
+/**
+ * @title ControlledGateway
+ * @notice Base Contract for both L1 and L2 LPT gateways. Provides AccessControl.
+ * Gateways can be paused by the governor to stop outgoing token migrations
+ */
 contract ControlledGateway is AccessControl, Pausable {
     bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
 
