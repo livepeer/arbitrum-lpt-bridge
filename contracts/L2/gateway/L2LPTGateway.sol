@@ -18,6 +18,12 @@ interface IL2LPTDataCache {
     function decreaseL2SupplyFromL1(uint256 _amount) external;
 }
 
+/**
+ * @title L1LPTGateway
+ * @notice Manages inbound and outbound transfers of LPT between Arbitrum Rollup and L1
+ * @dev the contract can be paused by the governor which will prevent any outbound transfers
+ * but pausing the contract does not affect inbound transfers (tokens coming from L1)
+ */
 contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
     address public immutable l2Router;
     address public immutable l2LPTDataCache;
@@ -34,6 +40,11 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         l2LPTDataCache = _l2LPTDataCache;
     }
 
+    /**
+     * @notice Sets address of companion L1LPTGateway
+     * @dev Only address with the governor role is allowed to change the value of l1Counterpart
+     * @param _l1Counterpart L1 Address of the counterpart
+     */
     function setCounterpart(address _l1Counterpart)
         external
         onlyRole(GOVERNOR_ROLE)
@@ -41,6 +52,16 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         l1Counterpart = _l1Counterpart;
     }
 
+    /**
+     * @notice Burns L2 tokens and sends a message to L1
+     * The tokens will be received on L1 only after the wait period (7 days) is over
+     * @dev no additional callhook data is allowed
+     * @param _l1Token L1 Address of LPT
+     * @param _to Recepient address on L1
+     * @param _amount Amount of tokens to burn
+     * @param _data Contains sender and additional data to send to L1
+     * @return res ID of the withdraw tx
+     */
     function outboundTransfer(
         address _l1Token,
         address _to,
@@ -67,6 +88,15 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         return abi.encode(id);
     }
 
+    /**
+     * @notice Receives token amount from L1 and mints the equivalent tokens to the receiving address
+     * @dev can only accept txs coming directly from L1 LPT Gateway
+     * data param is unused because no additional data is allowed from L1
+     * @param _l1Token L1 Address of LPT
+     * @param _from Address of the sender on L1
+     * @param _to Recepient address on L2
+     * @param _amount Amount of tokens transferred
+     */
     function finalizeInboundTransfer(
         address _l1Token,
         address _from,
@@ -82,6 +112,13 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         emit DepositFinalized(_l1Token, _from, _to, _amount);
     }
 
+    /**
+     * @notice Decodes calldata required for migration of tokens
+     * @dev extraData can be left empty
+     * @param data Encoded callhook data
+     * @return from Sender of the tx
+     * @return extraData Any other data sent to L1
+     */
     function parseOutboundData(bytes memory data)
         internal
         view
@@ -95,10 +132,16 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         }
     }
 
+    /**
+     * @notice returns address of L1 LPT Gateway
+     */
     function counterpartGateway() external view override returns (address) {
         return l1Counterpart;
     }
 
+    /**
+     * @notice returns address of L2 version of LPT
+     */
     function calculateL2TokenAddress(address l1Token)
         external
         view
@@ -112,6 +155,11 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         return l2Lpt;
     }
 
+    /**
+     * @notice Creates calldata required to send tx to L1
+     * @dev encodes the target function with its params which
+     * will be called on L1 when the message is received on L1
+     */
     function getOutboundCalldata(
         address token,
         address from,
