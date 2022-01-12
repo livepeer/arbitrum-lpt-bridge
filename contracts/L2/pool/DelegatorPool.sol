@@ -40,21 +40,34 @@ contract DelegatorPool is Initializable {
         _;
     }
 
+    /**
+     * @notice Initialize state
+     * @param _bondingManager Address of L2 BondingManager
+     */
     function initialize(address _bondingManager) public initializer {
         bondingManager = _bondingManager;
         migrator = msg.sender;
         initialStake = pendingStake();
     }
 
+    /**
+     * @notice Called by L2Migrator to credit stake and fees held by this contract to a delegator
+     * @param _delegator Address of delegator
+     * @param _stake Stake of delegator
+     */
     function claim(address _delegator, uint256 _stake) external onlyMigrator {
-        // Calculate original total stake
-
         require(
             claimedInitialStake < initialStake,
             "DelegatorPool#claim: FULLY_CLAIMED"
         );
 
-        // Calculate Stake owed to delegator
+        // _stake is the delegator's original stake
+        // This contract started off with initalStake
+        // We can calculate how much of the contract's current stake and fees
+        // are owed to the delegator proportional to _stake / (initialStake - claimedInitialStake)
+        // where claimedInitialStake is the stake of the contract that has already been claimed
+
+        // Calculate stake owed to delegator
         uint256 currTotalStake = pendingStake();
         uint256 owedStake = (currTotalStake * _stake) /
             (initialStake - claimedInitialStake);
