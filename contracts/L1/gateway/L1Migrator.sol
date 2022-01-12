@@ -143,6 +143,16 @@ contract L1Migrator is
         _pause();
     }
 
+    /**
+     * @notice Executes a L2 call to L2Migrator to migrate transcoder/delegator state from the L1 BondingManager.
+     * @dev The term "delegator" here can refer to both a transcoder (self-delegated delegator) and delegator.
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @param _sig Optional EIP-712 signature over a payload that includes _l1Addr and _l2Addr
+     * @param _maxGas Gas limit for L2 execution
+     * @param _gasPriceBid Gas price bid for L2 execution
+     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee
+     */
     function migrateDelegator(
         address _l1Addr,
         address _l2Addr,
@@ -151,6 +161,8 @@ contract L1Migrator is
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
     ) external payable whenNotPaused {
+        // Authorization
+        // Either msg.sender == _l1Addr OR signer for _sig == _l1Addr
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -165,6 +177,9 @@ contract L1Migrator is
             MigrateDelegatorParams memory params
         ) = getMigrateDelegatorParams(_l1Addr, _l2Addr);
 
+        // We do not prevent migration replays here to minimize L1 gas costs
+        // The L2Migrator is responsible for rejecting migration replays
+
         uint256 seqNo = sendTxToL2(
             l2MigratorAddr,
             _l2Addr, // Refunds to the L2 address
@@ -177,6 +192,16 @@ contract L1Migrator is
         emit MigrateDelegatorInitiated(seqNo, params);
     }
 
+    /**
+     * @notice Executes a L2 call to L2Migrator to migrate unbonding locks state from the L1 BondingManager.
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @param _unbondingLockIds IDs of unbonding locks in the L1 BondingManager to migrate
+     * @param _sig Optional EIP-712 signature over a payload that includes _l1Addr, _l2Addr and _unbondingLockIds
+     * @param _maxGas Gas limit for L2 execution
+     * @param _gasPriceBid Gas price bid for L2 execution
+     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee
+     */
     function migrateUnbondingLocks(
         address _l1Addr,
         address _l2Addr,
@@ -186,6 +211,8 @@ contract L1Migrator is
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
     ) external payable whenNotPaused {
+        // Authorization
+        // Either msg.sender == _l1Addr OR signer for _sig == _l1Addr
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -205,6 +232,9 @@ contract L1Migrator is
             MigrateUnbondingLocksParams memory params
         ) = getMigrateUnbondingLocksParams(_l1Addr, _l2Addr, _unbondingLockIds);
 
+        // We do not prevent migration replays here to minimize L1 gas costs
+        // The L2Migrator is responsible for rejecting migration replays
+
         uint256 seqNo = sendTxToL2(
             l2MigratorAddr,
             _l2Addr, // Refund to the L2 address
@@ -217,6 +247,15 @@ contract L1Migrator is
         emit MigrateUnbondingLocksInitiated(seqNo, params);
     }
 
+    /**
+     * @notice Executes a L2 call to L2Migrator to migrate sender deposit/reserve state from the L1 TicketBroker.
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @param _sig Optional EIP-712 signature over a payload that includes _l1Addr and _l2Addr
+     * @param _maxGas Gas limit for L2 execution
+     * @param _gasPriceBid Gas price bid for L2 execution
+     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee
+     */
     function migrateSender(
         address _l1Addr,
         address _l2Addr,
@@ -225,6 +264,8 @@ contract L1Migrator is
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
     ) external payable whenNotPaused {
+        // Authorization
+        // Either msg.sender == _l1Addr OR signer for _sig == _l1Addr
         requireValidMigration(
             _l1Addr,
             _l2Addr,
@@ -236,6 +277,9 @@ contract L1Migrator is
             bytes memory data,
             MigrateSenderParams memory params
         ) = getMigrateSenderParams(_l1Addr, _l2Addr);
+
+        // We do not prevent migration replays here to minimize L1 gas costs
+        // The L2Migrator is responsible for rejecting migration replays
 
         uint256 seqNo = sendTxToL2(
             l2MigratorAddr,
@@ -249,6 +293,13 @@ contract L1Migrator is
         emit MigrateSenderInitiated(seqNo, params);
     }
 
+    /**
+     * @notice Executes a L2 call to send ETH from the L1BridgeMinter to the L2Migrator.
+     * @dev Anyone can call this function.
+     * @param _maxGas Gas limit for L2 execution
+     * @param _gasPriceBid Gas price bid for L2 execution
+     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee
+     */
     function migrateETH(
         uint256 _maxGas,
         uint256 _gasPriceBid,
@@ -276,6 +327,13 @@ contract L1Migrator is
         );
     }
 
+    /**
+     * @notice Executes a L2 call to send LPT from the L1BridgeMinter to the L2Migrator.
+     * @dev Anyone can call this function.
+     * @param _maxGas Gas limit for L2 execution
+     * @param _gasPriceBid Gas price bid for L2 execution
+     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee
+     */
     function migrateLPT(
         uint256 _maxGas,
         uint256 _gasPriceBid,
@@ -298,14 +356,29 @@ contract L1Migrator is
         );
     }
 
+    /**
+     * @notice Pause the contract
+     * @dev Only callable by addresses with governor role
+     */
     function pause() external onlyRole(GOVERNOR_ROLE) {
         _pause();
     }
 
+    /**
+     * @notice Unpause the contract
+     * @dev Only callable by addresses with governor role
+     */
     function unpause() external onlyRole(GOVERNOR_ROLE) {
         _unpause();
     }
 
+    /**
+     * @notice Return L2 calldata and MigrateDelegatorParams to use for a L2 call on L2Migrator
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @return data L2 calldata for finalizeMigrateDelegator() in L2Migrator
+     * @return params MigrateDelegatorParams to use for finalizeMigrateDelegator() in L2Migrator
+     */
     function getMigrateDelegatorParams(address _l1Addr, address _l2Addr)
         public
         view
@@ -327,10 +400,7 @@ contract L1Migrator is
 
         ) = bondingManager.getDelegator(_l1Addr);
 
-        // We do not prevent migration replays here to minimize L1 gas costs
-        // The L2Migrator is responsible for rejecting migration replays
-
-        // Call finalizeMigrateDelegator() on L2Migrator
+        // Construct params and L2 calldata for finalizeMigrateDelegator() on L2Migrator
         params = MigrateDelegatorParams({
             l1Addr: _l1Addr,
             l2Addr: _l2Addr,
@@ -346,6 +416,13 @@ contract L1Migrator is
         );
     }
 
+    /**
+     * @notice Return L2 calldata and MigrateSenderParams to use for a L2 call on L2Migrator
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @return data L2 calldata for finalizeMigrateSender() in L2Migrator
+     * @return params MigrateSenderParams to use for finalizeMigrateSender() in L2Migrator
+     */
     function getMigrateSenderParams(address _l1Addr, address _l2Addr)
         public
         view
@@ -358,10 +435,7 @@ contract L1Migrator is
             ITicketBroker.ReserveInfo memory reserveInfo
         ) = ticketBroker.getSenderInfo(_l1Addr);
 
-        // We do not prevent migration replays here to minimize L1 gas costs
-        // The L2Migrator is responsible for rejecting migration replays
-
-        // Call finalizeMigrateSender() on L2Migrator
+        // Construct params and L2 calldata for finalizeMigrateSender() on L2Migrator
         params = MigrateSenderParams({
             l1Addr: _l1Addr,
             l2Addr: _l2Addr,
@@ -375,6 +449,14 @@ contract L1Migrator is
         );
     }
 
+    /**
+     * @notice Return L2 calldata and MigrateUnbondingLocksParams to use for a L2 call on L2Migrator
+     * @param _l1Addr Address migrating from L1
+     * @param _l2Addr Address to use on L2
+     * @param _unbondingLockIds IDs of unbonding locks in L1 BondingManager to migrate
+     * @return data L2 calldata for finalizeMigrateUnbondingLocks() in L2Migrator
+     * @return params MigrateUnbondingLocksParams to use for finalizeMigrateUnbondingLocks() in L2Migrator
+     */
     function getMigrateUnbondingLocksParams(
         address _l1Addr,
         address _l2Addr,
@@ -400,10 +482,7 @@ contract L1Migrator is
             _l1Addr
         );
 
-        // We do not prevent migration replays here to minimize L1 gas costs
-        // The L2Migrator is responsible for rejecting migration replays
-
-        // Call finalizeMigrateUnbondingLocks() on L2Migrator
+        // Construct params and L2 calldata for finalizeMigrateUnbondingLocks() on L2Migrator
         params = MigrateUnbondingLocksParams({
             l1Addr: _l1Addr,
             l2Addr: _l2Addr,
