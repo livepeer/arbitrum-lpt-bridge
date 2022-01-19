@@ -2,6 +2,7 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
 import {ARBITRUM_NETWORK} from '../constants';
 import {ethers} from 'hardhat';
+import {getAddress} from '../helpers';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
@@ -9,8 +10,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  const l1LPT = await deployments.get('L1_LPT');
-  const l2LPT = await hre.companionNetworks['l2'].deployments.get('L2_LPT');
+  const l1LPT = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
+  const l2provider = new ethers.providers.JsonRpcProvider(
+      process.env.ARB_RINKEBY_URL,
+  );
+  const l2LPT = await getAddress(l2provider, 'LivepeerToken', 'L2');
   const escrow = await deployments.get('L1Escrow');
 
   const l1Gateway = await deploy('L1LPTGateway', {
@@ -18,8 +22,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: [
       ARBITRUM_NETWORK.rinkeby.l1GatewayRouter,
       escrow.address,
-      l1LPT.address,
-      l2LPT.address,
+      l1LPT,
+      l2LPT,
       ARBITRUM_NETWORK.rinkeby.inbox,
     ],
     log: true,
@@ -41,7 +45,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       'L1Escrow',
       {from: deployer, log: true},
       'approve',
-      l1LPT.address,
+      l1LPT,
       l1Gateway.address,
       ethers.constants.MaxUint256,
   );

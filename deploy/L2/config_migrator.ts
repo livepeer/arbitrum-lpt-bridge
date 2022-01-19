@@ -7,19 +7,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  const l1Gateway = await hre.companionNetworks['l1'].deployments.get(
-      'L1LPTGateway',
-  );
-
   const l1Migrator = await hre.companionNetworks['l1'].deployments.get(
       'L1Migrator',
-  );
-
-  await execute(
-      'L2LPTGateway',
-      {from: deployer, log: true},
-      'setCounterpart',
-      l1Gateway.address,
   );
 
   await execute(
@@ -30,5 +19,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   );
 };
 
-func.tags = ['L2_GATEWAY_INIT'];
+func.tags = ['L2_MIGRATOR_CONFIG'];
 export default func;

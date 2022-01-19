@@ -3,16 +3,21 @@ import {DeployFunction} from 'hardhat-deploy/dist/types';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  const {execute} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  await deploy('L1Escrow', {
-    from: deployer,
-    args: [],
-    log: true,
-  });
+  const l1DataCache = await hre.companionNetworks['l1'].deployments.get(
+      'L1LPTDataCache',
+  );
+
+  await execute(
+      'L2LPTDataCache',
+      {from: deployer, log: true},
+      'setL1LPTDataCache',
+      l1DataCache.address,
+  );
 };
 
-func.tags = ['L1_ESCROW'];
+func.tags = ['L2_DATA_CACHE_CONFIG'];
 export default func;

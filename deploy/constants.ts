@@ -1,4 +1,6 @@
 export const L1_LPT = '0x58b6a8a3302369daec383334672404ee733ab239';
+export const L1_Controller = '0x7159fA1e24C05a91d4c03f98ff49069602AB88C3';
+export const L2_Controller = '0xa81F7622A0600cc801cB5AEb9AE022cab43562f1';
 
 export const ARBITRUM_NETWORK = {
   mainnet: {

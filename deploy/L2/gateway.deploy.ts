@@ -2,6 +2,7 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
 import {ARBITRUM_NETWORK} from '../constants';
 import {ethers} from 'hardhat';
+import {getAddress} from '../helpers';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
@@ -9,18 +10,31 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  const l1LPT = await hre.companionNetworks['l1'].deployments.get('L1_LPT');
-  const l2LPT = await deployments.get('L2_LPT');
+  const l1provider = new ethers.providers.JsonRpcProvider(
+      process.env.RINKEBY_URL,
+  );
+  const l1LPT = await getAddress(l1provider, 'LivepeerToken', 'L1');
+  const l2LPT = await getAddress(ethers.provider, 'LivepeerToken', 'L2');
+  const l2DataCache = await hre.deployments.get('L2LPTDataCache');
 
   const l2Gateway = await deploy('L2LPTGateway', {
     from: deployer,
     args: [
       ARBITRUM_NETWORK.rinkeby.l2GatewayRouter,
-      l1LPT.address,
-      l2LPT.address,
+      l1LPT,
+      l2LPT,
+      l2DataCache.address,
     ],
     log: true,
   });
+
+  await execute(
+      'L2LPTGateway',
+      {from: deployer, log: true},
+      'grantRole',
+      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
+      deployer,
+  );
 
   await execute(
       'L2_LPT',
@@ -31,11 +45,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   );
 
   await execute(
-      'L2LPTGateway',
+      'L2_LPT',
       {from: deployer, log: true},
       'grantRole',
-      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
-      deployer,
+      ethers.utils.solidityKeccak256(['string'], ['BURNER_ROLE']),
+      l2Gateway.address,
   );
 };
 

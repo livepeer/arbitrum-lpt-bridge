@@ -3,16 +3,17 @@ import {DeployFunction} from 'hardhat-deploy/dist/types';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  const {execute} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  await deploy('L1Escrow', {
-    from: deployer,
-    args: [],
-    log: true,
-  });
+  await execute(
+      'L1Migrator',
+      {from: deployer, log: true},
+      'unpause',
+      deployer,
+  );
 };
 
-func.tags = ['L1_ESCROW'];
+func.tags = ['L1_MIGRATOR_UNPAUSE'];
 export default func;
