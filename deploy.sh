@@ -40,6 +40,3 @@ npx hardhat deploy --tags L2_MIGRATOR_CONFIG --network arbitrumRinkeby
 
 echo -e "\n Unpause L1 Migrator"
 npx hardhat deploy --tags L1_MIGRATOR_UNPAUSE --network rinkeby
-
-echo -e "\n Unpause L2 Migrator"
-npx hardhat deploy --tags L2_MIGRATOR_UNPAUSE --network arbitrumRinkeby

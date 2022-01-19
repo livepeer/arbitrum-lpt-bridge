@@ -17,6 +17,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   );
   const ticketBroker = await getAddress(ethers.provider, 'TicketBroker', 'L1');
   const minter = await getAddress(ethers.provider, 'Minter', 'L1');
+  const token = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
   // TODO - fetch hardcoded values from controller instead
 
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
@@ -31,6 +32,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       bondingManager,
       ticketBroker,
       minter,
+      token,
       l1LPTgateway.address,
       l2Migrator.address,
     ],

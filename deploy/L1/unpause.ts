@@ -7,12 +7,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
-  await execute(
-      'L1Migrator',
-      {from: deployer, log: true},
-      'unpause',
-      deployer,
-  );
+  await execute('L1Migrator', {from: deployer, log: true}, 'unpause');
 };
 
 func.tags = ['L1_MIGRATOR_UNPAUSE'];
