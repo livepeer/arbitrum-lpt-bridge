@@ -1,6 +1,6 @@
 export const L1_LPT = '0x58b6a8a3302369daec383334672404ee733ab239';
 
-export const ARBITRUM_NETWORK = {
+export const ARBITRUM_NETWORK: any = {
   mainnet: {
     l1GatewayRouter: '0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef',
     l2GatewayRouter: '0x5288c571Fd7aD117beA99bF60FE0846C4E84F933',

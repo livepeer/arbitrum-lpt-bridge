@@ -3,16 +3,21 @@ import {DeployFunction} from 'hardhat-deploy/dist/types';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  const {execute} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  await deploy('L1Escrow', {
-    from: deployer,
-    args: [],
-    log: true,
-  });
+  const l1Gateway = await hre.companionNetworks['l1'].deployments.get(
+      'L1LPTGateway',
+  );
+
+  await execute(
+      'L2LPTGateway',
+      {from: deployer, log: true},
+      'setCounterpart',
+      l1Gateway.address,
+  );
 };
 
-func.tags = ['L1_ESCROW'];
+func.tags = ['L2_GATEWAY_INIT'];
 export default func;
