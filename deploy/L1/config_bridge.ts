@@ -1,36 +1,35 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
+import {getAddress} from '../helpers';
 import {ethers} from 'hardhat';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy, execute} = deployments;
+  const {execute} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  const token = await deploy('LivepeerToken', {
-    from: deployer,
-    args: [],
-    log: true,
-  });
-  await deployments.save('L1_LPT', token);
-
-  await execute(
-      'L1_LPT',
-      {from: deployer, log: true},
-      'grantRole',
-      ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
-      deployer,
+  const l2Gateway = await hre.companionNetworks['l2'].deployments.get(
+      'L2LPTGateway',
   );
 
+  const minter = await getAddress(ethers.provider, 'Minter', 'L1');
+
   await execute(
-      'L1_LPT',
+      'L1LPTGateway',
       {from: deployer, log: true},
-      'mint',
-      deployer,
-      ethers.utils.parseEther('100000'),
+      'setCounterpart',
+      l2Gateway.address,
+  );
+
+  // Note This is the L1 BridgeMinter
+  await execute(
+      'L1LPTGateway',
+      {from: deployer, log: true},
+      'setMinter',
+      minter,
   );
 };
 
-func.tags = ['L1_LPT'];
+func.tags = ['L1_GATEWAY_INIT'];
 export default func;

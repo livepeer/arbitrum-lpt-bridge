@@ -4,7 +4,8 @@
   "description": "A bridge to move LPT between Ethereum and Arbitrum",
   "scripts": {
     "prepare": "husky install",
-    "deploy": "npx hardhat deploy",
+    "deploy:token": "npx hardhat deploy --tags L2_LPT",
+    "deploy": "./deploy.sh",
     "lint": "yarn eslint && yarn solhint",
     "eslint:fix": "eslint . --ext .ts --fix",
     "eslint": "eslint . --ext .ts",
