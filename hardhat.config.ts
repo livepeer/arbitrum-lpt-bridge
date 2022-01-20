@@ -63,6 +63,14 @@ const config: HardhatUserConfig = {
         l2: 'arbitrumRinkeby',
       },
     },
+    rinkebyDevnet: {
+      url: process.env.RINKEBY_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l2: 'arbitrumRinkebyDevnet',
+      },
+    },
     arbitrumLocal: {
       url: 'http://localhost:8547',
       accounts: {
@@ -80,6 +88,14 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       companionNetworks: {
         l1: 'rinkeby',
+      },
+    },
+    arbitrumRinkebyDevnet: {
+      url: process.env.ARB_RINKEBY_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l1: 'rinkebyDevnet',
       },
     },
   },

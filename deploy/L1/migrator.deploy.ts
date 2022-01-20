@@ -1,29 +1,51 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
-import {ARBITRUM_NETWORK} from '../constants';
+import {ethers} from 'hardhat';
+import {getAddress, getArbitrumContracts} from '../helpers';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy} = deployments;
+  const {deploy, execute} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  const bondingManager = '0xf71b1fb1bd297ddb4e92c9ab89d5f57ffcc899f9';
-  const ticketBroker = '0x940D5630bBc300cCCF4BEaBAFfC300F7787d5b1f';
+  const arbitrumContracts = getArbitrumContracts(hre.network.name);
+
+  const bondingManager = await getAddress(
+      ethers.provider,
+      'BondingManager',
+      'L1',
+  );
+  const ticketBroker = await getAddress(ethers.provider, 'TicketBroker', 'L1');
+  const minter = await getAddress(ethers.provider, 'Minter', 'L1');
+  const token = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
+
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
       'L2Migrator',
   );
+  const l1LPTgateway = await deployments.get('L1LPTGateway');
 
   await deploy('L1Migrator', {
     from: deployer,
     args: [
-      ARBITRUM_NETWORK.rinkeby.inbox,
+      arbitrumContracts.inbox,
       bondingManager,
       ticketBroker,
+      minter,
+      token,
+      l1LPTgateway.address,
       l2Migrator.address,
     ],
     log: true,
   });
+
+  await execute(
+      'L1Migrator',
+      {from: deployer, log: true},
+      'grantRole',
+      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
+      deployer,
+  );
 };
 
 func.tags = ['L1_MIGRATOR'];
