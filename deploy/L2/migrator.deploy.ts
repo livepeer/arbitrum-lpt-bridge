@@ -9,6 +9,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const {deployer} = await getNamedAccounts();
 
+  const token = await deployments.get('LivepeerToken');
   const delegatorPool = await deployments.get('DelegatorPool');
   const bondingManager = await getAddress(
       ethers.provider,
@@ -30,6 +31,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       bondingManager,
       ticketBroker,
       merkleSnapshot,
+      token.address,
     ],
     log: true,
   });
