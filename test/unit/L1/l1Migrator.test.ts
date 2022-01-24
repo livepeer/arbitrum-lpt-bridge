@@ -851,6 +851,10 @@ describe('L1Migrator', function() {
 
         bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
         inboxMock.createRetryableTicket.returns(seqNo);
+        await l1EOA.sendTransaction({
+          to: l1Migrator.address,
+          value: amount,
+        });
 
         const maxGas = 111;
         const gasPriceBid = 222;
@@ -863,6 +867,7 @@ describe('L1Migrator', function() {
               value: l1CallValue,
             });
 
+        await expect(tx).to.changeEtherBalance(inboxMock, amount + l1CallValue);
         expect(bridgeMinterMock.withdrawETHToL1Migrator).to.be.calledOnce;
         expect(inboxMock.createRetryableTicket).to.be.calledOnceWith(
             mockL2MigratorEOA.address,
