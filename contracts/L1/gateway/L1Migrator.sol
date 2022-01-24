@@ -323,7 +323,7 @@ contract L1Migrator is
         sendTxToL2(
             l2MigratorAddr,
             address(this), // L2 alias of this contract will receive refunds
-            msg.value,
+            msg.value + amount,
             amount,
             _maxSubmissionCost,
             _maxGas,
