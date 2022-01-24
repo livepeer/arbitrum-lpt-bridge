@@ -144,6 +144,11 @@ contract L1Migrator is
     }
 
     /**
+     * @notice receive ETH from BridgeMinter.
+     */
+    receive() external payable {}
+
+    /**
      * @notice Executes a L2 call to L2Migrator to migrate transcoder/delegator state from the L1 BondingManager.
      * @dev The term "delegator" here can refer to both a transcoder (self-delegated delegator) and delegator.
      * @param _l1Addr Address migrating from L1

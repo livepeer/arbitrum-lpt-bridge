@@ -804,6 +804,18 @@ describe('L1Migrator', function() {
     });
   });
 
+  describe('receive', () => {
+    it('receives ETH', async () => {
+      const value = ethers.utils.parseUnits('1', 'ether');
+      const tx = await l1EOA.sendTransaction({
+        to: l1Migrator.address,
+        value,
+      });
+
+      await expect(tx).to.changeEtherBalance(l1Migrator, value);
+    });
+  });
+
   describe('migrateETH', () => {
     describe('migrator is paused', () => {
       it('fails to send tx to L2', async () => {
