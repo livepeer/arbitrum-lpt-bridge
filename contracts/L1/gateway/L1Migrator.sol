@@ -144,7 +144,7 @@ contract L1Migrator is
     }
 
     /**
-     * @notice receive ETH from BridgeMinter.
+     * @notice Receive ETH when there is no msg.data
      */
     receive() external payable {}
 
