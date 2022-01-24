@@ -144,6 +144,11 @@ contract L1Migrator is
     }
 
     /**
+     * @notice Receive ETH when there is no msg.data
+     */
+    receive() external payable {}
+
+    /**
      * @notice Executes a L2 call to L2Migrator to migrate transcoder/delegator state from the L1 BondingManager.
      * @dev The term "delegator" here can refer to both a transcoder (self-delegated delegator) and delegator.
      * @param _l1Addr Address migrating from L1
@@ -318,7 +323,7 @@ contract L1Migrator is
         sendTxToL2(
             l2MigratorAddr,
             address(this), // L2 alias of this contract will receive refunds
-            msg.value,
+            msg.value + amount,
             amount,
             _maxSubmissionCost,
             _maxGas,
