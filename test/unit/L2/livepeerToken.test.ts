@@ -101,19 +101,9 @@ describe('LivepeerToken', function() {
     });
 
     describe('caller does not have burner role', async function() {
-      it('should fail to burn tokens for another address', async function() {
-        const amount = ethers.utils.parseEther('5000');
-        const tx = token.burn(notOwner.address, amount);
-
-        await expect(tx).to.be.revertedWith(
-            // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${BURNER_ROLE}`
-        );
-      });
-
       it('should fail to burn tokens for self', async function() {
         const amount = ethers.utils.parseEther('5000');
-        const tx = token.connect(owner).burn(owner.address, amount);
+        const tx = token.connect(owner).burn(amount);
 
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
@@ -123,11 +113,85 @@ describe('LivepeerToken', function() {
     });
 
     describe('caller has burner role', async function() {
+      it('should burn tokens for self', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const balance = await token.balanceOf(burnController.address);
+
+        await token.connect(burnController).burn(amount);
+
+        const newBalance = await token.balanceOf(burnController.address);
+        expect(newBalance).to.equal(balance.sub(amount));
+      });
+    });
+  });
+
+  describe('burnFrom', async function() {
+    beforeEach(async function() {
+      const amount = ethers.utils.parseEther('10000');
+      await token.grantRole(MINTER_ROLE, mintController.address);
+      await token.grantRole(BURNER_ROLE, burnController.address);
+      await token.connect(mintController).mint(owner.address, amount);
+      await token.connect(mintController).mint(notOwner.address, amount);
+      await token.connect(mintController).mint(burnController.address, amount);
+    });
+
+    describe('caller does not have burner role', async function() {
+      it('should fail to burn tokens for another address', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const tx = token.burnFrom(notOwner.address, amount);
+
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${BURNER_ROLE}`
+        );
+      });
+
+      it('should fail to burn tokens for self', async function() {
+        const amount = ethers.utils.parseEther('5000');
+        const tx = token.connect(owner).burnFrom(owner.address, amount);
+
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${BURNER_ROLE}`
+        );
+      });
+    });
+
+    describe('caller has burner role', async function() {
+      it('should revert if allowance is insufficient', async () => {
+        const amount = ethers.utils.parseEther('5000');
+
+        // allowance = 0
+        await expect(
+            token.connect(burnController).burnFrom(owner.address, amount),
+        ).to.be.revertedWith('ERC20: burn amount exceeds allowance');
+        // allowance < amount
+        await token
+            .connect(owner)
+            .approve(burnController.address, amount.sub(1));
+        await expect(
+            token.connect(burnController).burnFrom(owner.address, amount),
+        ).to.be.revertedWith('ERC20: burn amount exceeds allowance');
+
+        // allowance = 0 when _from == msg.sender
+        await expect(
+            token.connect(burnController).burnFrom(burnController.address, amount),
+        ).to.be.revertedWith('ERC20: burn amount exceeds allowance');
+        // allowance < amount when _from == msg.sender
+        await token
+            .connect(burnController)
+            .approve(burnController.address, amount.sub(1));
+        await expect(
+            token.connect(burnController).burnFrom(burnController.address, amount),
+        ).to.be.revertedWith('ERC20: burn amount exceeds allowance');
+      });
+
       it('should burn tokens for another address', async function() {
         const amount = ethers.utils.parseEther('5000');
         const balance = await token.balanceOf(owner.address);
+        await token.connect(owner).approve(burnController.address, amount);
 
-        await token.connect(burnController).burn(owner.address, amount);
+        await token.connect(burnController).burnFrom(owner.address, amount);
 
         const newBalance = await token.balanceOf(owner.address);
         expect(newBalance).to.equal(balance.sub(amount));
@@ -136,10 +200,13 @@ describe('LivepeerToken', function() {
       it('should burn tokens for self', async function() {
         const amount = ethers.utils.parseEther('5000');
         const balance = await token.balanceOf(burnController.address);
+        await token
+            .connect(burnController)
+            .approve(burnController.address, amount);
 
         await token
             .connect(burnController)
-            .burn(burnController.address, amount);
+            .burnFrom(burnController.address, amount);
 
         const newBalance = await token.balanceOf(burnController.address);
         expect(newBalance).to.equal(balance.sub(amount));

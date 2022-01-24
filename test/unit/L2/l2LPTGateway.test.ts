@@ -370,7 +370,25 @@ describe('L2 Gateway', function() {
         await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
       });
 
+      it('should revert when allowance is insufficient', async () => {
+        const tx = l2Gateway
+            .connect(sender)
+            .outboundTransfer(
+                mockL1LptEOA.address,
+                sender.address,
+                initialTotalL2Supply,
+                defaultData,
+            );
+        await expect(tx).to.be.revertedWith(
+            'ERC20: burn amount exceeds allowance',
+        );
+      });
+
       it('should revert when funds are too low', async () => {
+        await token
+            .connect(sender)
+            .approve(l2Gateway.address, initialTotalL2Supply + 100);
+
         const tx = l2Gateway
             .connect(sender)
             .outboundTransfer(
@@ -412,6 +430,7 @@ describe('L2 Gateway', function() {
       });
 
       it('sends message to L1 and burns tokens', async () => {
+        await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         const tx = await l2Gateway
             .connect(sender)
             .outboundTransfer(
@@ -457,6 +476,7 @@ describe('L2 Gateway', function() {
       });
 
       it('sends message to L1 and burns tokens for 3rd party', async () => {
+        await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         const tx = await l2Gateway
             .connect(sender)
             .outboundTransfer(
@@ -509,6 +529,7 @@ describe('L2 Gateway', function() {
             [sender.address, defaultData],
         );
 
+        await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         const tx = await l2Gateway
             .connect(mockL2RouterEOA)
             .outboundTransfer(
@@ -555,6 +576,7 @@ describe('L2 Gateway', function() {
       });
 
       it('calls decreaseL2SupplyFromL1() on L2LPTDataCache', async () => {
+        await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         await l2Gateway
             .connect(sender)
             .outboundTransfer(

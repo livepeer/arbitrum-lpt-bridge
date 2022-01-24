@@ -9,7 +9,7 @@ import {IL1LPTGateway} from "../../L1/gateway/IL1LPTGateway.sol";
 interface Mintable {
     function mint(address _to, uint256 _amount) external;
 
-    function burn(address _from, uint256 _amount) external;
+    function burnFrom(address _from, uint256 _amount) external;
 }
 
 interface IL2LPTDataCache {
@@ -73,7 +73,8 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         (address from, bytes memory extraData) = parseOutboundData(_data);
         require(extraData.length == 0, "CALL_HOOK_DATA_NOT_ALLOWED");
 
-        Mintable(l2Lpt).burn(from, _amount);
+        // from needs to approve this contract to burn the amount first
+        Mintable(l2Lpt).burnFrom(from, _amount);
         IL2LPTDataCache(l2LPTDataCache).decreaseL2SupplyFromL1(_amount);
 
         uint256 id = sendTxToL1(
