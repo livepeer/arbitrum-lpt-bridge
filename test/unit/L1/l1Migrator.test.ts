@@ -398,8 +398,12 @@ describe('L1Migrator', function() {
         const delegate = notL1EOA.address;
 
         inboxMock.createRetryableTicket.returns(seqNo);
-        bondingManagerMock.pendingStake.returns(stake);
-        bondingManagerMock.pendingFees.returns(fees);
+        bondingManagerMock.pendingStake
+            .whenCalledWith(l1EOA.address, ethers.constants.MaxUint256)
+            .returns(stake);
+        bondingManagerMock.pendingFees
+            .whenCalledWith(l1EOA.address, ethers.constants.MaxUint256)
+            .returns(fees);
         bondingManagerMock.getDelegator.returns([
           0,
           0,

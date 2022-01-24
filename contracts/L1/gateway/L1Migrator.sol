@@ -391,10 +391,12 @@ contract L1Migrator is
     {
         IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
 
-        // pendingStake() ignores the _endRound arg
-        uint256 stake = bondingManager.pendingStake(_l1Addr, 0);
-        // pendingFees() ignores the _endRound arg
-        uint256 fees = bondingManager.pendingFees(_l1Addr, 0);
+        // pendingStake() will use current round if _endRound >= LIP-36 round
+        // Using max uint256 guarantees that
+        uint256 stake = bondingManager.pendingStake(_l1Addr, type(uint256).max);
+        // pendingFees() will use current round if _endRound >= LIP-36 round
+        // Using max uint256 guarantees that
+        uint256 fees = bondingManager.pendingFees(_l1Addr, type(uint256).max);
         (
             ,
             ,
