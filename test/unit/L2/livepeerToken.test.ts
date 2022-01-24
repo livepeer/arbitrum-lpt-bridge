@@ -72,20 +72,28 @@ describe('LivepeerToken', function() {
         const amount = ethers.utils.parseEther('10000');
         const balance = await token.balanceOf(owner.address);
 
-        await token.connect(mintController).mint(owner.address, amount);
+        const tx = await token
+            .connect(mintController)
+            .mint(owner.address, amount);
 
         const newBalance = await token.balanceOf(owner.address);
         expect(newBalance).to.equal(balance.add(amount));
+        await expect(tx).to.emit(token, 'Mint').withArgs(owner.address, amount);
       });
 
       it('should mint to another address', async function() {
         const amount = ethers.utils.parseEther('10000');
         const balance = await token.balanceOf(notOwner.address);
 
-        await token.connect(mintController).mint(notOwner.address, amount);
+        const tx = await token
+            .connect(mintController)
+            .mint(notOwner.address, amount);
 
         const newBalance = await token.balanceOf(notOwner.address);
         expect(newBalance).to.equal(balance.add(amount));
+        await expect(tx)
+            .to.emit(token, 'Mint')
+            .withArgs(notOwner.address, amount);
       });
     });
   });
@@ -117,10 +125,13 @@ describe('LivepeerToken', function() {
         const amount = ethers.utils.parseEther('5000');
         const balance = await token.balanceOf(burnController.address);
 
-        await token.connect(burnController).burn(amount);
+        const tx = await token.connect(burnController).burn(amount);
 
         const newBalance = await token.balanceOf(burnController.address);
         expect(newBalance).to.equal(balance.sub(amount));
+        await expect(tx)
+            .to.emit(token, 'Burn')
+            .withArgs(burnController.address, amount);
       });
     });
   });
@@ -191,10 +202,13 @@ describe('LivepeerToken', function() {
         const balance = await token.balanceOf(owner.address);
         await token.connect(owner).approve(burnController.address, amount);
 
-        await token.connect(burnController).burnFrom(owner.address, amount);
+        const tx = await token
+            .connect(burnController)
+            .burnFrom(owner.address, amount);
 
         const newBalance = await token.balanceOf(owner.address);
         expect(newBalance).to.equal(balance.sub(amount));
+        await expect(tx).to.emit(token, 'Burn').withArgs(owner.address, amount);
       });
 
       it('should burn tokens for self', async function() {
@@ -204,12 +218,15 @@ describe('LivepeerToken', function() {
             .connect(burnController)
             .approve(burnController.address, amount);
 
-        await token
+        const tx = await token
             .connect(burnController)
             .burnFrom(burnController.address, amount);
 
         const newBalance = await token.balanceOf(burnController.address);
         expect(newBalance).to.equal(balance.sub(amount));
+        await expect(tx)
+            .to.emit(token, 'Burn')
+            .withArgs(burnController.address, amount);
       });
     });
   });
