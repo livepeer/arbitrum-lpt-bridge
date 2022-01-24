@@ -486,6 +486,46 @@ describe('LivepeerToken', function() {
             const movedBalance = await token.balanceOf(mockSpender.address);
             expect(movedBalance).to.equal(amount);
           });
+
+          it('should allow spender with BURNER_ROLE to burn tokens', async () => {
+            await token.grantRole(BURNER_ROLE, mockSpender.address);
+
+            const amount = ethers.utils.parseEther('100');
+            const message = {
+              owner: owner.address,
+              spender: mockSpender.address,
+              value: amount,
+              nonce: 0,
+              deadline: ethers.constants.MaxUint256,
+            };
+
+            const {v, r, s} = await getSignature(
+                owner,
+                await token.name(),
+                chainId,
+                token.address,
+                message,
+            );
+
+            await token.permit(
+                owner.address,
+                mockSpender.address,
+                amount,
+                ethers.constants.MaxUint256,
+                v,
+                r,
+                s,
+            );
+
+            const startBalance = await token.balanceOf(owner.address);
+
+            await mockSpender.burnTokens(owner.address, token.address, amount);
+
+            const endBalance = await token.balanceOf(owner.address);
+
+            expect(await token.nonces(owner.address)).to.equal(1);
+            expect(startBalance.sub(endBalance)).to.be.equal(amount);
+          });
         });
       });
     });
