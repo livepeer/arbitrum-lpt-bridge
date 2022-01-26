@@ -15,7 +15,7 @@ contract L1Escrow is AccessControl {
     );
 
     constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
     function approve(

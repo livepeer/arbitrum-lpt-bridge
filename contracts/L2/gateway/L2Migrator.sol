@@ -80,7 +80,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         address _ticketBrokerAddr,
         address _merkleSnapshotAddr
     ) {
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
 
         l1Migrator = _l1Migrator;
