@@ -175,6 +175,8 @@ describe('DelegatorPool', function() {
 
       describe('full claim - only single delegator in pool', () => {
         it('fails if everything already claimed', async () => {
+          expect(await delegatorPool.initialStake()).to.be.equal(stake);
+
           await delegatorPool
               .connect(mockL2MigratorEOA)
               .claim(delegator.address, stake);
@@ -184,8 +186,42 @@ describe('DelegatorPool', function() {
               .claim(delegator.address, stake);
 
           await expect(tx).to.be.revertedWith(
-              'DelegatorPool#claim: FULLY_CLAIMED',
+              'DelegatorPool#claim: INVALID_CLAIM',
           );
+        });
+
+        it('fails if requested stake exceeds initial stake', async () => {
+          const unclaimedTokens = 10;
+
+          expect(await delegatorPool.initialStake()).to.be.equal(stake);
+
+          await delegatorPool
+              .connect(mockL2MigratorEOA)
+              .claim(delegator.address, stake - unclaimedTokens);
+
+          const tx = delegatorPool
+              .connect(mockL2MigratorEOA)
+              .claim(delegator.address, unclaimedTokens + 1);
+
+          await expect(tx).to.be.revertedWith(
+              'DelegatorPool#claim: INVALID_CLAIM',
+          );
+        });
+
+        it('does not fail if caller claims all remaining tokens', async () => {
+          const unclaimedTokens = 10;
+
+          expect(await delegatorPool.initialStake()).to.be.equal(stake);
+
+          await delegatorPool
+              .connect(mockL2MigratorEOA)
+              .claim(delegator.address, stake - unclaimedTokens);
+
+          const tx = delegatorPool
+              .connect(mockL2MigratorEOA)
+              .claim(delegator.address, unclaimedTokens);
+
+          await expect(tx).to.not.be.reverted;
         });
 
         it('emits claimed event', async () => {

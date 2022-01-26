@@ -64,8 +64,8 @@ contract DelegatorPool is Initializable {
      */
     function claim(address _delegator, uint256 _stake) external onlyMigrator {
         require(
-            claimedInitialStake < initialStake,
-            "DelegatorPool#claim: FULLY_CLAIMED"
+            claimedInitialStake + _stake <= initialStake,
+            "DelegatorPool#claim: INVALID_CLAIM"
         );
 
         // _stake is the delegator's original stake
