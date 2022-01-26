@@ -34,6 +34,11 @@ contract DelegatorPool is Initializable {
     address public migrator;
 
     event Claimed(address indexed _delegator, uint256 _stake, uint256 _fees);
+    event DelegatorPoolInitialized(
+        address indexed _bondingManager,
+        address indexed _migrator,
+        uint256 _initialStake
+    );
 
     modifier onlyMigrator() {
         require(msg.sender == migrator, "DelegatorPool#claim: NOT_MIGRATOR");
@@ -48,6 +53,8 @@ contract DelegatorPool is Initializable {
         bondingManager = _bondingManager;
         migrator = msg.sender;
         initialStake = pendingStake();
+
+        emit DelegatorPoolInitialized(_bondingManager, migrator, initialStake);
     }
 
     /**

@@ -284,6 +284,9 @@ describe('L2Migrator', function() {
     describe('finalizes migration', () => {
       describe('l1Addr == delegate (is orchestrator on L1)', () => {
         it('creates delegator pool', async () => {
+          const pendingStake = 500;
+          bondingManagerMock.pendingStake.returns(pendingStake);
+
           const params = {
             ...mockMigrateDelegatorParams(),
             l1Addr: l1AddrEOA.address,
@@ -335,6 +338,14 @@ describe('L2Migrator', function() {
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
           );
+
+          await expect(tx)
+              .to.emit(deployed, 'DelegatorPoolInitialized')
+              .withArgs(
+                  bondingManagerMock.address,
+                  l2Migrator.address,
+                  pendingStake,
+              );
 
           await expect(tx)
               .to.emit(l2Migrator, 'DelegatorPoolCreated')
