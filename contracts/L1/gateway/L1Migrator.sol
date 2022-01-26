@@ -131,7 +131,6 @@ contract L1Migrator is
         address _l2MigratorAddr
     ) L1ArbitrumMessenger(_inbox) EIP712("Livepeer L1Migrator", "1") {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setRoleAdmin(GOVERNOR_ROLE, DEFAULT_ADMIN_ROLE);
 
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;

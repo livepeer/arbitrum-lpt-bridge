@@ -14,8 +14,6 @@ contract LivepeerToken is AccessControl, ERC20Burnable, ERC20Permit {
 
     constructor() ERC20("Livepeer Token", "LPT") ERC20Permit("Livepeer Token") {
         _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setRoleAdmin(MINTER_ROLE, DEFAULT_ADMIN_ROLE);
-        _setRoleAdmin(BURNER_ROLE, DEFAULT_ADMIN_ROLE);
     }
 
     /**
