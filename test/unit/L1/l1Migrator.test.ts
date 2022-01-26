@@ -357,9 +357,7 @@ describe('L1Migrator', function() {
             .migrateDelegator(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
               value: ethers.utils.parseEther('1'),
             });
-        await expect(tx).to.be.revertedWith(
-            'L1Migrator#requireValidMigration: FAIL_AUTH',
-        );
+        await expect(tx).to.be.revertedWith('ECDSA: invalid signature length');
       });
 
       it('does not revert for successful auth', async () => {
@@ -528,9 +526,7 @@ describe('L1Migrator', function() {
                   value: ethers.utils.parseEther('1'),
                 },
             );
-        await expect(tx).to.be.revertedWith(
-            'L1Migrator#requireValidMigration: FAIL_AUTH',
-        );
+        await expect(tx).to.be.revertedWith('ECDSA: invalid signature length');
       });
 
       it('does not revert for successful auth', async () => {
@@ -708,9 +704,7 @@ describe('L1Migrator', function() {
             .migrateSender(l1EOA.address, l1EOA.address, '0x', 0, 0, 0, {
               value: ethers.utils.parseEther('1'),
             });
-        await expect(tx).to.be.revertedWith(
-            'L1Migrator#requireValidMigration: FAIL_AUTH',
-        );
+        await expect(tx).to.be.revertedWith('ECDSA: invalid signature length');
       });
 
       it('does not revert for successful auth', async () => {
