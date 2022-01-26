@@ -124,9 +124,17 @@ describe('DelegatorPool', function() {
     bondingManagerMock.pendingStake.returns(pendingStake);
     bondingManagerMock.pendingFees.returns(pendingFees);
 
-    await delegatorPool
+    const tx = await delegatorPool
         .connect(mockL2MigratorEOA)
         .initialize(mockBondingManagerEOA.address);
+
+    await expect(tx)
+        .to.emit(delegatorPool, 'DelegatorPoolInitialized')
+        .withArgs(
+            bondingManagerMock.address,
+            mockL2MigratorEOA.address,
+            pendingStake,
+        );
   });
 
   describe('initialize', () => {
