@@ -38,6 +38,8 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
     ) ControlledGateway(_l1Lpt, _l2Lpt) {
         l2Router = _l2Router;
         l2LPTDataCache = _l2LPTDataCache;
+
+        _pause();
     }
 
     /**

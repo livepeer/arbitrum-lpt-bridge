@@ -129,6 +129,13 @@ describe('L2 Gateway', function() {
         expect(counterpart).to.equal(mockL1GatewayEOA.address);
       });
     });
+
+    describe('Pausable', () => {
+      it('gateway should be paused on deployment', async function() {
+        const isPaused = await l2Gateway.paused();
+        expect(isPaused).to.be.true;
+      });
+    });
   });
 
   describe('setCounterpart', () => {
@@ -163,6 +170,10 @@ describe('L2 Gateway', function() {
     );
 
     describe('when gateway is not paused', () => {
+      beforeEach(async function() {
+        await l2Gateway.connect(governor).unpause();
+      });
+
       describe('caller is not l1 gateway router (aliased)', () => {
         it('should revert if not relaying message from l1Gateway', async () => {
           const tx = l2Gateway
@@ -298,10 +309,6 @@ describe('L2 Gateway', function() {
     });
 
     describe('when gateway is paused', () => {
-      beforeEach(async function() {
-        await l2Gateway.connect(governor).pause();
-      });
-
       it('should allow minting', async () => {
         const tx = await l2Gateway
             .connect(mockL1GatewayL2Alias)
@@ -340,6 +347,7 @@ describe('L2 Gateway', function() {
           owner.address,
       );
       await token.connect(owner).mint(sender.address, initialTotalL2Supply);
+      await l2Gateway.connect(governor).unpause();
     });
 
     describe('when gateway is paused', async function() {
