@@ -81,7 +81,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
      * @param _to Recipient address on L1
      * @param _amount Amount of tokens to burn
      * @param _data Contains sender and additional data (always zero) to send to L1
-     * @return res ID of the withdraw tx
+     * @return ID of the withdraw tx
      */
     function outboundTransfer(
         address _l1Token,
@@ -199,7 +199,5 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
             amount,
             abi.encode(0, data) // we don't need to track exitNums (b/c we have no fast exits) so we always use 0
         );
-
-        return outboundCalldata;
     }
 }

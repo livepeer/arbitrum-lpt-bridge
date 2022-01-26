@@ -236,7 +236,5 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
             amount,
             abi.encode(emptyBytes, data)
         );
-
-        return outboundCalldata;
     }
 }
