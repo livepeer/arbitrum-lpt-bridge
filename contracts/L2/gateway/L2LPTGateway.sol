@@ -19,7 +19,7 @@ interface IL2LPTDataCache {
 }
 
 /**
- * @title L1LPTGateway
+ * @title L2LPTGateway
  * @notice Manages inbound and outbound transfers of LPT between Arbitrum Rollup and L1
  * @dev the contract can be paused by the governor which will prevent any outbound transfers
  * but pausing the contract does not affect inbound transfers (tokens coming from L1)
@@ -78,7 +78,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
      * @param _l1Token L1 Address of LPT
      * @param _to Recipient address on L1
      * @param _amount Amount of tokens to burn
-     * @param _data Contains sender and additional data to send to L1
+     * @param _data Contains sender and additional data (always zero) to send to L1
      * @return res ID of the withdraw tx
      */
     function outboundTransfer(
