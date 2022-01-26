@@ -148,6 +148,13 @@ describe('L1 LPT Gateway', function() {
         expect(counterpart).to.equal(mockL2GatewayEOA.address);
       });
     });
+
+    describe('Pausable', () => {
+      it('gateway should be paused on deployment', async function() {
+        const isPaused = await l1Gateway.paused();
+        expect(isPaused).to.be.true;
+      });
+    });
   });
 
   describe('setCounterpart', () => {
@@ -215,6 +222,10 @@ describe('L1 LPT Gateway', function() {
           ['uint256', 'bytes'],
           [maxSubmissionCost, notEmptyCallHookData],
       );
+
+    beforeEach(async function() {
+      await l1Gateway.connect(governor).unpause();
+    });
 
     describe('when gateway is paused', async function() {
       beforeEach(async function() {
@@ -601,6 +612,10 @@ describe('L1 LPT Gateway', function() {
     });
 
     describe('when gateway is not paused', () => {
+      beforeEach(async function() {
+        await l1Gateway.connect(governor).unpause();
+      });
+
       it('sends funds from the escrow', async () => {
         const initialSenderBalance = await token.balanceOf(sender.address);
         const initialEscrowBalance = await token.balanceOf(escrow.address);
@@ -775,10 +790,6 @@ describe('L1 LPT Gateway', function() {
     });
 
     describe('when gateway is paused', () => {
-      beforeEach(async function() {
-        await l1Gateway.connect(governor).pause();
-      });
-
       it('completes withdrawals even when closed', async () => {
         const initialSenderBalance = await token.balanceOf(sender.address);
         const initialEscrowBalance = await token.balanceOf(escrow.address);

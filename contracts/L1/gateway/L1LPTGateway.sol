@@ -41,6 +41,8 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
     ) ControlledGateway(_l1Lpt, _l2Lpt) L1ArbitrumMessenger(_inbox) {
         l1Router = _l1Router;
         l1LPTEscrow = _l1LPTEscrow;
+
+        _pause();
     }
 
     /**
