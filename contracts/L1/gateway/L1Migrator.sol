@@ -525,10 +525,6 @@ contract L1Migrator is
         view
         returns (address)
     {
-        if (_sig.length == 0) {
-            return address(0);
-        }
-
         bytes32 hash = _hashTypedDataV4(_structHash);
         return ECDSA.recover(hash, _sig);
     }
