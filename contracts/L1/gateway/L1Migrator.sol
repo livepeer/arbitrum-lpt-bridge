@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.8;
 
 import {L1ArbitrumMessenger} from "./L1ArbitrumMessenger.sol";
 import {IL1LPTGateway} from "./IL1LPTGateway.sol";
