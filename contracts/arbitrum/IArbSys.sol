@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.8;
 
 /**
  * @title Precompiled contract that exists in every Arbitrum chain at address(100), 0x0000000000000000000000000000000000000064. Exposes a variety of system-level functionality.
