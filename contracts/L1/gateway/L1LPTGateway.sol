@@ -98,6 +98,13 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
             (from, maxSubmissionCost, extraData) = parseOutboundData(_data);
             require(extraData.length == 0, "CALL_HOOK_DATA_NOT_ALLOWED");
 
+            // makes sure only sufficient ETH is supplied required for successful redemption on L2
+            // if a user does not desire immediate redemption they should provide
+            // a msg.value of AT LEAST maxSubmissionCost
+            uint256 expectedEth = maxSubmissionCost + (_maxGas * _gasPriceBid);
+            require(maxSubmissionCost > 0, "NO_SUBMISSION_COST");
+            require(msg.value == expectedEth, "WRONG_ETH_VALUE");
+
             // transfer tokens to escrow
             TokenLike(_l1Token).transferFrom(from, l1LPTEscrow, _amount);
 

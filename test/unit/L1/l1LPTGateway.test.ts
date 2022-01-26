@@ -207,8 +207,9 @@ describe('L1 LPT Gateway', function() {
 
   describe('outboundTransfer', async function() {
     const defaultGas = 42;
-    const defaultEthValue = ethers.utils.parseEther('0.1');
     const maxSubmissionCost = 7;
+    const gasPriceBid = 2;
+    const defaultEthValue = maxSubmissionCost + defaultGas * gasPriceBid;
 
     const emptyCallHookData = '0x';
     const defaultData = ethers.utils.defaultAbiCoder.encode(
@@ -240,7 +241,7 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
                 {
                   value: defaultEthValue,
@@ -260,7 +261,7 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
                 {
                   value: defaultEthValue,
@@ -278,8 +279,11 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 depositAmount + 100,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
+                {
+                  value: defaultEthValue,
+                },
             );
         await expect(tx).to.be.revertedWith(
             'ERC20: transfer amount exceeds allowance',
@@ -294,8 +298,11 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 initialTotalL1Supply + 100,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
+                {
+                  value: defaultEthValue,
+                },
             );
         await expect(tx).to.be.revertedWith(
             'ERC20: transfer amount exceeds balance',
@@ -310,10 +317,87 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultDataWithNotEmptyCallHookData,
             );
         await expect(tx).to.be.revertedWith('CALL_HOOK_DATA_NOT_ALLOWED');
+      });
+
+      describe('incorrect msg value', async function() {
+        it('should revert when no maxSubmissionCost is provided', async function() {
+          const tx = l1Gateway
+              .connect(sender)
+              .outboundTransfer(
+                  token.address,
+                  sender.address,
+                  depositAmount,
+                  0,
+                  0,
+                  ethers.utils.defaultAbiCoder.encode(
+                      ['uint256', 'bytes'],
+                      [0, '0x'],
+                  ),
+                  {
+                    value: 0,
+                  },
+              );
+
+          await expect(tx).to.be.revertedWith('NO_SUBMISSION_COST');
+        });
+
+        it('should NOT revert when no maxGas or gasPriceBid is provided', async function() {
+          const tx = l1Gateway
+              .connect(sender)
+              .outboundTransfer(
+                  token.address,
+                  sender.address,
+                  depositAmount,
+                  0,
+                  0,
+                  defaultData,
+                  {
+                    value: maxSubmissionCost,
+                  },
+              );
+
+          await expect(tx).to.not.be.reverted;
+        });
+
+        it('should revert when supplied ETH is less than expected ETH', async function() {
+          const tx = l1Gateway
+              .connect(sender)
+              .outboundTransfer(
+                  token.address,
+                  sender.address,
+                  depositAmount,
+                  defaultGas,
+                  gasPriceBid,
+                  defaultData,
+                  {
+                    value: defaultEthValue - 1,
+                  },
+              );
+
+          await expect(tx).to.be.revertedWith('WRONG_ETH_VALUE');
+        });
+
+        it('should revert when supplied ETH is more than expected ETH', async function() {
+          const tx = l1Gateway
+              .connect(sender)
+              .outboundTransfer(
+                  token.address,
+                  sender.address,
+                  depositAmount,
+                  defaultGas,
+                  gasPriceBid,
+                  defaultData,
+                  {
+                    value: defaultEthValue + 1,
+                  },
+              );
+
+          await expect(tx).to.be.revertedWith('WRONG_ETH_VALUE');
+        });
       });
 
       it('escrows funds and sends message to L2', async () => {
@@ -326,7 +410,7 @@ describe('L1 LPT Gateway', function() {
                 sender.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
                 {
                   value: defaultEthValue,
@@ -373,7 +457,7 @@ describe('L1 LPT Gateway', function() {
             sender.address,
             sender.address,
             defaultGas,
-            0,
+            gasPriceBid,
             expectedL2calldata,
         );
 
@@ -406,7 +490,7 @@ describe('L1 LPT Gateway', function() {
                 receiver.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 defaultData,
                 {
                   value: defaultEthValue,
@@ -454,7 +538,7 @@ describe('L1 LPT Gateway', function() {
             sender.address,
             sender.address,
             defaultGas,
-            0,
+            gasPriceBid,
             expectedL2calldata,
         );
 
@@ -491,8 +575,11 @@ describe('L1 LPT Gateway', function() {
                 receiver.address,
                 depositAmount,
                 defaultGas,
-                0,
+                gasPriceBid,
                 routerEncodedData,
+                {
+                  value: defaultEthValue,
+                },
             );
         const depositCallToMessenger = inboxMock.createRetryableTicket;
 
@@ -532,7 +619,7 @@ describe('L1 LPT Gateway', function() {
             sender.address,
             sender.address,
             defaultGas,
-            0,
+            gasPriceBid,
             expectedL2calldata,
         );
 
