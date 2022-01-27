@@ -322,7 +322,7 @@ describe('L2Migrator', function() {
           );
 
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-              params.delegatedStake,
+              params.delegatedStake - params.stake,
               delegatorPool,
               params.delegate,
               ethers.constants.AddressZero,
@@ -373,7 +373,7 @@ describe('L2Migrator', function() {
 
           const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-              params.delegatedStake - stake,
+              params.delegatedStake - params.stake - stake,
               delegatorPool,
               params.delegate,
               ethers.constants.AddressZero,
@@ -418,7 +418,7 @@ describe('L2Migrator', function() {
 
           const delegatorPool = await l2Migrator.delegatorPools(params2.l1Addr);
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
-              params2.delegatedStake - stake,
+              params2.delegatedStake - params2.stake - stake,
               delegatorPool,
               params2.delegate,
               ethers.constants.AddressZero,

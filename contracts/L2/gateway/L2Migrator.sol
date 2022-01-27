@@ -142,15 +142,19 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
             // l1Addr is an orchestrator on L1:
             // 1. Stake _params.stake on behalf of _params.l2Addr
             // 2. Create delegator pool
-            // 3. Stake _params.delegatedStake on behalf of the delegator pool
+            // 3. Stake non-self delegated stake on behalf of the delegator pool
             bondFor(_params.stake, _params.l2Addr, _params.delegate);
 
             address poolAddr = Clones.clone(delegatorPoolImpl);
 
             delegatorPools[_params.l1Addr] = poolAddr;
 
+            // _params.delegatedStake includes _params.stake which is the orchestrator's self-stake
+            // Subtract _params.stake to get the orchestrator's non-self delegated stake
+            uint256 nonSelfDelegatedStake = _params.delegatedStake -
+                _params.stake;
             bondFor(
-                _params.delegatedStake - claimedDelegatedStake[_params.l1Addr],
+                nonSelfDelegatedStake - claimedDelegatedStake[_params.l1Addr],
                 poolAddr,
                 _params.delegate
             );
