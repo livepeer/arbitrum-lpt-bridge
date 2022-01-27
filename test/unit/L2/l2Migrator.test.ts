@@ -602,6 +602,16 @@ describe('L2Migrator', function() {
       await expect(tx).to.revertedWith(
           'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
       );
+
+      // None of the ids have been migrated previously, but the list contains duplicate ids
+      params.unbondingLockIds = [11, 11, 12];
+      tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateUnbondingLocks(params);
+
+      await expect(tx).to.revertedWith(
+          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
+      );
     });
 
     it('finalizes migration', async () => {
