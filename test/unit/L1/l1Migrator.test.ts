@@ -914,6 +914,24 @@ describe('L1Migrator', function() {
         await l1Migrator.connect(governor).unpause();
       });
 
+      it('fails to send tx to L2 when caller not governor', async () => {
+        const maxGas = 111;
+        const gasPriceBid = 222;
+        const maxSubmissionCost = 333;
+
+        const l1CallValue = 300;
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
+              value: l1CallValue,
+            });
+
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        );
+      });
+
       it('withdraws from BridgeMinter and calls outboundTransfer() on L1LPTGateway', async () => {
         const amount = 200;
         const seqNo = 7;
@@ -927,7 +945,7 @@ describe('L1Migrator', function() {
 
         const l1CallValue = 300;
         const tx = await l1Migrator
-            .connect(l1EOA)
+            .connect(governor)
             .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
               value: l1CallValue,
             });
