@@ -342,7 +342,7 @@ contract L1Migrator is
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable whenNotPaused {
+    ) external payable whenNotPaused onlyRole(GOVERNOR_ROLE) {
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawLPTToL1Migrator();
 
