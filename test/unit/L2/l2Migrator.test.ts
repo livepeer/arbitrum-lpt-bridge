@@ -311,20 +311,25 @@ describe('L2Migrator', function() {
 
           expect(await deployed.migrator()).to.equal(l2Migrator.address);
 
+          // Check for case where the orchestrator's L2 address is different from its delegate address (which is its L1 address)
+          expect(params.delegate).to.not.be.equal(params.l2Addr);
+
+          // Make sure that the orchestrator is staked to it's L2 address and NOT its delegate/L1 address
           expect(bondingManagerMock.bondForWithHint.atCall(0)).to.be.calledWith(
               params.stake,
               params.l2Addr,
-              params.delegate,
+              params.l2Addr,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
           );
 
+          // Make sure that the delegator pool is staked to the orchestrator's L2 address and NOT its delegate/L1 address
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
               params.delegatedStake - params.stake,
               delegatorPool,
-              params.delegate,
+              params.l2Addr,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,
               ethers.constants.AddressZero,

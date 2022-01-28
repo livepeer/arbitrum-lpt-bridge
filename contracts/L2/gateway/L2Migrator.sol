@@ -143,7 +143,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
             // 1. Stake _params.stake on behalf of _params.l2Addr
             // 2. Create delegator pool
             // 3. Stake non-self delegated stake on behalf of the delegator pool
-            bondFor(_params.stake, _params.l2Addr, _params.delegate);
+            bondFor(_params.stake, _params.l2Addr, _params.l2Addr);
 
             address poolAddr = Clones.clone(delegatorPoolImpl);
 
@@ -156,7 +156,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
             bondFor(
                 nonSelfDelegatedStake - claimedDelegatedStake[_params.l1Addr],
                 poolAddr,
-                _params.delegate
+                _params.l2Addr
             );
 
             IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
