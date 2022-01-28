@@ -57,7 +57,26 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
      * The tokens will be received on L1 only after the wait period (7 days) is over
      * @dev no additional callhook data is allowed
      * @param _l1Token L1 Address of LPT
-     * @param _to Recepient address on L1
+     * @param _to Recipient address on L1
+     * @param _amount Amount of tokens to burn
+     * @param _data Contains sender and additional data to send to L1
+     * @return ID of the withdraw tx
+     */
+    function outboundTransfer(
+        address _l1Token,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    ) external override returns (bytes memory) {
+        return outboundTransfer(_l1Token, _to, _amount, 0, 0, _data);
+    }
+
+    /**
+     * @notice Burns L2 tokens and sends a message to L1
+     * The tokens will be received on L1 only after the wait period (7 days) is over
+     * @dev no additional callhook data is allowed
+     * @param _l1Token L1 Address of LPT
+     * @param _to Recipient address on L1
      * @param _amount Amount of tokens to burn
      * @param _data Contains sender and additional data to send to L1
      * @return res ID of the withdraw tx
@@ -66,8 +85,10 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         address _l1Token,
         address _to,
         uint256 _amount,
+        uint256, // maxGas
+        uint256, // gasPriceBid
         bytes calldata _data
-    ) public override whenNotPaused returns (bytes memory res) {
+    ) public whenNotPaused returns (bytes memory res) {
         require(_l1Token == l1Lpt, "TOKEN_NOT_LPT");
 
         (address from, bytes memory extraData) = parseOutboundData(_data);
