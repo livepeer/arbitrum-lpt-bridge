@@ -17,5 +17,6 @@ module.exports = {
     'require-jsdoc': 'off',
     'camelcase': 'off',
     'new-cap': ['error', {capIsNew: false}],
+    'no-unexpected-multiline': 'off'
   },
 };

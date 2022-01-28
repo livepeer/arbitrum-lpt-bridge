@@ -349,7 +349,7 @@ describe('L2 Gateway', function() {
 
       it('should fail to tranfer', async () => {
         await expect(
-            l2Gateway.outboundTransfer(
+            l2Gateway['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 sender.address,
                 withdrawAmount,
@@ -361,7 +361,7 @@ describe('L2 Gateway', function() {
 
     describe('when gateway is not paused', async function() {
       it('should revert when called with a different token', async () => {
-        const tx = l2Gateway.outboundTransfer(
+        const tx = l2Gateway['outboundTransfer(address,address,uint256,bytes)'](
             token.address,
             sender.address,
             withdrawAmount,
@@ -373,7 +373,7 @@ describe('L2 Gateway', function() {
       it('should revert when allowance is insufficient', async () => {
         const tx = l2Gateway
             .connect(sender)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 sender.address,
                 initialTotalL2Supply,
@@ -391,7 +391,7 @@ describe('L2 Gateway', function() {
 
         const tx = l2Gateway
             .connect(sender)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 sender.address,
                 initialTotalL2Supply + 100,
@@ -403,7 +403,7 @@ describe('L2 Gateway', function() {
       });
 
       it('should revert when called with callHookData', async () => {
-        const tx = l2Gateway.outboundTransfer(
+        const tx = l2Gateway['outboundTransfer(address,address,uint256,bytes)'](
             mockL1LptEOA.address,
             sender.address,
             withdrawAmount,
@@ -416,7 +416,7 @@ describe('L2 Gateway', function() {
         // remove burn permissions
         await token.revokeRole(BURNER_ROLE, l2Gateway.address);
 
-        const tx = l2Gateway.outboundTransfer(
+        const tx = l2Gateway['outboundTransfer(address,address,uint256,bytes)'](
             mockL1LptEOA.address,
             sender.address,
             withdrawAmount,
@@ -433,7 +433,7 @@ describe('L2 Gateway', function() {
         await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         const tx = await l2Gateway
             .connect(sender)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 sender.address,
                 withdrawAmount,
@@ -479,7 +479,7 @@ describe('L2 Gateway', function() {
         await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         const tx = await l2Gateway
             .connect(sender)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 receiver.address,
                 withdrawAmount,
@@ -530,12 +530,15 @@ describe('L2 Gateway', function() {
         );
 
         await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
+        // Router calls outboundTransfer() with two additional uint256 params that are unused and set to 0
         const tx = await l2Gateway
             .connect(mockL2RouterEOA)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,uint256,uint256,bytes)'](
                 mockL1LptEOA.address,
                 receiver.address,
                 withdrawAmount,
+                0,
+                0,
                 routerEncodedData,
             );
 
@@ -579,7 +582,7 @@ describe('L2 Gateway', function() {
         await token.connect(sender).approve(l2Gateway.address, withdrawAmount);
         await l2Gateway
             .connect(sender)
-            .outboundTransfer(
+            ['outboundTransfer(address,address,uint256,bytes)'](
                 mockL1LptEOA.address,
                 sender.address,
                 withdrawAmount,
