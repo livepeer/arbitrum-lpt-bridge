@@ -126,7 +126,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      * @notice Called by L1Migrator to complete transcoder/delegator state migration
      * @param _params L1 state relevant for migration
      */
-    function finalizeMigrateDelegator(MigrateDelegatorParams memory _params)
+    function finalizeMigrateDelegator(MigrateDelegatorParams calldata _params)
         external
         onlyL1Counterpart(l1Migrator)
     {
@@ -195,7 +195,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      * @param _params L1 state relevant for migration
      */
     function finalizeMigrateUnbondingLocks(
-        MigrateUnbondingLocksParams memory _params
+        MigrateUnbondingLocksParams calldata _params
     ) external onlyL1Counterpart(l1Migrator) {
         uint256 unbondingLockIdsLen = _params.unbondingLockIds.length;
         for (uint256 i = 0; i < unbondingLockIdsLen; i++) {
@@ -216,7 +216,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      * @notice Called by L1Migrator to complete sender deposit/reserve migration
      * @param _params L1 state relevant for migration
      */
-    function finalizeMigrateSender(MigrateSenderParams memory _params)
+    function finalizeMigrateSender(MigrateSenderParams calldata _params)
         external
         onlyL1Counterpart(l1Migrator)
     {
