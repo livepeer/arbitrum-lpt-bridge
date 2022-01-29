@@ -509,7 +509,7 @@ contract L1Migrator is
         address _l2Addr,
         bytes32 _structHash,
         bytes memory _sig
-    ) internal view {
+    ) private view {
         require(
             _l2Addr != address(0),
             "L1Migrator#requireValidMigration: INVALID_L2_ADDR"
@@ -522,7 +522,7 @@ contract L1Migrator is
     }
 
     function recoverSigner(bytes32 _structHash, bytes memory _sig)
-        internal
+        private
         view
         returns (address)
     {

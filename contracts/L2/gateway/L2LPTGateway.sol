@@ -144,7 +144,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
      * @return extraData Any other data sent to L1
      */
     function parseOutboundData(bytes memory data)
-        internal
+        private
         view
         returns (address from, bytes memory extraData)
     {
