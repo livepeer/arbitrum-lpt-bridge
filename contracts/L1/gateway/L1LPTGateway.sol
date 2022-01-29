@@ -233,7 +233,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         uint256 amount,
         bytes memory data
     ) public pure returns (bytes memory outboundCalldata) {
-        bytes memory emptyBytes = "";
+        bytes memory emptyBytes;
 
         outboundCalldata = abi.encodeWithSelector(
             IL2LPTGateway.finalizeInboundTransfer.selector,
