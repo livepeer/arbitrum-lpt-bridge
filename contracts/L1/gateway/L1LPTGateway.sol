@@ -176,7 +176,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
      * @return extraData any other data sent to L2
      */
     function parseOutboundData(bytes memory data)
-        internal
+        private
         view
         returns (
             address from,

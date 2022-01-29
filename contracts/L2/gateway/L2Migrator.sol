@@ -307,7 +307,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         uint256 _amount,
         address _owner,
         address _to
-    ) internal {
+    ) private {
         IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
 
         bondingManager.bondForWithHint(
