@@ -92,9 +92,15 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
     function l1CirculatingSupply() public view returns (uint256) {
         // After the first update from L1, l1TotalSupply should always be >= l2SupplyFromL1
         // The below check is defensive to avoid reverting if this invariant for some reason violated
-        return
-            l1TotalSupply >= l2SupplyFromL1
-                ? l1TotalSupply - l2SupplyFromL1
-                : 0;
+        uint256 ml1TotalSupply = l1TotalSupply;
+        uint256 ml2SupplyFromL1 = l2SupplyFromL1;
+        if (ml1TotalSupply > ml2SupplyFromL1) {
+            // Underflow not possible due to prceeding check
+            unchecked {
+                return ml1TotalSupply - ml2SupplyFromL1;
+            }
+        } else {
+            return 0;
+        }
     }
 }
