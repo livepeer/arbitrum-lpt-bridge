@@ -160,7 +160,7 @@ contract L1Migrator is
     function migrateDelegator(
         address _l1Addr,
         address _l2Addr,
-        bytes memory _sig,
+        bytes calldata _sig,
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
@@ -210,7 +210,7 @@ contract L1Migrator is
         address _l1Addr,
         address _l2Addr,
         uint256[] calldata _unbondingLockIds,
-        bytes memory _sig,
+        bytes calldata _sig,
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
@@ -263,7 +263,7 @@ contract L1Migrator is
     function migrateSender(
         address _l1Addr,
         address _l2Addr,
-        bytes memory _sig,
+        bytes calldata _sig,
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
