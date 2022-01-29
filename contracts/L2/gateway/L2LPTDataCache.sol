@@ -59,10 +59,14 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
         // In this case, we just set l2SupplyFromL1 = 0 because there will be no more supply on L2
         // that is from L1 and the excess (_amount - l2SupplyFromL1) is inflationary LPT that was
         // never from L1 in the first place.
-        if (_amount > l2SupplyFromL1) {
+        uint256 ml2SupplyFromL1 = l2SupplyFromL1;
+        if (_amount >= ml2SupplyFromL1) {
             l2SupplyFromL1 = 0;
         } else {
-            l2SupplyFromL1 -= _amount;
+            // Underflow not possible due to preceeding check
+            unchecked {
+                l2SupplyFromL1 = ml2SupplyFromL1 - _amount;
+            }
         }
 
         // No event because the L2LPTGateway events are sufficient
