@@ -645,7 +645,19 @@ describe('L2Migrator', function() {
       await expect(tx).to.revertedWith('ONLY_COUNTERPART_GATEWAY');
     });
 
+    it('reverts when L2Migrator balance is insufficient', async () => {
+      const tx = l2Migrator
+          .connect(mockL1MigratorL2AliasEOA)
+          .finalizeMigrateSender(mockMigrateSenderParams());
+      await expect(tx).to.reverted;
+    });
+
     it('reverts when l1Addr already migrated', async () => {
+      await mockL1MigratorEOA.sendTransaction({
+        to: l2Migrator.address,
+        value: ethers.utils.parseUnits('1', 'ether'),
+      });
+
       await l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateSender(mockMigrateSenderParams());
@@ -659,6 +671,11 @@ describe('L2Migrator', function() {
     });
 
     it('finalizes migration', async () => {
+      await mockL1MigratorEOA.sendTransaction({
+        to: l2Migrator.address,
+        value: ethers.utils.parseUnits('1', 'ether'),
+      });
+
       const params = {
         ...mockMigrateSenderParams(),
         l1Addr: l1AddrEOA.address,
@@ -675,6 +692,15 @@ describe('L2Migrator', function() {
           params.l2Addr,
           params.deposit,
           params.reserve,
+      );
+
+      await expect(tx).to.changeEtherBalance(
+          mockTicketBrokerEOA,
+          params.deposit + params.reserve,
+      );
+      await expect(tx).to.changeEtherBalance(
+          l2Migrator,
+          -(params.deposit + params.reserve),
       );
 
       await expect(tx).to.emit(l2Migrator, 'MigrateSenderFinalized');
