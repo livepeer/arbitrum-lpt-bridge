@@ -24,7 +24,7 @@ interface ITicketBroker {
         address _addr,
         uint256 _depositAmount,
         uint256 _reserveAmount
-    ) external;
+    ) external payable;
 }
 
 interface IMerkleSnapshot {
@@ -226,11 +226,10 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
 
         migratedSenders[_params.l1Addr] = true;
 
-        ITicketBroker(ticketBrokerAddr).fundDepositAndReserveFor(
-            _params.l2Addr,
-            _params.deposit,
-            _params.reserve
-        );
+        // msg.value for this call must be equal to deposit + reserve amounts
+        ITicketBroker(ticketBrokerAddr).fundDepositAndReserveFor{
+            value: _params.deposit + _params.reserve
+        }(_params.l2Addr, _params.deposit, _params.reserve);
 
         emit MigrateSenderFinalized(_params);
     }
