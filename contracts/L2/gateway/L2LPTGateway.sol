@@ -90,7 +90,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         uint256, // maxGas
         uint256, // gasPriceBid
         bytes calldata _data
-    ) public whenNotPaused returns (bytes memory res) {
+    ) public whenNotPaused returns (bytes memory) {
         require(_l1Token == l1Lpt, "TOKEN_NOT_LPT");
 
         (address from, bytes memory extraData) = parseOutboundData(_data);
