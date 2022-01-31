@@ -74,15 +74,14 @@ contract DelegatorPool is Initializable {
         // are owed to the delegator proportional to _stake / (initialStake - claimedInitialStake)
         // where claimedInitialStake is the stake of the contract that has already been claimed
 
+        // stake remaining with the pool
+        uint256 diff = initialStake - claimedInitialStake;
+
         // Calculate stake owed to delegator
-        uint256 currTotalStake = pendingStake();
-        uint256 owedStake = (currTotalStake * _stake) /
-            (initialStake - claimedInitialStake);
+        uint256 owedStake = (pendingStake() * _stake) / diff;
 
         // Calculate fees owed to delegator
-        uint256 currTotalFees = pendingFees();
-        uint256 owedFees = (currTotalFees * _stake) /
-            (initialStake - claimedInitialStake);
+        uint256 owedFees = (pendingFees() * _stake) / diff;
 
         // update claimed balance
         claimedInitialStake += _stake;
