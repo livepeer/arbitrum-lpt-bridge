@@ -63,10 +63,10 @@ contract DelegatorPool is Initializable {
      * @param _stake Stake of delegator
      */
     function claim(address _delegator, uint256 _stake) external onlyMigrator {
-        require(
-            claimedInitialStake + _stake <= initialStake,
-            "DelegatorPool#claim: INVALID_CLAIM"
-        );
+        // stake remaining with the pool
+        uint256 remaining = initialStake - claimedInitialStake;
+
+        require(_stake <= remaining, "DelegatorPool#claim: INVALID_CLAIM");
 
         // _stake is the delegator's original stake
         // This contract started off with initalStake
@@ -74,14 +74,11 @@ contract DelegatorPool is Initializable {
         // are owed to the delegator proportional to _stake / (initialStake - claimedInitialStake)
         // where claimedInitialStake is the stake of the contract that has already been claimed
 
-        // stake remaining with the pool
-        uint256 diff = initialStake - claimedInitialStake;
-
         // Calculate stake owed to delegator
-        uint256 owedStake = (pendingStake() * _stake) / diff;
+        uint256 owedStake = (pendingStake() * _stake) / remaining;
 
         // Calculate fees owed to delegator
-        uint256 owedFees = (pendingFees() * _stake) / diff;
+        uint256 owedFees = (pendingFees() * _stake) / remaining;
 
         // update claimed balance
         claimedInitialStake += _stake;
