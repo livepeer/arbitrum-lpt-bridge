@@ -14,7 +14,7 @@ contract ControlledGateway is AccessControl, Pausable {
     address public immutable l2Lpt;
 
     constructor(address _l1Lpt, address _l2Lpt) {
-        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         l1Lpt = _l1Lpt;
         l2Lpt = _l2Lpt;
