@@ -267,9 +267,15 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
             "L2Migrator#claimStake: CLAIM_STAKE_DISABLED"
         );
 
+        address delegator = msg.sender;
+
+        require(
+            !migratedDelegators[delegator],
+            "L2Migrator#claimStake: ALREADY_MIGRATED"
+        );
+
         IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
 
-        address delegator = msg.sender;
         bytes32 leaf = keccak256(
             abi.encodePacked(delegator, _delegate, _stake, _fees)
         );
@@ -277,11 +283,6 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         require(
             merkleSnapshot.verify(keccak256("LIP-73"), _proof, leaf),
             "L2Migrator#claimStake: INVALID_PROOF"
-        );
-
-        require(
-            !migratedDelegators[delegator],
-            "L2Migrator#claimStake: ALREADY_MIGRATED"
         );
 
         migratedDelegators[delegator] = true;
