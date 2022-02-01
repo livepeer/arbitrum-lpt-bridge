@@ -56,13 +56,19 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
     mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
     mapping(address => bool) public migratedSenders;
 
+    event L1MigratorUpdate(address _l1Migrator);
+
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
     event MigrateUnbondingLocksFinalized(MigrateUnbondingLocksParams params);
 
     event MigrateSenderFinalized(MigrateSenderParams params);
 
+    event DelegatorPoolImplUpdate(address _delegatorPoolImpl);
+
     event DelegatorPoolCreated(address indexed l1Addr, address delegatorPool);
+
+    event ClaimStakeEnabled(bool _enabled);
 
     event StakeClaimed(
         address indexed delegator,
@@ -96,6 +102,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         l1Migrator = _l1Migrator;
+        emit L1MigratorUpdate(_l1Migrator);
     }
 
     /**
@@ -107,6 +114,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         delegatorPoolImpl = _delegatorPoolImpl;
+        emit DelegatorPoolImplUpdate(_delegatorPoolImpl);
     }
 
     /**
@@ -118,6 +126,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         claimStakeEnabled = _enabled;
+        emit ClaimStakeEnabled(_enabled);
     }
 
     /**

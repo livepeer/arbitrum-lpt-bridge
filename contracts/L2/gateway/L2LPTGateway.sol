@@ -30,6 +30,8 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
 
     address public l1Counterpart;
 
+    event L1CounterpartUpdate(address _l1Counterpart);
+
     constructor(
         address _l2Router,
         address _l1Lpt,
@@ -52,6 +54,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         l1Counterpart = _l1Counterpart;
+        emit L1CounterpartUpdate(_l1Counterpart);
     }
 
     /**

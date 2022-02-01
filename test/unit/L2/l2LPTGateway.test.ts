@@ -152,7 +152,10 @@ describe('L2 Gateway', function() {
 
     describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l2Gateway.connect(admin).setCounterpart(newAddress);
+        const tx = await l2Gateway.connect(admin).setCounterpart(newAddress);
+        await expect(tx)
+            .to.emit(l2Gateway, 'L1CounterpartUpdate')
+            .withArgs(newAddress);
         const counterpart = await l2Gateway.counterpartGateway();
         expect(counterpart).to.equal(newAddress);
       });
