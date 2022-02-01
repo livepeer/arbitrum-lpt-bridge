@@ -6,8 +6,8 @@ import {ERC20, ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 contract LivepeerToken is AccessControl, ERC20Burnable, ERC20Permit {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 private immutable MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 private immutable BURNER_ROLE = keccak256("BURNER_ROLE");
 
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed burner, uint256 amount);
