@@ -56,8 +56,6 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
     mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
     mapping(address => bool) public migratedSenders;
 
-    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
-
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
     event MigrateUnbondingLocksFinalized(MigrateUnbondingLocksParams params);
@@ -117,7 +115,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      */
     function setClaimStakeEnabled(bool _enabled)
         external
-        onlyRole(GOVERNOR_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         claimStakeEnabled = _enabled;
     }

@@ -108,8 +108,6 @@ contract L1Migrator is
         MigrateSenderParams params
     );
 
-    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
-
     bytes32 private constant MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
 
@@ -342,7 +340,7 @@ contract L1Migrator is
         uint256 _maxGas,
         uint256 _gasPriceBid,
         uint256 _maxSubmissionCost
-    ) external payable whenNotPaused onlyRole(GOVERNOR_ROLE) {
+    ) external payable whenNotPaused onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 amount = IBridgeMinter(bridgeMinterAddr)
             .withdrawLPTToL1Migrator();
 
@@ -364,7 +362,7 @@ contract L1Migrator is
      * @notice Pause the contract
      * @dev Only callable by addresses with governor role
      */
-    function pause() external onlyRole(GOVERNOR_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
@@ -372,7 +370,7 @@ contract L1Migrator is
      * @notice Unpause the contract
      * @dev Only callable by addresses with governor role
      */
-    function unpause() external onlyRole(GOVERNOR_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
