@@ -17,6 +17,10 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
 
     event CacheTotalSupplyFinalized(uint256 totalSupply);
 
+    event L1LPTDataCacheUpdate(address _l1LPTDataCache);
+
+    event L2LPTGatewayUpdate(address _l2LPTGateway);
+
     modifier onlyL2LPTGateway() {
         require(msg.sender == l2LPTGateway, "NOT_L2_LPT_GATEWAY");
         _;
@@ -28,6 +32,7 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
      */
     function setL1LPTDataCache(address _l1LPTDataCache) external onlyOwner {
         l1LPTDataCache = _l1LPTDataCache;
+        emit L1LPTDataCacheUpdate(_l1LPTDataCache);
     }
 
     /**
@@ -36,6 +41,7 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
      */
     function setL2LPTGateway(address _l2LPTGateway) external onlyOwner {
         l2LPTGateway = _l2LPTGateway;
+        emit L2LPTGatewayUpdate(_l2LPTGateway);
     }
 
     /**

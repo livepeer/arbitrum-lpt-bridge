@@ -32,6 +32,10 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
     address public l2Counterpart;
     address public minter;
 
+    event L2CounterpartUpdate(address _l2Counterpart);
+
+    event MinterUpdate(address _minter);
+
     constructor(
         address _l1Router,
         address _l1LPTEscrow,
@@ -55,6 +59,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         l2Counterpart = _l2Counterpart;
+        emit L2CounterpartUpdate(_l2Counterpart);
     }
 
     /**
@@ -64,6 +69,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
      */
     function setMinter(address _minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         minter = _minter;
+        emit MinterUpdate(_minter);
     }
 
     /**

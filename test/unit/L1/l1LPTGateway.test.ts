@@ -171,7 +171,10 @@ describe('L1 LPT Gateway', function() {
 
     describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l1Gateway.connect(admin).setCounterpart(newAddress);
+        const tx = await l1Gateway.connect(admin).setCounterpart(newAddress);
+        await expect(tx)
+            .to.emit(l1Gateway, 'L2CounterpartUpdate')
+            .withArgs(newAddress);
         const counterpart = await l1Gateway.counterpartGateway();
         expect(counterpart).to.equal(newAddress);
       });
@@ -195,7 +198,10 @@ describe('L1 LPT Gateway', function() {
 
     describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l1Gateway.connect(admin).setMinter(newAddress);
+        const tx = await l1Gateway.connect(admin).setMinter(newAddress);
+        await expect(tx)
+            .to.emit(l1Gateway, 'MinterUpdate')
+            .withArgs(newAddress);
         const minter = await l1Gateway.minter();
         expect(minter).to.equal(newAddress);
       });

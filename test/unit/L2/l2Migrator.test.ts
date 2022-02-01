@@ -182,7 +182,12 @@ describe('L2Migrator', function() {
 
     describe('caller is admin', () => {
       it('sets l1Migrator', async () => {
-        await l2Migrator.connect(admin).setL1Migrator(notL1MigratorEOA.address);
+        const tx = await l2Migrator
+            .connect(admin)
+            .setL1Migrator(notL1MigratorEOA.address);
+        await expect(tx)
+            .to.emit(l2Migrator, 'L1MigratorUpdate')
+            .withArgs(notL1MigratorEOA.address);
         const l1MigratorAddr = await l2Migrator.l1Migrator();
         expect(l1MigratorAddr).to.equal(notL1MigratorEOA.address);
       });
@@ -204,9 +209,12 @@ describe('L2Migrator', function() {
 
     describe('caller is admin', () => {
       it('sets delegatorPoolImpl', async () => {
-        await l2Migrator
+        const tx = await l2Migrator
             .connect(admin)
             .setDelegatorPoolImpl(notL1MigratorEOA.address);
+        await expect(tx)
+            .to.emit(l2Migrator, 'DelegatorPoolImplUpdate')
+            .withArgs(notL1MigratorEOA.address);
         const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
         expect(delegatorPoolImpl).to.equal(notL1MigratorEOA.address);
       });
@@ -226,9 +234,15 @@ describe('L2Migrator', function() {
 
     describe('caller is admin', () => {
       it('sets claimStakeEnabled', async () => {
-        await l2Migrator.connect(admin).setClaimStakeEnabled(true);
+        const tx1 = await l2Migrator.connect(admin).setClaimStakeEnabled(true);
+        await expect(tx1)
+            .to.emit(l2Migrator, 'ClaimStakeEnabled')
+            .withArgs(true);
         expect(await l2Migrator.claimStakeEnabled()).to.be.true;
-        await l2Migrator.connect(admin).setClaimStakeEnabled(false);
+        const tx2 = await l2Migrator.connect(admin).setClaimStakeEnabled(false);
+        await expect(tx2)
+            .to.emit(l2Migrator, 'ClaimStakeEnabled')
+            .withArgs(false);
         expect(await l2Migrator.claimStakeEnabled()).to.be.false;
       });
     });

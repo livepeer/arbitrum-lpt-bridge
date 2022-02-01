@@ -54,7 +54,12 @@ describe('L2LPTDataCache', () => {
     });
 
     it('sets L1LPTDataCache', async () => {
-      await l2LPTDataCache.setL1LPTDataCache(ethers.constants.AddressZero);
+      const tx = await l2LPTDataCache.setL1LPTDataCache(
+          ethers.constants.AddressZero,
+      );
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L1LPTDataCacheUpdate')
+          .withArgs(ethers.constants.AddressZero);
       expect(await l2LPTDataCache.l1LPTDataCache()).to.be.equal(
           ethers.constants.AddressZero,
       );
@@ -71,7 +76,12 @@ describe('L2LPTDataCache', () => {
     });
 
     it('sets L2LPTGateway', async () => {
-      await l2LPTDataCache.setL2LPTGateway(ethers.constants.AddressZero);
+      const tx = await l2LPTDataCache.setL2LPTGateway(
+          ethers.constants.AddressZero,
+      );
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L2LPTGatewayUpdate')
+          .withArgs(ethers.constants.AddressZero);
       expect(await l2LPTDataCache.l2LPTGateway()).to.be.equal(
           ethers.constants.AddressZero,
       );
