@@ -219,7 +219,7 @@ describe('L2 Gateway', function() {
           await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
         });
 
-        it('should revert when DAI minting access was revoked', async () => {
+        it('should revert when LPT minting access was revoked', async () => {
           const MINTER_ROLE = ethers.utils.solidityKeccak256(
               ['string'],
               ['MINTER_ROLE'],
@@ -376,6 +376,16 @@ describe('L2 Gateway', function() {
             defaultData,
         );
         await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
+      });
+
+      it('should revert when amount zero', async () => {
+        const tx = l2Gateway['outboundTransfer(address,address,uint256,bytes)'](
+            mockL1LptEOA.address,
+            sender.address,
+            0,
+            defaultData,
+        );
+        await expect(tx).to.be.revertedWith('INVALID_ZERO_AMOUNT');
       });
 
       it('should revert when allowance is insufficient', async () => {

@@ -274,6 +274,23 @@ describe('L1 LPT Gateway', function() {
         await expect(tx).to.be.revertedWith('TOKEN_NOT_LPT');
       });
 
+      it('should revert when amount is zero', async () => {
+        const tx = l1Gateway
+            .connect(sender)
+            .outboundTransfer(
+                token.address,
+                sender.address,
+                0,
+                defaultGas,
+                gasPriceBid,
+                defaultData,
+                {
+                  value: defaultEthValue,
+                },
+            );
+        await expect(tx).to.be.revertedWith('INVALID_ZERO_AMOUNT');
+      });
+
       it('should revert when approval is too low', async () => {
         const tx = l1Gateway
             .connect(sender)
