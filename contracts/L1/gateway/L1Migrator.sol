@@ -108,15 +108,15 @@ contract L1Migrator is
         MigrateSenderParams params
     );
 
-    bytes32 private constant MIGRATE_DELEGATOR_TYPE_HASH =
+    bytes32 private immutable MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
 
-    bytes32 private constant MIGRATE_UNBONDING_LOCKS_TYPE_HASH =
+    bytes32 private immutable MIGRATE_UNBONDING_LOCKS_TYPE_HASH =
         keccak256(
             "MigrateUnbondingLocks(address l1Addr,address l2Addr,uint256[] unbondingLockIds)"
         );
 
-    bytes32 private constant MIGRATE_SENDER_TYPE_HASH =
+    bytes32 private immutable MIGRATE_SENDER_TYPE_HASH =
         keccak256("MigrateSender(address l1Addr,address l2Addr)");
 
     constructor(
