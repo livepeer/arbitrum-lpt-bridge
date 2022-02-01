@@ -16,7 +16,7 @@ describe('L1Migrator', function() {
 
   let l1EOA: SignerWithAddress;
   let notL1EOA: SignerWithAddress;
-  let governor: SignerWithAddress;
+  let admin: SignerWithAddress;
   let owner: SignerWithAddress;
 
   // mocks
@@ -40,11 +40,6 @@ describe('L1Migrator', function() {
 
   const ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
-
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
 
   class L1MigratorSigner {
     signer: SignerWithAddress;
@@ -122,7 +117,7 @@ describe('L1Migrator', function() {
   beforeEach(async function() {
     [
       owner,
-      governor,
+      admin,
       l1EOA,
       notL1EOA,
       mockInboxEOA,
@@ -150,7 +145,7 @@ describe('L1Migrator', function() {
     );
     await l1Migrator.deployed();
 
-    await l1Migrator.grantRole(GOVERNOR_ROLE, governor.address);
+    await l1Migrator.grantRole(ADMIN_ROLE, admin.address);
 
     inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
@@ -217,12 +212,12 @@ describe('L1Migrator', function() {
   });
 
   describe('AccessControl', async function() {
-    describe('add governor', async function() {
+    describe('add admin', async function() {
       describe('caller is not admin', async function() {
-        it('should not be able to set governor', async function() {
+        it('should not be able to set admin', async function() {
           const tx = l1Migrator
               .connect(l1EOA)
-              .grantRole(GOVERNOR_ROLE, governor.address);
+              .grantRole(ADMIN_ROLE, admin.address);
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
@@ -232,14 +227,12 @@ describe('L1Migrator', function() {
       });
 
       describe('caller is admin', async function() {
-        it('should set governor', async function() {
-          await l1Migrator
-              .connect(owner)
-              .grantRole(GOVERNOR_ROLE, governor.address);
+        it('should set admin', async function() {
+          await l1Migrator.connect(owner).grantRole(ADMIN_ROLE, admin.address);
 
           const hasControllerRole = await l1Migrator.hasRole(
-              GOVERNOR_ROLE,
-              governor.address,
+              ADMIN_ROLE,
+              admin.address,
           );
           expect(hasControllerRole).to.be.true;
         });
@@ -247,20 +240,20 @@ describe('L1Migrator', function() {
     });
 
     describe('unpause', async function() {
-      describe('caller is not governor', async function() {
+      describe('caller is not admin', async function() {
         it('should not be able to unpause system', async function() {
-          const tx = l1Migrator.unpause();
+          const tx = l1Migrator.connect(l1EOA).unpause();
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+            `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
           );
         });
       });
 
-      describe('caller is governor', async function() {
+      describe('caller is admin', async function() {
         it('should unpause system', async function() {
-          await l1Migrator.connect(governor).unpause();
+          await l1Migrator.connect(admin).unpause();
 
           const isPaused = await l1Migrator.paused();
           expect(isPaused).to.be.false;
@@ -270,23 +263,23 @@ describe('L1Migrator', function() {
 
     describe('pause', async function() {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
-      describe('caller is not governor', async function() {
+      describe('caller is not admin', async function() {
         it('should not be able to pause system', async function() {
-          const tx = l1Migrator.connect(owner).pause();
+          const tx = l1Migrator.connect(l1EOA).pause();
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+            `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
           );
         });
       });
 
-      describe('caller is governor', async function() {
+      describe('caller is admin', async function() {
         it('should pause system', async function() {
-          await l1Migrator.connect(governor).pause();
+          await l1Migrator.connect(admin).pause();
 
           const isPaused = await l1Migrator.paused();
           expect(isPaused).to.be.true;
@@ -317,7 +310,7 @@ describe('L1Migrator', function() {
 
     describe('migrator is unpaused', () => {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
       it('reverts for null l2Addr', async () => {
@@ -487,7 +480,7 @@ describe('L1Migrator', function() {
 
     describe('migrator is unpaused', () => {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
       it('reverts for failed auth', async () => {
@@ -664,7 +657,7 @@ describe('L1Migrator', function() {
 
     describe('migrator is unpaused', () => {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
       it('reverts for null l2Addr', async () => {
@@ -840,7 +833,7 @@ describe('L1Migrator', function() {
 
     describe('migrator is unpaused', () => {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
       it('withdraws from BridgeMinter and sends tx to L2', async () => {
@@ -911,10 +904,10 @@ describe('L1Migrator', function() {
 
     describe('migrator is unpaused', () => {
       beforeEach(async function() {
-        await l1Migrator.connect(governor).unpause();
+        await l1Migrator.connect(admin).unpause();
       });
 
-      it('fails to send tx to L2 when caller not governor', async () => {
+      it('fails to send tx to L2 when caller not admin', async () => {
         const maxGas = 111;
         const gasPriceBid = 222;
         const maxSubmissionCost = 333;
@@ -928,7 +921,7 @@ describe('L1Migrator', function() {
 
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
         );
       });
 
@@ -945,7 +938,7 @@ describe('L1Migrator', function() {
 
         const l1CallValue = 300;
         const tx = await l1Migrator
-            .connect(governor)
+            .connect(admin)
             .migrateLPT(maxGas, gasPriceBid, maxSubmissionCost, {
               value: l1CallValue,
             });

@@ -21,7 +21,7 @@ describe('L2Migrator', function() {
   let l1AddrEOA: SignerWithAddress;
   let l2AddrEOA: SignerWithAddress;
   let owner: SignerWithAddress;
-  let governor: SignerWithAddress;
+  let admin: SignerWithAddress;
 
   // mocks
   let bondingManagerMock: FakeContract;
@@ -35,11 +35,6 @@ describe('L2Migrator', function() {
 
   const ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
-
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
 
   const mockMigrateDelegatorParams = () => ({
     l1Addr: ethers.constants.AddressZero,
@@ -68,7 +63,7 @@ describe('L2Migrator', function() {
   beforeEach(async function() {
     [
       owner,
-      governor,
+      admin,
       notL1MigratorEOA,
       l1AddrEOA,
       l2AddrEOA,
@@ -94,8 +89,8 @@ describe('L2Migrator', function() {
     );
     await l2Migrator.deployed();
 
-    await l2Migrator.connect(owner).grantRole(GOVERNOR_ROLE, governor.address);
-    await l2Migrator.connect(governor).setClaimStakeEnabled(true);
+    await l2Migrator.connect(owner).grantRole(ADMIN_ROLE, admin.address);
+    await l2Migrator.connect(admin).setClaimStakeEnabled(true);
 
     const bondingManagerAbi = [
       'function bondForWithHint(uint256,address,address,address,address,address,address)',
@@ -144,12 +139,12 @@ describe('L2Migrator', function() {
   });
 
   describe('AccessControl', async function() {
-    describe('add governor', async function() {
+    describe('add admin', async function() {
       describe('caller is not admin', async function() {
-        it('should not be able to set governor', async function() {
+        it('should not be able to set admin', async function() {
           const tx = l2Migrator
               .connect(l1AddrEOA)
-              .grantRole(GOVERNOR_ROLE, governor.address);
+              .grantRole(ADMIN_ROLE, admin.address);
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
@@ -159,14 +154,12 @@ describe('L2Migrator', function() {
       });
 
       describe('caller is admin', async function() {
-        it('should set governor', async function() {
-          await l2Migrator
-              .connect(owner)
-              .grantRole(GOVERNOR_ROLE, governor.address);
+        it('should set admin', async function() {
+          await l2Migrator.connect(owner).grantRole(ADMIN_ROLE, admin.address);
 
           const hasControllerRole = await l2Migrator.hasRole(
-              GOVERNOR_ROLE,
-              governor.address,
+              ADMIN_ROLE,
+              admin.address,
           );
           expect(hasControllerRole).to.be.true;
         });
@@ -175,21 +168,21 @@ describe('L2Migrator', function() {
   });
 
   describe('setL1Migrator', () => {
-    describe('caller is not owner', () => {
+    describe('caller is not admin', () => {
       it('fails to set l1Migrator', async () => {
         const tx = l2Migrator
-            .connect(governor)
+            .connect(l1AddrEOA)
             .setL1Migrator(notL1MigratorEOA.address);
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${governor.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is owner', () => {
+    describe('caller is admin', () => {
       it('sets l1Migrator', async () => {
-        await l2Migrator.setL1Migrator(notL1MigratorEOA.address);
+        await l2Migrator.connect(admin).setL1Migrator(notL1MigratorEOA.address);
         const l1MigratorAddr = await l2Migrator.l1Migrator();
         expect(l1MigratorAddr).to.equal(notL1MigratorEOA.address);
       });
@@ -197,21 +190,23 @@ describe('L2Migrator', function() {
   });
 
   describe('setDelegatorPoolImpl', () => {
-    describe('caller is not owner', () => {
+    describe('caller is not admin', () => {
       it('fails to set delegatorPoolImpl', async () => {
         const tx = l2Migrator
-            .connect(governor)
+            .connect(l1AddrEOA)
             .setDelegatorPoolImpl(notL1MigratorEOA.address);
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${governor.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is owner', () => {
+    describe('caller is admin', () => {
       it('sets delegatorPoolImpl', async () => {
-        await l2Migrator.setDelegatorPoolImpl(notL1MigratorEOA.address);
+        await l2Migrator
+            .connect(admin)
+            .setDelegatorPoolImpl(notL1MigratorEOA.address);
         const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
         expect(delegatorPoolImpl).to.equal(notL1MigratorEOA.address);
       });
@@ -219,21 +214,21 @@ describe('L2Migrator', function() {
   });
 
   describe('setClaimStakeEnabled', () => {
-    describe('caller is not governor', () => {
+    describe('caller is not admin', () => {
       it('fails to set claimStakeEnabled', async () => {
-        const tx = l2Migrator.connect(owner).setClaimStakeEnabled(true);
+        const tx = l2Migrator.connect(l1AddrEOA).setClaimStakeEnabled(true);
         await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is governor', () => {
+    describe('caller is admin', () => {
       it('sets claimStakeEnabled', async () => {
-        await l2Migrator.connect(governor).setClaimStakeEnabled(true);
+        await l2Migrator.connect(admin).setClaimStakeEnabled(true);
         expect(await l2Migrator.claimStakeEnabled()).to.be.true;
-        await l2Migrator.connect(governor).setClaimStakeEnabled(false);
+        await l2Migrator.connect(admin).setClaimStakeEnabled(false);
         expect(await l2Migrator.claimStakeEnabled()).to.be.false;
       });
     });
@@ -749,7 +744,7 @@ describe('L2Migrator', function() {
 
   describe('claimStake', () => {
     it('reverts if !claimStakeEnabled', async () => {
-      await l2Migrator.connect(governor).setClaimStakeEnabled(false);
+      await l2Migrator.connect(admin).setClaimStakeEnabled(false);
 
       const tx = l2Migrator
           .connect(l1AddrEOA)
