@@ -94,6 +94,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
         bytes calldata _data
     ) external payable override whenNotPaused returns (bytes memory) {
         require(_l1Token == l1Lpt, "TOKEN_NOT_LPT");
+        require(_amount > 0, "INVALID_ZERO_AMOUNT");
 
         // nested scope to avoid stack too deep errors
         address from;
