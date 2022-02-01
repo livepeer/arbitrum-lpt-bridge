@@ -139,7 +139,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
     {
         require(
             !migratedDelegators[_params.l1Addr],
-            "L2Migrator#finalizeMigrateDelegator: ALREADY_MIGRATED"
+            "DELEGATOR_ALREADY_MIGRATED"
         );
 
         migratedDelegators[_params.l1Addr] = true;
@@ -191,7 +191,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         // by _params.l2Addr since the function can only be called by the L1Migrator via a cross-chain retryable ticket
         if (_params.fees > 0) {
             (bool ok, ) = _params.l2Addr.call{value: _params.fees}("");
-            require(ok, "L2Migrator#finalizeMigrateDelegator: FAIL_FEE");
+            require(ok, "FINALIZE_DELEGATOR:FAIL_FEE");
         }
 
         emit MigrateDelegatorFinalized(_params);
@@ -209,7 +209,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
             uint256 id = _params.unbondingLockIds[i];
             require(
                 !migratedUnbondingLocks[_params.l1Addr][id],
-                "L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED"
+                "UNBONDING_LOCK_ALREADY_MIGRATED"
             );
             migratedUnbondingLocks[_params.l1Addr][id] = true;
         }
@@ -227,10 +227,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         external
         onlyL1Counterpart(l1Migrator)
     {
-        require(
-            !migratedSenders[_params.l1Addr],
-            "L2Migrator#finalizeMigrateSender: ALREADY_MIGRATED"
-        );
+        require(!migratedSenders[_params.l1Addr], "SENDER_ALREADY_MIGRATED");
 
         migratedSenders[_params.l1Addr] = true;
 
@@ -262,17 +259,11 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         bytes32[] calldata _proof,
         address _newDelegate
     ) external {
-        require(
-            claimStakeEnabled,
-            "L2Migrator#claimStake: CLAIM_STAKE_DISABLED"
-        );
+        require(claimStakeEnabled, "CLAIM_STAKE_DISABLED");
 
         address delegator = msg.sender;
 
-        require(
-            !migratedDelegators[delegator],
-            "L2Migrator#claimStake: ALREADY_MIGRATED"
-        );
+        require(!migratedDelegators[delegator], "CLAIM_STAKE:ALREADY_MIGRATED");
 
         IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
 
@@ -282,7 +273,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
 
         require(
             merkleSnapshot.verify(keccak256("LIP-73"), _proof, leaf),
-            "L2Migrator#claimStake: INVALID_PROOF"
+            "CLAIM_STAKE:INVALID_PROOF"
         );
 
         migratedDelegators[delegator] = true;

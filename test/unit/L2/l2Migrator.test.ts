@@ -271,9 +271,7 @@ describe('L2Migrator', function() {
       const tx = l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateDelegator(mockMigrateDelegatorParams());
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateDelegator: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('DELEGATOR_ALREADY_MIGRATED');
     });
 
     it('reverts if fee transfer fails', async () => {
@@ -285,9 +283,7 @@ describe('L2Migrator', function() {
       const tx = l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateDelegator(params);
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateDelegator: FAIL_FEE',
-      );
+      await expect(tx).to.revertedWith('FINALIZE_DELEGATOR:FAIL_FEE');
     });
 
     describe('finalizes migration', () => {
@@ -599,9 +595,7 @@ describe('L2Migrator', function() {
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateUnbondingLocks(params);
 
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('UNBONDING_LOCK_ALREADY_MIGRATED');
 
       // Middle id migrated
       params.unbondingLockIds = [7, 2, 8];
@@ -609,9 +603,7 @@ describe('L2Migrator', function() {
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateUnbondingLocks(params);
 
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('UNBONDING_LOCK_ALREADY_MIGRATED');
 
       // Last id migrated
       params.unbondingLockIds = [7, 8, 3];
@@ -619,9 +611,7 @@ describe('L2Migrator', function() {
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateUnbondingLocks(params);
 
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('UNBONDING_LOCK_ALREADY_MIGRATED');
 
       // None of the ids have been migrated previously, but the list contains duplicate ids
       params.unbondingLockIds = [11, 11, 12];
@@ -629,9 +619,7 @@ describe('L2Migrator', function() {
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateUnbondingLocks(params);
 
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateUnbondingLocks: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('UNBONDING_LOCK_ALREADY_MIGRATED');
     });
 
     it('finalizes migration', async () => {
@@ -700,9 +688,7 @@ describe('L2Migrator', function() {
       const tx = l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
           .finalizeMigrateSender(mockMigrateSenderParams());
-      await expect(tx).to.revertedWith(
-          'L2Migrator#finalizeMigrateSender: ALREADY_MIGRATED',
-      );
+      await expect(tx).to.revertedWith('SENDER_ALREADY_MIGRATED');
     });
 
     it('finalizes migration', async () => {
@@ -769,9 +755,7 @@ describe('L2Migrator', function() {
               [],
               ethers.constants.AddressZero,
           );
-      await expect(tx).to.revertedWith(
-          'L2Migrator#claimStake: CLAIM_STAKE_DISABLED',
-      );
+      await expect(tx).to.revertedWith('CLAIM_STAKE_DISABLED');
     });
 
     it('reverts for invalid proof', async () => {
@@ -786,7 +770,7 @@ describe('L2Migrator', function() {
               [],
               ethers.constants.AddressZero,
           );
-      await expect(tx).to.revertedWith('L2Migrator#claimStake: INVALID_PROOF');
+      await expect(tx).to.revertedWith('CLAIM_STAKE:INVALID_PROOF');
     });
 
     it('reverts if delegator is already migrated', async () => {
@@ -809,7 +793,7 @@ describe('L2Migrator', function() {
               [],
               ethers.constants.AddressZero,
           );
-      expect(tx).to.revertedWith('L2Migrator#claimStake: ALREADY_MIGRATED');
+      expect(tx).to.revertedWith('CLAIM_STAKE:ALREADY_MIGRATED');
     });
 
     it('reverts if fee transfer fails', async () => {
