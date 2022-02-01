@@ -163,9 +163,7 @@ describe('DelegatorPool', function() {
     describe('caller is not migrator', () => {
       it('fails when called claim', async () => {
         const tx = delegatorPool.connect(delegator).claim(delegator.address, 1);
-        await expect(tx).to.be.revertedWith(
-            'DelegatorPool#claim: NOT_MIGRATOR',
-        );
+        await expect(tx).to.be.revertedWith('POOL:NOT_MIGRATOR');
       });
     });
 
@@ -185,9 +183,7 @@ describe('DelegatorPool', function() {
               .connect(mockL2MigratorEOA)
               .claim(delegator.address, stake);
 
-          await expect(tx).to.be.revertedWith(
-              'DelegatorPool#claim: INVALID_CLAIM',
-          );
+          await expect(tx).to.be.revertedWith('POOL:INVALID_CLAIM');
         });
 
         it('fails if requested stake exceeds initial stake', async () => {
@@ -203,9 +199,7 @@ describe('DelegatorPool', function() {
               .connect(mockL2MigratorEOA)
               .claim(delegator.address, unclaimedTokens + 1);
 
-          await expect(tx).to.be.revertedWith(
-              'DelegatorPool#claim: INVALID_CLAIM',
-          );
+          await expect(tx).to.be.revertedWith('POOL:INVALID_CLAIM');
         });
 
         it('does not fail if caller claims all remaining tokens', async () => {

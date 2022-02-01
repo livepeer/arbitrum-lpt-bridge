@@ -41,7 +41,7 @@ contract DelegatorPool is Initializable {
     );
 
     modifier onlyMigrator() {
-        require(msg.sender == migrator, "DelegatorPool#claim: NOT_MIGRATOR");
+        require(msg.sender == migrator, "POOL:NOT_MIGRATOR");
         _;
     }
 
@@ -66,7 +66,7 @@ contract DelegatorPool is Initializable {
         // stake remaining with the pool
         uint256 remaining = initialStake - claimedInitialStake;
 
-        require(_stake <= remaining, "DelegatorPool#claim: INVALID_CLAIM");
+        require(_stake <= remaining, "POOL:INVALID_CLAIM");
 
         // _stake is the delegator's original stake
         // This contract started off with initalStake

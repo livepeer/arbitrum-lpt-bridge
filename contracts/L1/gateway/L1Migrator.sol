@@ -508,14 +508,11 @@ contract L1Migrator is
         bytes32 _structHash,
         bytes memory _sig
     ) private view {
-        require(
-            _l2Addr != address(0),
-            "L1Migrator#requireValidMigration: INVALID_L2_ADDR"
-        );
+        require(_l2Addr != address(0), "INVALID_L2_ADDR");
         require(
             msg.sender == _l1Addr ||
                 recoverSigner(_structHash, _sig) == _l1Addr,
-            "L1Migrator#requireValidMigration: FAIL_AUTH"
+            "FAIL_AUTH"
         );
     }
 
