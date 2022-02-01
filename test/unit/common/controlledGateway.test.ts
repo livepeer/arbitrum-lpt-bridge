@@ -9,27 +9,22 @@ import {
 } from '../../../typechain';
 import {L1_LPT} from '../../../deploy/constants';
 
-describe('L1 Gateway', function() {
+describe('ControlledGateway', function() {
   let token: LivepeerToken;
   let gateway: ControlledGateway;
   let owner: SignerWithAddress;
   let notOwner: SignerWithAddress;
-  let governor: SignerWithAddress;
-  let governor2: SignerWithAddress;
+  let admin: SignerWithAddress;
+  let admin2: SignerWithAddress;
 
   const ADMIN_ROLE =
     '0x0000000000000000000000000000000000000000000000000000000000000000';
 
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
-
   beforeEach(async function() {
     const signers = await ethers.getSigners();
     owner = signers[0];
-    governor = signers[1];
-    governor2 = signers[2];
+    admin = signers[1];
+    admin2 = signers[2];
     notOwner = signers[3];
 
     const Token: LivepeerToken__factory = await ethers.getContractFactory(
@@ -51,12 +46,12 @@ describe('L1 Gateway', function() {
   });
 
   describe('AccessControl', async function() {
-    describe('add governor', async function() {
+    describe('add admin', async function() {
       describe('caller is not admin', async function() {
-        it('should not be able to set governor', async function() {
+        it('should not be able to set admin', async function() {
           const tx = gateway
               .connect(notOwner)
-              .grantRole(GOVERNOR_ROLE, governor.address);
+              .grantRole(ADMIN_ROLE, admin.address);
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
@@ -66,12 +61,12 @@ describe('L1 Gateway', function() {
       });
 
       describe('caller is admin', async function() {
-        it('should set governor', async function() {
-          await gateway.grantRole(GOVERNOR_ROLE, governor.address);
+        it('should set admin', async function() {
+          await gateway.grantRole(ADMIN_ROLE, admin.address);
 
           const hasControllerRole = await gateway.hasRole(
-              GOVERNOR_ROLE,
-              governor.address,
+              ADMIN_ROLE,
+              admin.address,
           );
           expect(hasControllerRole).to.be.true;
         });
@@ -80,23 +75,23 @@ describe('L1 Gateway', function() {
 
     describe('pause', async function() {
       beforeEach(async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governor.address);
+        await gateway.grantRole(ADMIN_ROLE, admin.address);
       });
 
-      describe('caller is not governor', async function() {
+      describe('caller is not admin', async function() {
         it('should not be able to pause system', async function() {
-          const tx = gateway.pause();
+          const tx = gateway.connect(notOwner).pause();
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+            `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
           );
         });
       });
 
-      describe('caller is governor', async function() {
+      describe('caller is admin', async function() {
         it('should pause system', async function() {
-          await gateway.connect(governor).pause();
+          await gateway.connect(admin).pause();
 
           const isPaused = await gateway.paused();
           expect(isPaused).to.be.true;
@@ -106,27 +101,27 @@ describe('L1 Gateway', function() {
 
     describe('unpause', async function() {
       beforeEach(async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governor.address);
-        await gateway.connect(governor).pause();
+        await gateway.grantRole(ADMIN_ROLE, admin.address);
+        await gateway.connect(admin).pause();
 
         const isPaused = await gateway.paused();
         expect(isPaused).to.be.true;
       });
 
-      describe('caller is not governor', async function() {
+      describe('caller is not admin', async function() {
         it('should not be able to unpause system', async function() {
-          const tx = gateway.unpause();
+          const tx = gateway.connect(notOwner).unpause();
 
           await expect(tx).to.be.revertedWith(
               // eslint-disable-next-line
-            `AccessControl: account ${owner.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+            `AccessControl: account ${notOwner.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
           );
         });
       });
 
-      describe('caller is governor', async function() {
+      describe('caller is admin', async function() {
         it('should unpause system', async function() {
-          await gateway.connect(governor).unpause();
+          await gateway.connect(admin).unpause();
 
           const isPaused = await gateway.paused();
           expect(isPaused).to.be.false;
@@ -137,16 +132,16 @@ describe('L1 Gateway', function() {
 
   describe('Pausable', async function() {
     beforeEach(async function() {
-      await gateway.grantRole(GOVERNOR_ROLE, governor.address);
+      await gateway.grantRole(ADMIN_ROLE, admin.address);
     });
 
     describe('contract is not paused', async function() {
       it('should call function', async function() {
-        await gateway.grantRole(GOVERNOR_ROLE, governor2.address);
+        await gateway.grantRole(ADMIN_ROLE, admin2.address);
 
         const hasControllerRole = await gateway.hasRole(
-            GOVERNOR_ROLE,
-            governor2.address,
+            ADMIN_ROLE,
+            admin2.address,
         );
         expect(hasControllerRole).to.be.true;
       });
@@ -154,11 +149,11 @@ describe('L1 Gateway', function() {
 
     describe('contract is paused', async function() {
       beforeEach(async function() {
-        await gateway.connect(governor).pause();
+        await gateway.connect(admin).pause();
       });
 
       it('should fail to call function', async function() {
-        const tx = gateway.connect(governor).pause();
+        const tx = gateway.connect(admin).pause();
 
         await expect(tx).to.be.revertedWith('Pausable: paused');
       });

@@ -7,11 +7,9 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 /**
  * @title ControlledGateway
  * @notice Base Contract for both L1 and L2 LPT gateways. Provides AccessControl.
- * Gateways can be paused by the governor to stop outgoing token migrations
+ * Gateways can be paused by the admin to stop outgoing token migrations
  */
 contract ControlledGateway is AccessControl, Pausable {
-    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
-
     address public immutable l1Lpt;
     address public immutable l2Lpt;
 
@@ -22,11 +20,11 @@ contract ControlledGateway is AccessControl, Pausable {
         l2Lpt = _l2Lpt;
     }
 
-    function pause() external onlyRole(GOVERNOR_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    function unpause() external onlyRole(GOVERNOR_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 }

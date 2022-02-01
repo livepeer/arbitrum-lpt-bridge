@@ -52,7 +52,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
      */
     function setCounterpart(address _l2Counterpart)
         external
-        onlyRole(GOVERNOR_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         l2Counterpart = _l2Counterpart;
     }
@@ -62,7 +62,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
      * @dev Only address with the governor role is allowed to change the value of minter
      * @param _minter L1 Address of minter
      */
-    function setMinter(address _minter) external onlyRole(GOVERNOR_ROLE) {
+    function setMinter(address _minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
         minter = _minter;
     }
 

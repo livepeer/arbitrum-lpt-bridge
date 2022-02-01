@@ -49,7 +49,7 @@ contract L2LPTGateway is IL2LPTGateway, ControlledGateway, L2ArbitrumMessenger {
      */
     function setCounterpart(address _l1Counterpart)
         external
-        onlyRole(GOVERNOR_ROLE)
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         l1Counterpart = _l1Counterpart;
     }
