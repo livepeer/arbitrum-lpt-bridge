@@ -22,7 +22,7 @@ describe('L1 LPT Gateway', function() {
   let owner: SignerWithAddress;
   let sender: SignerWithAddress;
   let receiver: SignerWithAddress;
-  let governor: SignerWithAddress;
+  let admin: SignerWithAddress;
 
   // mocks
   let inboxMock: FakeContract;
@@ -40,17 +40,14 @@ describe('L1 LPT Gateway', function() {
   const initialTotalL1Supply = 3000;
   const depositAmount = 100;
 
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
+  const DEFAULT_ADMIN_ROLE = ethers.constants.HashZero;
 
   beforeEach(async function() {
     [
       owner,
       sender,
       receiver,
-      governor,
+      admin,
       mockOutboxEOA,
       mockInboxEOA,
       mockBridgeEOA,
@@ -98,9 +95,9 @@ describe('L1 LPT Gateway', function() {
     await token.transfer(sender.address, initialTotalL1Supply);
     await token.connect(sender).approve(l1Gateway.address, depositAmount);
 
-    await l1Gateway.grantRole(GOVERNOR_ROLE, governor.address);
-    await l1Gateway.connect(governor).setCounterpart(mockL2GatewayEOA.address);
-    await l1Gateway.connect(governor).setMinter(mockMinterEOA.address);
+    await l1Gateway.grantRole(DEFAULT_ADMIN_ROLE, admin.address);
+    await l1Gateway.connect(admin).setCounterpart(mockL2GatewayEOA.address);
+    await l1Gateway.connect(admin).setMinter(mockMinterEOA.address);
 
     inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
@@ -162,19 +159,19 @@ describe('L1 LPT Gateway', function() {
         ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
     );
 
-    describe('caller not governor', () => {
+    describe('caller not admin', () => {
       it('should fail to change counterpart address', async function() {
-        const tx = l1Gateway.connect(owner).setCounterpart(newAddress);
-        expect(tx).to.be.revertedWith(
+        const tx = l1Gateway.connect(sender).setCounterpart(newAddress);
+        await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          `AccessControl: account ${sender.address.toLocaleLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is governor', () => {
+    describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l1Gateway.connect(governor).setCounterpart(newAddress);
+        await l1Gateway.connect(admin).setCounterpart(newAddress);
         const counterpart = await l1Gateway.counterpartGateway();
         expect(counterpart).to.equal(newAddress);
       });
@@ -186,19 +183,19 @@ describe('L1 LPT Gateway', function() {
         ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
     );
 
-    describe('caller not governor', () => {
+    describe('caller not admin', () => {
       it('should fail to change minter address', async function() {
-        const tx = l1Gateway.connect(owner).setMinter(newAddress);
-        expect(tx).to.be.revertedWith(
+        const tx = l1Gateway.connect(sender).setMinter(newAddress);
+        await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          `AccessControl: account ${sender.address.toLocaleLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is governor', () => {
+    describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l1Gateway.connect(governor).setMinter(newAddress);
+        await l1Gateway.connect(admin).setMinter(newAddress);
         const minter = await l1Gateway.minter();
         expect(minter).to.equal(newAddress);
       });
@@ -225,12 +222,12 @@ describe('L1 LPT Gateway', function() {
       );
 
     beforeEach(async function() {
-      await l1Gateway.connect(governor).unpause();
+      await l1Gateway.connect(admin).unpause();
     });
 
     describe('when gateway is paused', async function() {
       beforeEach(async function() {
-        await l1Gateway.connect(governor).pause();
+        await l1Gateway.connect(admin).pause();
       });
 
       it('should fail to tranfer', async function() {
@@ -700,7 +697,7 @@ describe('L1 LPT Gateway', function() {
 
     describe('when gateway is not paused', () => {
       beforeEach(async function() {
-        await l1Gateway.connect(governor).unpause();
+        await l1Gateway.connect(admin).unpause();
       });
 
       it('sends funds from the escrow', async () => {

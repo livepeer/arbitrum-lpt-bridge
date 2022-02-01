@@ -20,7 +20,7 @@ describe('L2 Gateway', function() {
   let l2Gateway: L2LPTGateway;
   let sender: SignerWithAddress;
   let receiver: SignerWithAddress;
-  let governor: SignerWithAddress;
+  let admin: SignerWithAddress;
 
   // mocks
   let arbSysMock: FakeContract;
@@ -36,17 +36,14 @@ describe('L2 Gateway', function() {
       ['BURNER_ROLE'],
   );
 
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
+  const DEFAULT_ADMIN_ROLE = ethers.constants.HashZero;
 
   beforeEach(async function() {
     [
       owner,
       sender,
       receiver,
-      governor,
+      admin,
       mockL2RouterEOA,
       mockL1GatewayEOA,
       mockL1LptEOA,
@@ -75,8 +72,8 @@ describe('L2 Gateway', function() {
         l2Gateway.address,
     );
 
-    await l2Gateway.grantRole(GOVERNOR_ROLE, governor.address);
-    await l2Gateway.connect(governor).setCounterpart(mockL1GatewayEOA.address);
+    await l2Gateway.grantRole(DEFAULT_ADMIN_ROLE, admin.address);
+    await l2Gateway.connect(admin).setCounterpart(mockL1GatewayEOA.address);
 
     await token.grantRole(BURNER_ROLE, l2Gateway.address);
 
@@ -143,19 +140,19 @@ describe('L2 Gateway', function() {
         ethers.utils.solidityKeccak256(['string'], ['newAddress']).slice(0, 42),
     );
 
-    describe('caller not governor', () => {
+    describe('caller not admin', () => {
       it('should fail to change counterpart address', async function() {
-        const tx = l2Gateway.connect(owner).setCounterpart(newAddress);
-        expect(tx).to.be.revertedWith(
+        const tx = l2Gateway.connect(sender).setCounterpart(newAddress);
+        await expect(tx).to.be.revertedWith(
             // eslint-disable-next-line
-          `AccessControl: account ${owner.address.toLocaleLowerCase()} is missing role ${GOVERNOR_ROLE}`
+          `AccessControl: account ${sender.address.toLocaleLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
         );
       });
     });
 
-    describe('caller is governor', () => {
+    describe('caller is admin', () => {
       it('should change counterpart address', async function() {
-        await l2Gateway.connect(governor).setCounterpart(newAddress);
+        await l2Gateway.connect(admin).setCounterpart(newAddress);
         const counterpart = await l2Gateway.counterpartGateway();
         expect(counterpart).to.equal(newAddress);
       });
@@ -171,7 +168,7 @@ describe('L2 Gateway', function() {
 
     describe('when gateway is not paused', () => {
       beforeEach(async function() {
-        await l2Gateway.connect(governor).unpause();
+        await l2Gateway.connect(admin).unpause();
       });
 
       describe('caller is not l1 gateway router (aliased)', () => {
@@ -347,12 +344,12 @@ describe('L2 Gateway', function() {
           owner.address,
       );
       await token.connect(owner).mint(sender.address, initialTotalL2Supply);
-      await l2Gateway.connect(governor).unpause();
+      await l2Gateway.connect(admin).unpause();
     });
 
     describe('when gateway is paused', async function() {
       beforeEach(async function() {
-        await l2Gateway.connect(governor).pause();
+        await l2Gateway.connect(admin).pause();
       });
 
       it('should fail to tranfer', async () => {
