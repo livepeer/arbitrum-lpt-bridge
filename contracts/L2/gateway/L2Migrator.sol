@@ -205,7 +205,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         MigrateUnbondingLocksParams calldata _params
     ) external onlyL1Counterpart(l1Migrator) {
         uint256 unbondingLockIdsLen = _params.unbondingLockIds.length;
-        for (uint256 i = 0; i < unbondingLockIdsLen; i++) {
+        for (uint256 i; i < unbondingLockIdsLen; i++) {
             uint256 id = _params.unbondingLockIds[i];
             require(
                 !migratedUnbondingLocks[_params.l1Addr][id],

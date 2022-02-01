@@ -472,9 +472,9 @@ contract L1Migrator is
     {
         IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
 
-        uint256 total = 0;
+        uint256 total;
         uint256 unbondingLockIdsLen = _unbondingLockIds.length;
-        for (uint256 i = 0; i < unbondingLockIdsLen; i++) {
+        for (uint256 i; i < unbondingLockIdsLen; i++) {
             (uint256 amount, ) = bondingManager.getDelegatorUnbondingLock(
                 _l1Addr,
                 _unbondingLockIds[i]
