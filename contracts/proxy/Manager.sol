@@ -4,6 +4,8 @@ pragma solidity 0.8.8;
 import {IManager} from "./IManager.sol";
 import {IController} from "./IController.sol";
 
+// Copy of https://github.com/livepeer/protocol/blob/confluence/contracts/Manager.sol
+// Tests at https://github.com/livepeer/protocol/blob/confluence/test/unit/ManagerProxy.js
 contract Manager is IManager {
     // Controller that contract is registered with
     IController public controller;

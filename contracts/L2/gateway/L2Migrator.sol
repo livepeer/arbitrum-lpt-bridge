@@ -3,9 +3,8 @@ pragma solidity 0.8.8;
 
 import {L2ArbitrumMessenger} from "./L2ArbitrumMessenger.sol";
 import {IMigrator} from "../../interfaces/IMigrator.sol";
-
+import "../../proxy/ManagerProxyTarget.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
 interface IBondingManager {
     function bondForWithHint(
@@ -41,10 +40,10 @@ interface IDelegatorPool {
     function claim(address _addr, uint256 _stake) external;
 }
 
-contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
-    address public immutable bondingManagerAddr;
-    address public immutable ticketBrokerAddr;
-    address public immutable merkleSnapshotAddr;
+contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
+    address public bondingManagerAddr;
+    address public ticketBrokerAddr;
+    address public merkleSnapshotAddr;
 
     address public l1Migrator;
     address public delegatorPoolImpl;
@@ -77,15 +76,21 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
         uint256 fees
     );
 
-    constructor(
+    /**
+     * @notice L2Migrator constructor. Only invokes constructor of base Manager contract with provided Controller address
+     * @dev This constructor will not initialize any state variables besides `controller`.
+     * - initialize() function must be called immediately after deployment
+     * @param _controller Address of Controller that this contract will be registered with
+     */
+    constructor(address _controller) Manager(_controller) {}
+
+    function initialize(
         address _l1Migrator,
         address _delegatorPoolImpl,
         address _bondingManagerAddr,
         address _ticketBrokerAddr,
         address _merkleSnapshotAddr
-    ) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-
+    ) external onlyControllerOwner {
         l1Migrator = _l1Migrator;
         delegatorPoolImpl = _delegatorPoolImpl;
         bondingManagerAddr = _bondingManagerAddr;
@@ -97,10 +102,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      * @notice Sets L1Migrator
      * @param _l1Migrator L1Migrator address
      */
-    function setL1Migrator(address _l1Migrator)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setL1Migrator(address _l1Migrator) external onlyControllerOwner {
         l1Migrator = _l1Migrator;
         emit L1MigratorUpdate(_l1Migrator);
     }
@@ -111,7 +113,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      */
     function setDelegatorPoolImpl(address _delegatorPoolImpl)
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyControllerOwner
     {
         delegatorPoolImpl = _delegatorPoolImpl;
         emit DelegatorPoolImplUpdate(_delegatorPoolImpl);
@@ -121,10 +123,7 @@ contract L2Migrator is L2ArbitrumMessenger, IMigrator, AccessControl {
      * @notice Enable/disable claimStake()
      * @param _enabled True/false indicating claimStake() enabled/disabled
      */
-    function setClaimStakeEnabled(bool _enabled)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function setClaimStakeEnabled(bool _enabled) external onlyControllerOwner {
         claimStakeEnabled = _enabled;
         emit ClaimStakeEnabled(_enabled);
     }

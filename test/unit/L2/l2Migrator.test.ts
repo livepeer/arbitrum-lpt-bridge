@@ -27,14 +27,13 @@ describe('L2Migrator', function() {
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
   let merkleSnapshotMock: FakeContract;
+  let controllerMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
   let mockL1MigratorL2AliasEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
   let mockMerkleSnapshotEOA: SignerWithAddress;
-
-  const ADMIN_ROLE =
-    '0x0000000000000000000000000000000000000000000000000000000000000000';
+  let mockControllerEOA: SignerWithAddress;
 
   const mockMigrateDelegatorParams = () => ({
     l1Addr: ethers.constants.AddressZero,
@@ -71,7 +70,17 @@ describe('L2Migrator', function() {
       mockBondingManagerEOA,
       mockTicketBrokerEOA,
       mockMerkleSnapshotEOA,
+      mockControllerEOA,
     ] = await ethers.getSigners();
+
+    controllerMock = await smock.fake(
+        'contracts/proxy/IController.sol:IController',
+        {
+          address: mockControllerEOA.address,
+        },
+    );
+
+    controllerMock.owner.returns(admin.address);
 
     const DelegatorPool: DelegatorPool__factory =
       await ethers.getContractFactory('DelegatorPool');
@@ -80,16 +89,18 @@ describe('L2Migrator', function() {
     const L2Migrator: L2Migrator__factory = await ethers.getContractFactory(
         'L2Migrator',
     );
-    l2Migrator = await L2Migrator.deploy(
-        mockL1MigratorEOA.address,
-        delegatorPool.address,
-        mockBondingManagerEOA.address,
-        mockTicketBrokerEOA.address,
-        mockMerkleSnapshotEOA.address,
-    );
+    l2Migrator = await L2Migrator.deploy(mockControllerEOA.address);
     await l2Migrator.deployed();
 
-    await l2Migrator.connect(owner).grantRole(ADMIN_ROLE, admin.address);
+    await l2Migrator
+        .connect(admin)
+        .initialize(
+            mockL1MigratorEOA.address,
+            delegatorPool.address,
+            mockBondingManagerEOA.address,
+            mockTicketBrokerEOA.address,
+            mockMerkleSnapshotEOA.address,
+        );
     await l2Migrator.connect(admin).setClaimStakeEnabled(true);
 
     const bondingManagerAbi = [
@@ -125,7 +136,7 @@ describe('L2Migrator', function() {
     merkleSnapshotMock.verify.returns(true);
   });
 
-  describe('constructor', () => {
+  describe('initializer', () => {
     it('sets addresses', async () => {
       const l1MigratorAddr = await l2Migrator.l1Migrator();
       expect(l1MigratorAddr).to.equal(mockL1MigratorEOA.address);
@@ -138,31 +149,34 @@ describe('L2Migrator', function() {
     });
   });
 
-  describe('AccessControl', async function() {
-    describe('add admin', async function() {
-      describe('caller is not admin', async function() {
-        it('should not be able to set admin', async function() {
-          const tx = l2Migrator
-              .connect(l1AddrEOA)
-              .grantRole(ADMIN_ROLE, admin.address);
-
-          await expect(tx).to.be.revertedWith(
-              // eslint-disable-next-line
-            `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
-          );
-        });
+  describe('initialize', () => {
+    describe('when caller not controller owner', async () => {
+      it('should fail to set addresses', async () => {
+        const addr = ethers.constants.AddressZero;
+        const tx = l2Migrator
+            .connect(owner)
+            .initialize(addr, addr, addr, addr, addr);
+        await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
+    });
 
-      describe('caller is admin', async function() {
-        it('should set admin', async function() {
-          await l2Migrator.connect(owner).grantRole(ADMIN_ROLE, admin.address);
+    describe('when caller is controller owner', async () => {
+      it('should set addresses', async () => {
+        const addr = ethers.constants.AddressZero;
+        await l2Migrator
+            .connect(admin)
+            .initialize(addr, addr, addr, addr, addr);
 
-          const hasControllerRole = await l2Migrator.hasRole(
-              ADMIN_ROLE,
-              admin.address,
-          );
-          expect(hasControllerRole).to.be.true;
-        });
+        const l1MigratorAddr = await l2Migrator.l1Migrator();
+        expect(l1MigratorAddr).to.equal(addr);
+        const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
+        expect(delegatorPoolImpl).to.equal(addr);
+        const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
+        expect(bondingManagerAddr).to.equal(addr);
+        const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
+        expect(ticketBrokerAddr).to.equal(addr);
+        const merkleSnapshotAddr = await l2Migrator.merkleSnapshotAddr();
+        expect(merkleSnapshotAddr).to.equal(addr);
       });
     });
   });
@@ -173,10 +187,7 @@ describe('L2Migrator', function() {
         const tx = l2Migrator
             .connect(l1AddrEOA)
             .setL1Migrator(notL1MigratorEOA.address);
-        await expect(tx).to.be.revertedWith(
-            // eslint-disable-next-line
-          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
-        );
+        await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
     });
 
@@ -200,10 +211,7 @@ describe('L2Migrator', function() {
         const tx = l2Migrator
             .connect(l1AddrEOA)
             .setDelegatorPoolImpl(notL1MigratorEOA.address);
-        await expect(tx).to.be.revertedWith(
-            // eslint-disable-next-line
-          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
-        );
+        await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
     });
 
@@ -225,10 +233,7 @@ describe('L2Migrator', function() {
     describe('caller is not admin', () => {
       it('fails to set claimStakeEnabled', async () => {
         const tx = l2Migrator.connect(l1AddrEOA).setClaimStakeEnabled(true);
-        await expect(tx).to.be.revertedWith(
-            // eslint-disable-next-line
-          `AccessControl: account ${l1AddrEOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
-        );
+        await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
     });
 
