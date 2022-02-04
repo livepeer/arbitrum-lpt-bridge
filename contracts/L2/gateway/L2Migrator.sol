@@ -57,6 +57,8 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
     event L1MigratorUpdate(address _l1MigratorAddr);
 
+    event ProtocolContractUpdate(bytes32 _id, address _address);
+
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
     event MigrateUnbondingLocksFinalized(MigrateUnbondingLocksParams params);
@@ -84,18 +86,14 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      */
     constructor(address _controller) Manager(_controller) {}
 
-    function initialize(
-        address _l1MigratorAddr,
-        address _delegatorPoolImpl,
-        address _bondingManagerAddr,
-        address _ticketBrokerAddr,
-        address _merkleSnapshotAddr
-    ) external onlyControllerOwner {
+    function initialize(address _l1MigratorAddr, address _delegatorPoolImpl)
+        external
+        onlyControllerOwner
+    {
         l1MigratorAddr = _l1MigratorAddr;
         delegatorPoolImpl = _delegatorPoolImpl;
-        bondingManagerAddr = _bondingManagerAddr;
-        ticketBrokerAddr = _ticketBrokerAddr;
-        merkleSnapshotAddr = _merkleSnapshotAddr;
+
+        syncControllerContracts();
     }
 
     /**
@@ -320,5 +318,38 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
             address(0),
             address(0)
         );
+    }
+
+    /**
+     * @notice Fetches addresses and sets bondingManagerAddr, ticketBrokerAddr, merkleSnapshotAddr
+     * if they are different from the stored addresses
+     */
+    function syncControllerContracts() public {
+        // Check and update BondingManager address
+        bytes32 bondingManagerId = keccak256("BondingManager");
+        address _bondingManagerAddr = controller.getContract(bondingManagerId);
+
+        if (_bondingManagerAddr != bondingManagerAddr) {
+            bondingManagerAddr = _bondingManagerAddr;
+            emit ProtocolContractUpdate(bondingManagerId, _bondingManagerAddr);
+        }
+
+        // Check and update TicketBroker address
+        bytes32 ticketBrokerId = keccak256("TicketBroker");
+        address _ticketBrokerAddr = controller.getContract(ticketBrokerId);
+
+        if (_ticketBrokerAddr != ticketBrokerAddr) {
+            ticketBrokerAddr = _ticketBrokerAddr;
+            emit ProtocolContractUpdate(ticketBrokerId, _ticketBrokerAddr);
+        }
+
+        // Check and update MerkleSnapshot address
+        bytes32 merkleSnapshotId = keccak256("MerkleSnapshot");
+        address _merkleSnapshotAddr = controller.getContract(merkleSnapshotId);
+
+        if (_merkleSnapshotAddr != merkleSnapshotAddr) {
+            merkleSnapshotAddr = _merkleSnapshotAddr;
+            emit ProtocolContractUpdate(merkleSnapshotId, _merkleSnapshotAddr);
+        }
     }
 }

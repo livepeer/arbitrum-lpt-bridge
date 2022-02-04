@@ -82,6 +82,24 @@ describe('L2Migrator', function() {
 
     controllerMock.owner.returns(admin.address);
 
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['BondingManager']),
+        )
+        .returns(mockBondingManagerEOA.address);
+
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['TicketBroker']),
+        )
+        .returns(mockTicketBrokerEOA.address);
+
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['MerkleSnapshot']),
+        )
+        .returns(mockMerkleSnapshotEOA.address);
+
     const DelegatorPool: DelegatorPool__factory =
       await ethers.getContractFactory('DelegatorPool');
     delegatorPool = await DelegatorPool.deploy();
@@ -94,13 +112,7 @@ describe('L2Migrator', function() {
 
     await l2Migrator
         .connect(admin)
-        .initialize(
-            mockL1MigratorEOA.address,
-            delegatorPool.address,
-            mockBondingManagerEOA.address,
-            mockTicketBrokerEOA.address,
-            mockMerkleSnapshotEOA.address,
-        );
+        .initialize(mockL1MigratorEOA.address, delegatorPool.address);
     await l2Migrator.connect(admin).setClaimStakeEnabled(true);
 
     const bondingManagerAbi = [
@@ -146,6 +158,8 @@ describe('L2Migrator', function() {
       expect(bondingManagerAddr).to.equal(mockBondingManagerEOA.address);
       const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
       expect(ticketBrokerAddr).to.equal(mockTicketBrokerEOA.address);
+      const merkleSnapshotAddr = await l2Migrator.merkleSnapshotAddr();
+      expect(merkleSnapshotAddr).to.equal(mockMerkleSnapshotEOA.address);
     });
   });
 
@@ -153,9 +167,7 @@ describe('L2Migrator', function() {
     describe('when caller not controller owner', async () => {
       it('should fail to set addresses', async () => {
         const addr = ethers.constants.AddressZero;
-        const tx = l2Migrator
-            .connect(owner)
-            .initialize(addr, addr, addr, addr, addr);
+        const tx = l2Migrator.connect(owner).initialize(addr, addr);
         await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
     });
@@ -163,20 +175,107 @@ describe('L2Migrator', function() {
     describe('when caller is controller owner', async () => {
       it('should set addresses', async () => {
         const addr = ethers.constants.AddressZero;
-        await l2Migrator
-            .connect(admin)
-            .initialize(addr, addr, addr, addr, addr);
+        await l2Migrator.connect(admin).initialize(addr, addr);
 
         const l1MigratorAddr = await l2Migrator.l1MigratorAddr();
         expect(l1MigratorAddr).to.equal(addr);
         const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
         expect(delegatorPoolImpl).to.equal(addr);
         const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
-        expect(bondingManagerAddr).to.equal(addr);
+        expect(bondingManagerAddr).to.equal(mockBondingManagerEOA.address);
         const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
-        expect(ticketBrokerAddr).to.equal(addr);
+        expect(ticketBrokerAddr).to.equal(mockTicketBrokerEOA.address);
         const merkleSnapshotAddr = await l2Migrator.merkleSnapshotAddr();
-        expect(merkleSnapshotAddr).to.equal(addr);
+        expect(merkleSnapshotAddr).to.equal(mockMerkleSnapshotEOA.address);
+      });
+    });
+  });
+
+  describe('syncControllerContracts', () => {
+    const bondingManagerID = ethers.utils.solidityKeccak256(
+        ['string'],
+        ['BondingManager'],
+    );
+    const ticketBrokerID = ethers.utils.solidityKeccak256(
+        ['string'],
+        ['TicketBroker'],
+    );
+    const merkleSnapshotID = ethers.utils.solidityKeccak256(
+        ['string'],
+        ['MerkleSnapshot'],
+    );
+
+    describe('addresses do not change', () => {
+      it('should set addresses', async () => {
+        const tx = l2Migrator.syncControllerContracts();
+        await expect(tx).to.not.emit(l2Migrator, 'ProtocolContractUpdate');
+      });
+    });
+
+    describe('only bondingManager Changes', () => {
+      it('should set addresses', async () => {
+        controllerMock.getContract
+            .whenCalledWith(bondingManagerID)
+            .returns(ethers.constants.AddressZero);
+
+        const tx = await l2Migrator.syncControllerContracts();
+
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(bondingManagerID, ethers.constants.AddressZero);
+      });
+    });
+
+    describe('only ticketBroker Changes', () => {
+      it('should set addresses', async () => {
+        controllerMock.getContract
+            .whenCalledWith(ticketBrokerID)
+            .returns(ethers.constants.AddressZero);
+
+        const tx = await l2Migrator.syncControllerContracts();
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(ticketBrokerID, ethers.constants.AddressZero);
+      });
+    });
+
+    describe('only merkleSnapshot Changes', () => {
+      it('should set addresses', async () => {
+        controllerMock.getContract
+            .whenCalledWith(merkleSnapshotID)
+            .returns(ethers.constants.AddressZero);
+
+        const tx = await l2Migrator.syncControllerContracts();
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
+      });
+    });
+
+    describe('all 3 change', () => {
+      it('should set addresses', async () => {
+        controllerMock.getContract
+            .whenCalledWith(bondingManagerID)
+            .returns(ethers.constants.AddressZero);
+
+        controllerMock.getContract
+            .whenCalledWith(ticketBrokerID)
+            .returns(ethers.constants.AddressZero);
+
+        controllerMock.getContract
+            .whenCalledWith(merkleSnapshotID)
+            .returns(ethers.constants.AddressZero);
+
+        const tx = await l2Migrator.syncControllerContracts();
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(bondingManagerID, ethers.constants.AddressZero);
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(ticketBrokerID, ethers.constants.AddressZero);
+        await expect(tx)
+            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
       });
     });
   });
