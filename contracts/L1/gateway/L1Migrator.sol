@@ -91,7 +91,7 @@ contract L1Migrator is
     address public immutable bridgeMinterAddr;
     address public immutable tokenAddr;
     address public immutable l1LPTGatewayAddr;
-    address public immutable l2MigratorAddr;
+    address public l2MigratorAddr;
 
     event MigrateDelegatorInitiated(
         uint256 indexed seqNo,
@@ -107,6 +107,8 @@ contract L1Migrator is
         uint256 indexed seqNo,
         MigrateSenderParams params
     );
+
+    event L2MigratorUpdate(address l2Migrator);
 
     bytes32 private immutable MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
@@ -138,6 +140,18 @@ contract L1Migrator is
         l2MigratorAddr = _l2MigratorAddr;
 
         _pause();
+    }
+
+    /**
+     * @notice Sets L2Migrator
+     * @param _l2MigratorAddr L2Migrator address
+     */
+    function setL2Migrator(address _l2MigratorAddr)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        l2MigratorAddr = _l2MigratorAddr;
+        emit L2MigratorUpdate(_l2MigratorAddr);
     }
 
     /**
