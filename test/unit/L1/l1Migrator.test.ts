@@ -211,6 +211,33 @@ describe('L1Migrator', function() {
     });
   });
 
+  describe('setL2Migrator', () => {
+    describe('caller is not admin', () => {
+      it('fails to set l2Migrator', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .setL2Migrator(mockL2MigratorEOA.address);
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+        );
+      });
+    });
+
+    describe('caller is admin', () => {
+      it('sets l2Migrator', async () => {
+        const tx = await l1Migrator
+            .connect(admin)
+            .setL2Migrator(mockTokenEOA.address);
+        await expect(tx)
+            .to.emit(l1Migrator, 'L2MigratorUpdate')
+            .withArgs(mockTokenEOA.address);
+        const l2MigratorAddr = await l1Migrator.l2MigratorAddr();
+        expect(l2MigratorAddr).to.equal(mockTokenEOA.address);
+      });
+    });
+  });
+
   describe('AccessControl', async function() {
     describe('add admin', async function() {
       describe('caller is not admin', async function() {
