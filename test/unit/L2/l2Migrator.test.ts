@@ -82,6 +82,24 @@ describe('L2Migrator', function() {
 
     controllerMock.owner.returns(admin.address);
 
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['BondingManager']),
+        )
+        .returns(mockBondingManagerEOA.address);
+
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['TicketBroker']),
+        )
+        .returns(mockTicketBrokerEOA.address);
+
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['MerkleSnapshot']),
+        )
+        .returns(mockMerkleSnapshotEOA.address);
+
     const DelegatorPool: DelegatorPool__factory =
       await ethers.getContractFactory('DelegatorPool');
     delegatorPool = await DelegatorPool.deploy();
@@ -94,13 +112,7 @@ describe('L2Migrator', function() {
 
     await l2Migrator
         .connect(admin)
-        .initialize(
-            mockL1MigratorEOA.address,
-            delegatorPool.address,
-            mockBondingManagerEOA.address,
-            mockTicketBrokerEOA.address,
-            mockMerkleSnapshotEOA.address,
-        );
+        .initialize(mockL1MigratorEOA.address, delegatorPool.address);
     await l2Migrator.connect(admin).setClaimStakeEnabled(true);
 
     const bondingManagerAbi = [
@@ -142,10 +154,6 @@ describe('L2Migrator', function() {
       expect(l1MigratorAddr).to.equal(mockL1MigratorEOA.address);
       const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
       expect(delegatorPoolImpl).to.equal(delegatorPool.address);
-      const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
-      expect(bondingManagerAddr).to.equal(mockBondingManagerEOA.address);
-      const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
-      expect(ticketBrokerAddr).to.equal(mockTicketBrokerEOA.address);
     });
   });
 
@@ -153,9 +161,7 @@ describe('L2Migrator', function() {
     describe('when caller not controller owner', async () => {
       it('should fail to set addresses', async () => {
         const addr = ethers.constants.AddressZero;
-        const tx = l2Migrator
-            .connect(owner)
-            .initialize(addr, addr, addr, addr, addr);
+        const tx = l2Migrator.connect(owner).initialize(addr, addr);
         await expect(tx).to.be.revertedWith('caller must be Controller owner');
       });
     });
@@ -163,20 +169,12 @@ describe('L2Migrator', function() {
     describe('when caller is controller owner', async () => {
       it('should set addresses', async () => {
         const addr = ethers.constants.AddressZero;
-        await l2Migrator
-            .connect(admin)
-            .initialize(addr, addr, addr, addr, addr);
+        await l2Migrator.connect(admin).initialize(addr, addr);
 
         const l1MigratorAddr = await l2Migrator.l1Migrator();
         expect(l1MigratorAddr).to.equal(addr);
         const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
         expect(delegatorPoolImpl).to.equal(addr);
-        const bondingManagerAddr = await l2Migrator.bondingManagerAddr();
-        expect(bondingManagerAddr).to.equal(addr);
-        const ticketBrokerAddr = await l2Migrator.ticketBrokerAddr();
-        expect(ticketBrokerAddr).to.equal(addr);
-        const merkleSnapshotAddr = await l2Migrator.merkleSnapshotAddr();
-        expect(merkleSnapshotAddr).to.equal(addr);
       });
     });
   });

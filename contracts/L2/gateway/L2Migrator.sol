@@ -41,10 +41,6 @@ interface IDelegatorPool {
 }
 
 contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
-    address public bondingManagerAddr;
-    address public ticketBrokerAddr;
-    address public merkleSnapshotAddr;
-
     address public l1Migrator;
     address public delegatorPoolImpl;
     bool public claimStakeEnabled;
@@ -84,18 +80,12 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      */
     constructor(address _controller) Manager(_controller) {}
 
-    function initialize(
-        address _l1Migrator,
-        address _delegatorPoolImpl,
-        address _bondingManagerAddr,
-        address _ticketBrokerAddr,
-        address _merkleSnapshotAddr
-    ) external onlyControllerOwner {
+    function initialize(address _l1Migrator, address _delegatorPoolImpl)
+        external
+        onlyControllerOwner
+    {
         l1Migrator = _l1Migrator;
         delegatorPoolImpl = _delegatorPoolImpl;
-        bondingManagerAddr = _bondingManagerAddr;
-        ticketBrokerAddr = _ticketBrokerAddr;
-        merkleSnapshotAddr = _merkleSnapshotAddr;
     }
 
     /**
@@ -164,7 +154,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
                 _params.l2Addr
             );
 
-            IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
+            IDelegatorPool(poolAddr).initialize(address(bondingManager()));
 
             emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
         } else {
@@ -231,7 +221,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
         migratedSenders[_params.l1Addr] = true;
 
         // msg.value for this call must be equal to deposit + reserve amounts
-        ITicketBroker(ticketBrokerAddr).fundDepositAndReserveFor{
+        ticketBroker().fundDepositAndReserveFor{
             value: _params.deposit + _params.reserve
         }(_params.l2Addr, _params.deposit, _params.reserve);
 
@@ -264,14 +254,12 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
         require(!migratedDelegators[delegator], "CLAIM_STAKE:ALREADY_MIGRATED");
 
-        IMerkleSnapshot merkleSnapshot = IMerkleSnapshot(merkleSnapshotAddr);
-
         bytes32 leaf = keccak256(
             abi.encodePacked(delegator, _delegate, _stake, _fees)
         );
 
         require(
-            merkleSnapshot.verify(keccak256("LIP-73"), _proof, leaf),
+            merkleSnapshot().verify(keccak256("LIP-73"), _proof, leaf),
             "CLAIM_STAKE:INVALID_PROOF"
         );
 
@@ -306,9 +294,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
         address _owner,
         address _to
     ) private {
-        IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
-
-        bondingManager.bondForWithHint(
+        bondingManager().bondForWithHint(
             _amount,
             _owner,
             _to,
@@ -317,5 +303,32 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
             address(0),
             address(0)
         );
+    }
+
+    /**
+     * @notice Returns BondingManager currently registered with controller
+     */
+    function bondingManager() private view returns (IBondingManager) {
+        return
+            IBondingManager(
+                controller.getContract(keccak256("BondingManager"))
+            );
+    }
+
+    /**
+     * @notice Returns TicketBroker currently registered with controller
+     */
+    function ticketBroker() private view returns (ITicketBroker) {
+        return ITicketBroker(controller.getContract(keccak256("TicketBroker")));
+    }
+
+    /**
+     * @notice Returns MerkleSnapshot currently registered with controller
+     */
+    function merkleSnapshot() private view returns (IMerkleSnapshot) {
+        return
+            IMerkleSnapshot(
+                controller.getContract(keccak256("MerkleSnapshot"))
+            );
     }
 }
