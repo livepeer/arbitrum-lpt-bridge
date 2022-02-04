@@ -79,7 +79,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     /**
      * @notice L2Migrator constructor. Only invokes constructor of base Manager contract with provided Controller address
      * @dev This constructor will not initialize any state variables besides `controller`.
-     * - initialize() function must be called immediately after deployment
+     * - initialize() function must be called on a proxy that uses this implementation contract immediately after deployment
      * @param _controller Address of Controller that this contract will be registered with
      */
     constructor(address _controller) Manager(_controller) {}
