@@ -138,7 +138,7 @@ describe('L2Migrator', function() {
 
   describe('initializer', () => {
     it('sets addresses', async () => {
-      const l1MigratorAddr = await l2Migrator.l1Migrator();
+      const l1MigratorAddr = await l2Migrator.l1MigratorAddr();
       expect(l1MigratorAddr).to.equal(mockL1MigratorEOA.address);
       const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
       expect(delegatorPoolImpl).to.equal(delegatorPool.address);
@@ -167,7 +167,7 @@ describe('L2Migrator', function() {
             .connect(admin)
             .initialize(addr, addr, addr, addr, addr);
 
-        const l1MigratorAddr = await l2Migrator.l1Migrator();
+        const l1MigratorAddr = await l2Migrator.l1MigratorAddr();
         expect(l1MigratorAddr).to.equal(addr);
         const delegatorPoolImpl = await l2Migrator.delegatorPoolImpl();
         expect(delegatorPoolImpl).to.equal(addr);
@@ -199,7 +199,7 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'L1MigratorUpdate')
             .withArgs(notL1MigratorEOA.address);
-        const l1MigratorAddr = await l2Migrator.l1Migrator();
+        const l1MigratorAddr = await l2Migrator.l1MigratorAddr();
         expect(l1MigratorAddr).to.equal(notL1MigratorEOA.address);
       });
     });
