@@ -45,7 +45,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     address public ticketBrokerAddr;
     address public merkleSnapshotAddr;
 
-    address public l1Migrator;
+    address public l1MigratorAddr;
     address public delegatorPoolImpl;
     bool public claimStakeEnabled;
 
@@ -55,7 +55,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     mapping(address => mapping(uint256 => bool)) public migratedUnbondingLocks;
     mapping(address => bool) public migratedSenders;
 
-    event L1MigratorUpdate(address _l1Migrator);
+    event L1MigratorUpdate(address _l1MigratorAddr);
 
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
@@ -85,13 +85,13 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     constructor(address _controller) Manager(_controller) {}
 
     function initialize(
-        address _l1Migrator,
+        address _l1MigratorAddr,
         address _delegatorPoolImpl,
         address _bondingManagerAddr,
         address _ticketBrokerAddr,
         address _merkleSnapshotAddr
     ) external onlyControllerOwner {
-        l1Migrator = _l1Migrator;
+        l1MigratorAddr = _l1MigratorAddr;
         delegatorPoolImpl = _delegatorPoolImpl;
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
@@ -100,11 +100,14 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
     /**
      * @notice Sets L1Migrator
-     * @param _l1Migrator L1Migrator address
+     * @param _l1MigratorAddr L1Migrator address
      */
-    function setL1Migrator(address _l1Migrator) external onlyControllerOwner {
-        l1Migrator = _l1Migrator;
-        emit L1MigratorUpdate(_l1Migrator);
+    function setL1Migrator(address _l1MigratorAddr)
+        external
+        onlyControllerOwner
+    {
+        l1MigratorAddr = _l1MigratorAddr;
+        emit L1MigratorUpdate(_l1MigratorAddr);
     }
 
     /**
@@ -134,7 +137,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      */
     function finalizeMigrateDelegator(MigrateDelegatorParams calldata _params)
         external
-        onlyL1Counterpart(l1Migrator)
+        onlyL1Counterpart(l1MigratorAddr)
     {
         require(
             !migratedDelegators[_params.l1Addr],
@@ -202,7 +205,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      */
     function finalizeMigrateUnbondingLocks(
         MigrateUnbondingLocksParams calldata _params
-    ) external onlyL1Counterpart(l1Migrator) {
+    ) external onlyL1Counterpart(l1MigratorAddr) {
         uint256 unbondingLockIdsLen = _params.unbondingLockIds.length;
         for (uint256 i; i < unbondingLockIdsLen; i++) {
             uint256 id = _params.unbondingLockIds[i];
@@ -224,7 +227,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      */
     function finalizeMigrateSender(MigrateSenderParams calldata _params)
         external
-        onlyL1Counterpart(l1Migrator)
+        onlyL1Counterpart(l1MigratorAddr)
     {
         require(!migratedSenders[_params.l1Addr], "SENDER_ALREADY_MIGRATED");
 
