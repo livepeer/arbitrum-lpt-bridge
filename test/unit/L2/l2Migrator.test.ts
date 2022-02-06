@@ -2,7 +2,7 @@ import {FakeContract, smock} from '@defi-wonderland/smock';
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import {expect, use} from 'chai';
 
-import {ethers} from 'hardhat';
+import {ethers, network} from 'hardhat';
 import {
   DelegatorPool,
   DelegatorPool__factory,
@@ -814,6 +814,55 @@ describe('L2Migrator', function() {
       expect(tx).to.be.reverted;
     });
 
+    describe('delegate is null', () => {
+      it('does not claim stake or stake in BondingManager', async () => {
+        // Simulate a scenario where there is a delegator pool for the null address to make sure
+        // that even in that scenario the delegator pool is not called
+        const slot = ethers.utils.solidityKeccak256(
+            ['uint256', 'uint256'],
+            // delegatorPools mapping is at storage slot 8
+            [ethers.constants.AddressZero, '8'],
+        );
+
+        await network.provider.send('hardhat_setStorageAt', [
+          l2Migrator.address,
+          slot,
+          ethers.utils.hexlify(ethers.utils.zeroPad(l2AddrEOA.address, 32)),
+        ]);
+
+        const pool = await l2Migrator.delegatorPools(
+            ethers.constants.AddressZero,
+        );
+        expect(pool).to.be.equal(l2AddrEOA.address);
+
+        const delegatorPoolMock: FakeContract = await smock.fake(
+            'IDelegatorPool',
+            {
+              address: l2AddrEOA.address,
+            },
+        );
+
+        const delegator = l2AddrEOA;
+        const delegate = ethers.constants.AddressZero;
+        const stake = 100;
+        const fees = 200;
+
+        await mockL1MigratorEOA.sendTransaction({
+          to: l2Migrator.address,
+          value: ethers.utils.parseUnits('1', 'ether'),
+        });
+
+        const tx = await l2Migrator
+            .connect(delegator)
+            .claimStake(delegate, stake, fees, [], ethers.constants.AddressZero);
+
+        expect(delegatorPoolMock.claim).to.not.be.called;
+        expect(bondingManagerMock.bondForWithHint).to.not.be.called;
+
+        await expect(tx).to.changeEtherBalance(delegator, fees);
+      });
+    });
+
     describe('claims stake', () => {
       it('claims stake from delegator pool if it exists', async () => {
         const params = mockMigrateDelegatorParams();
@@ -923,7 +972,7 @@ describe('L2Migrator', function() {
 
         await expect(tx)
             .to.emit(l2Migrator, 'StakeClaimed')
-            .withArgs(delegator.address, newDelegate, stake, fees);
+            .withArgs(delegator.address, delegate, stake, fees);
       });
 
       it('transfers if fees > 0', async () => {

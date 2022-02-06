@@ -276,20 +276,23 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
         );
 
         migratedDelegators[delegator] = true;
-        claimedDelegatedStake[_delegate] += _stake;
 
-        address pool = delegatorPools[_delegate];
+        if (_delegate != address(0)) {
+            claimedDelegatedStake[_delegate] += _stake;
 
-        address delegate = _delegate;
-        if (_newDelegate != address(0)) {
-            delegate = _newDelegate;
-        }
+            address pool = delegatorPools[_delegate];
 
-        if (pool != address(0)) {
-            // Claim stake that is held by the delegator pool
-            IDelegatorPool(pool).claim(delegator, _stake);
-        } else {
-            bondFor(_stake, delegator, delegate);
+            address delegate = _delegate;
+            if (_newDelegate != address(0)) {
+                delegate = _newDelegate;
+            }
+
+            if (pool != address(0)) {
+                // Claim stake that is held by the delegator pool
+                IDelegatorPool(pool).claim(delegator, _stake);
+            } else {
+                bondFor(_stake, delegator, delegate);
+            }
         }
 
         // Only EOAs are included in the snapshot so we do not need to worry about
@@ -298,7 +301,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
             payable(delegator).transfer(_fees);
         }
 
-        emit StakeClaimed(delegator, delegate, _stake, _fees);
+        emit StakeClaimed(delegator, _delegate, _stake, _fees);
     }
 
     function bondFor(
