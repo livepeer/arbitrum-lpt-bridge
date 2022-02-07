@@ -223,6 +223,23 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(bondingManagerID, ethers.constants.AddressZero);
+
+        // confirm only a single event was emitted
+        const events = await l2Migrator.queryFilter(
+            l2Migrator.filters.ControllerContractUpdate(),
+            'latest',
+        );
+        expect(events.length).to.equal(1);
+
+        expect(await l2Migrator.bondingManagerAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+        expect(await l2Migrator.ticketBrokerAddr()).to.equal(
+            mockTicketBrokerEOA.address,
+        );
+        expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            mockMerkleSnapshotEOA.address,
+        );
       });
     });
 
@@ -236,6 +253,23 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(ticketBrokerID, ethers.constants.AddressZero);
+
+        // confirm only a single event was emitted
+        const events = await l2Migrator.queryFilter(
+            l2Migrator.filters.ControllerContractUpdate(),
+            'latest',
+        );
+        expect(events.length).to.equal(1);
+
+        expect(await l2Migrator.bondingManagerAddr()).to.equal(
+            mockBondingManagerEOA.address,
+        );
+        expect(await l2Migrator.ticketBrokerAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+        expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            mockMerkleSnapshotEOA.address,
+        );
       });
     });
 
@@ -249,6 +283,23 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
+
+        // confirm only a single event was emitted
+        const events = await l2Migrator.queryFilter(
+            l2Migrator.filters.ControllerContractUpdate(),
+            'latest',
+        );
+        expect(events.length).to.equal(1);
+
+        expect(await l2Migrator.bondingManagerAddr()).to.equal(
+            mockBondingManagerEOA.address,
+        );
+        expect(await l2Migrator.ticketBrokerAddr()).to.equal(
+            mockTicketBrokerEOA.address,
+        );
+        expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
       });
     });
 
@@ -267,6 +318,7 @@ describe('L2Migrator', function() {
             .returns(ethers.constants.AddressZero);
 
         const tx = await l2Migrator.syncControllerContracts();
+
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(bondingManagerID, ethers.constants.AddressZero);
@@ -276,6 +328,23 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
+
+        // confirm three events were emitted
+        const events = await l2Migrator.queryFilter(
+            l2Migrator.filters.ControllerContractUpdate(),
+            'latest',
+        );
+        expect(events.length).to.equal(3);
+
+        expect(await l2Migrator.bondingManagerAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+        expect(await l2Migrator.ticketBrokerAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+        expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
       });
     });
   });
