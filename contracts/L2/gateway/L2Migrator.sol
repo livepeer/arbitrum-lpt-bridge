@@ -57,7 +57,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
     event L1MigratorUpdate(address _l1MigratorAddr);
 
-    event ProtocolContractUpdate(bytes32 _id, address _address);
+    event ControllerContractUpdate(bytes32 id, address addr);
 
     event MigrateDelegatorFinalized(MigrateDelegatorParams params);
 
@@ -331,7 +331,10 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
         if (_bondingManagerAddr != bondingManagerAddr) {
             bondingManagerAddr = _bondingManagerAddr;
-            emit ProtocolContractUpdate(bondingManagerId, _bondingManagerAddr);
+            emit ControllerContractUpdate(
+                bondingManagerId,
+                _bondingManagerAddr
+            );
         }
 
         // Check and update TicketBroker address
@@ -340,7 +343,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
         if (_ticketBrokerAddr != ticketBrokerAddr) {
             ticketBrokerAddr = _ticketBrokerAddr;
-            emit ProtocolContractUpdate(ticketBrokerId, _ticketBrokerAddr);
+            emit ControllerContractUpdate(ticketBrokerId, _ticketBrokerAddr);
         }
 
         // Check and update MerkleSnapshot address
@@ -349,7 +352,10 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
 
         if (_merkleSnapshotAddr != merkleSnapshotAddr) {
             merkleSnapshotAddr = _merkleSnapshotAddr;
-            emit ProtocolContractUpdate(merkleSnapshotId, _merkleSnapshotAddr);
+            emit ControllerContractUpdate(
+                merkleSnapshotId,
+                _merkleSnapshotAddr
+            );
         }
     }
 }
