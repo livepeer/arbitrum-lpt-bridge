@@ -208,11 +208,11 @@ describe('L2Migrator', function() {
     describe('addresses do not change', () => {
       it('should set addresses', async () => {
         const tx = l2Migrator.syncControllerContracts();
-        await expect(tx).to.not.emit(l2Migrator, 'ProtocolContractUpdate');
+        await expect(tx).to.not.emit(l2Migrator, 'ControllerContractUpdate');
       });
     });
 
-    describe('only bondingManager Changes', () => {
+    describe('only bondingManager changes', () => {
       it('should set addresses', async () => {
         controllerMock.getContract
             .whenCalledWith(bondingManagerID)
@@ -221,12 +221,12 @@ describe('L2Migrator', function() {
         const tx = await l2Migrator.syncControllerContracts();
 
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(bondingManagerID, ethers.constants.AddressZero);
       });
     });
 
-    describe('only ticketBroker Changes', () => {
+    describe('only ticketBroker changes', () => {
       it('should set addresses', async () => {
         controllerMock.getContract
             .whenCalledWith(ticketBrokerID)
@@ -234,12 +234,12 @@ describe('L2Migrator', function() {
 
         const tx = await l2Migrator.syncControllerContracts();
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(ticketBrokerID, ethers.constants.AddressZero);
       });
     });
 
-    describe('only merkleSnapshot Changes', () => {
+    describe('only merkleSnapshot changes', () => {
       it('should set addresses', async () => {
         controllerMock.getContract
             .whenCalledWith(merkleSnapshotID)
@@ -247,7 +247,7 @@ describe('L2Migrator', function() {
 
         const tx = await l2Migrator.syncControllerContracts();
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
       });
     });
@@ -268,13 +268,13 @@ describe('L2Migrator', function() {
 
         const tx = await l2Migrator.syncControllerContracts();
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(bondingManagerID, ethers.constants.AddressZero);
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(ticketBrokerID, ethers.constants.AddressZero);
         await expect(tx)
-            .to.emit(l2Migrator, 'ProtocolContractUpdate')
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
       });
     });
