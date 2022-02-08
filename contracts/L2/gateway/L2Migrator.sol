@@ -40,10 +40,15 @@ interface IDelegatorPool {
     function claim(address _addr, uint256 _stake) external;
 }
 
+interface ApproveLike {
+    function approve(address _addr, uint256 _amount) external;
+}
+
 contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     address public bondingManagerAddr;
     address public ticketBrokerAddr;
     address public merkleSnapshotAddr;
+    address public tokenAddr;
 
     address public l1MigratorAddr;
     address public delegatorPoolImpl;
@@ -312,6 +317,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
     ) private {
         IBondingManager bondingManager = IBondingManager(bondingManagerAddr);
 
+        ApproveLike(tokenAddr).approve(address(bondingManager), _amount);
         bondingManager.bondForWithHint(
             _amount,
             _owner,
@@ -359,6 +365,15 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
                 merkleSnapshotId,
                 _merkleSnapshotAddr
             );
+        }
+
+        // Check and update LivepeerToken address
+        bytes32 tokenId = keccak256("LivepeerToken");
+        address _tokenAddr = controller.getContract(tokenId);
+
+        if (_tokenAddr != tokenAddr) {
+            tokenAddr = _tokenAddr;
+            emit ControllerContractUpdate(tokenId, _tokenAddr);
         }
     }
 }

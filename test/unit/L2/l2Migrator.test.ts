@@ -27,12 +27,14 @@ describe('L2Migrator', function() {
   let bondingManagerMock: FakeContract;
   let ticketBrokerMock: FakeContract;
   let merkleSnapshotMock: FakeContract;
+  let tokenMock: FakeContract;
   let controllerMock: FakeContract;
   let mockL1MigratorEOA: SignerWithAddress;
   let mockL1MigratorL2AliasEOA: SignerWithAddress;
   let mockBondingManagerEOA: SignerWithAddress;
   let mockTicketBrokerEOA: SignerWithAddress;
   let mockMerkleSnapshotEOA: SignerWithAddress;
+  let mockTokenEOA: SignerWithAddress;
   let mockControllerEOA: SignerWithAddress;
 
   const mockMigrateDelegatorParams = () => ({
@@ -70,6 +72,7 @@ describe('L2Migrator', function() {
       mockBondingManagerEOA,
       mockTicketBrokerEOA,
       mockMerkleSnapshotEOA,
+      mockTokenEOA,
       mockControllerEOA,
     ] = await ethers.getSigners();
 
@@ -99,6 +102,12 @@ describe('L2Migrator', function() {
             ethers.utils.solidityKeccak256(['string'], ['MerkleSnapshot']),
         )
         .returns(mockMerkleSnapshotEOA.address);
+
+    controllerMock.getContract
+        .whenCalledWith(
+            ethers.utils.solidityKeccak256(['string'], ['LivepeerToken']),
+        )
+        .returns(mockTokenEOA.address);
 
     const DelegatorPool: DelegatorPool__factory =
       await ethers.getContractFactory('DelegatorPool');
@@ -138,6 +147,13 @@ describe('L2Migrator', function() {
     merkleSnapshotMock = await smock.fake('IMerkleSnapshot', {
       address: mockMerkleSnapshotEOA.address,
     });
+
+    tokenMock = await smock.fake(
+        'contracts/L2/gateway/L2Migrator.sol:ApproveLike',
+        {
+          address: mockTokenEOA.address,
+        },
+    );
 
     mockL1MigratorL2AliasEOA = await getL2SignerFromL1(mockL1MigratorEOA);
     await mockL1MigratorEOA.sendTransaction({
@@ -203,6 +219,10 @@ describe('L2Migrator', function() {
     const merkleSnapshotID = ethers.utils.solidityKeccak256(
         ['string'],
         ['MerkleSnapshot'],
+    );
+    const tokenID = ethers.utils.solidityKeccak256(
+        ['string'],
+        ['LivepeerToken'],
     );
 
     describe('addresses do not change', () => {
@@ -303,7 +323,40 @@ describe('L2Migrator', function() {
       });
     });
 
-    describe('all 3 change', () => {
+    describe('only token changes', () => {
+      it('should set addresses', async () => {
+        controllerMock.getContract
+            .whenCalledWith(tokenID)
+            .returns(ethers.constants.AddressZero);
+
+        const tx = await l2Migrator.syncControllerContracts();
+        await expect(tx)
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
+            .withArgs(tokenID, ethers.constants.AddressZero);
+
+        // confirm only a single event was emitted
+        const events = await l2Migrator.queryFilter(
+            l2Migrator.filters.ControllerContractUpdate(),
+            'latest',
+        );
+        expect(events.length).to.equal(1);
+
+        expect(await l2Migrator.bondingManagerAddr()).to.equal(
+            mockBondingManagerEOA.address,
+        );
+        expect(await l2Migrator.ticketBrokerAddr()).to.equal(
+            mockTicketBrokerEOA.address,
+        );
+        expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            mockMerkleSnapshotEOA.address,
+        );
+        expect(await l2Migrator.tokenAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+      });
+    });
+
+    describe('all 4 change', () => {
       it('should set addresses', async () => {
         controllerMock.getContract
             .whenCalledWith(bondingManagerID)
@@ -317,6 +370,10 @@ describe('L2Migrator', function() {
             .whenCalledWith(merkleSnapshotID)
             .returns(ethers.constants.AddressZero);
 
+        controllerMock.getContract
+            .whenCalledWith(tokenID)
+            .returns(ethers.constants.AddressZero);
+
         const tx = await l2Migrator.syncControllerContracts();
 
         await expect(tx)
@@ -328,13 +385,16 @@ describe('L2Migrator', function() {
         await expect(tx)
             .to.emit(l2Migrator, 'ControllerContractUpdate')
             .withArgs(merkleSnapshotID, ethers.constants.AddressZero);
+        await expect(tx)
+            .to.emit(l2Migrator, 'ControllerContractUpdate')
+            .withArgs(tokenID, ethers.constants.AddressZero);
 
-        // confirm three events were emitted
+        // confirm four events were emitted
         const events = await l2Migrator.queryFilter(
             l2Migrator.filters.ControllerContractUpdate(),
             'latest',
         );
-        expect(events.length).to.equal(3);
+        expect(events.length).to.equal(4);
 
         expect(await l2Migrator.bondingManagerAddr()).to.equal(
             ethers.constants.AddressZero,
@@ -343,6 +403,9 @@ describe('L2Migrator', function() {
             ethers.constants.AddressZero,
         );
         expect(await l2Migrator.merkleSnapshotAddr()).to.equal(
+            ethers.constants.AddressZero,
+        );
+        expect(await l2Migrator.tokenAddr()).to.equal(
             ethers.constants.AddressZero,
         );
       });
@@ -496,6 +559,10 @@ describe('L2Migrator', function() {
           expect(params.delegate).to.not.be.equal(params.l2Addr);
 
           // Make sure that the orchestrator is staked to it's L2 address and NOT its delegate/L1 address
+          expect(tokenMock.approve.atCall(0)).to.be.calledWith(
+              bondingManagerMock.address,
+              params.stake,
+          );
           expect(bondingManagerMock.bondForWithHint.atCall(0)).to.be.calledWith(
               params.stake,
               params.l2Addr,
@@ -507,6 +574,10 @@ describe('L2Migrator', function() {
           );
 
           // Make sure that the delegator pool is staked to the orchestrator's L2 address and NOT its delegate/L1 address
+          expect(tokenMock.approve.atCall(1)).to.be.calledWith(
+              bondingManagerMock.address,
+              params.stake,
+          );
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
               params.delegatedStake - params.stake,
               delegatorPool,
@@ -560,12 +631,18 @@ describe('L2Migrator', function() {
           params.delegate = delegate;
 
           bondingManagerMock.bondForWithHint.reset();
+          tokenMock.approve.reset();
 
           await l2Migrator
               .connect(mockL1MigratorL2AliasEOA)
               .finalizeMigrateDelegator(params);
 
           const delegatorPool = await l2Migrator.delegatorPools(params.l1Addr);
+          expect(tokenMock.approve.atCall(1)).to.be.calledWith(
+              bondingManagerMock.address,
+              params.delegatedStake - params.stake - stake,
+          );
+
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
               params.delegatedStake - params.stake - stake,
               delegatorPool,
@@ -605,12 +682,17 @@ describe('L2Migrator', function() {
           };
 
           bondingManagerMock.bondForWithHint.reset();
+          tokenMock.approve.reset();
 
           await l2Migrator
               .connect(mockL1MigratorL2AliasEOA)
               .finalizeMigrateDelegator(params2);
 
           const delegatorPool = await l2Migrator.delegatorPools(params2.l1Addr);
+          expect(tokenMock.approve.atCall(1)).to.be.calledWith(
+              bondingManagerMock.address,
+              params2.delegatedStake - params2.stake - stake,
+          );
           expect(bondingManagerMock.bondForWithHint.atCall(1)).to.be.calledWith(
               params2.delegatedStake - params2.stake - stake,
               delegatorPool,
@@ -657,6 +739,10 @@ describe('L2Migrator', function() {
 
           expect(await l2Migrator.migratedDelegators(params.l1Addr)).to.be.true;
 
+          expect(tokenMock.approve).to.be.calledOnceWith(
+              bondingManagerMock.address,
+              params.stake,
+          );
           expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
               params.stake,
               params.l2Addr,
@@ -810,6 +896,10 @@ describe('L2Migrator', function() {
             .true;
       }
 
+      expect(tokenMock.approve).to.be.calledOnceWith(
+          bondingManagerMock.address,
+          params.total,
+      );
       expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
           params.total,
           params.l2Addr,
@@ -988,8 +1078,8 @@ describe('L2Migrator', function() {
         // that even in that scenario the delegator pool is not called
         const slot = ethers.utils.solidityKeccak256(
             ['uint256', 'uint256'],
-            // delegatorPools mapping is at storage slot 8
-            [ethers.constants.AddressZero, '8'],
+            // delegatorPools mapping is at storage slot 9
+            [ethers.constants.AddressZero, '9'],
         );
 
         await network.provider.send('hardhat_setStorageAt', [
@@ -1102,6 +1192,10 @@ describe('L2Migrator', function() {
         expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
             stake,
         );
+        expect(tokenMock.approve).to.be.calledOnceWith(
+            bondingManagerMock.address,
+            stake,
+        );
         expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
             stake,
             delegator.address,
@@ -1128,6 +1222,10 @@ describe('L2Migrator', function() {
             .connect(delegator)
             .claimStake(delegate, stake, fees, [], newDelegate);
 
+        expect(tokenMock.approve).to.be.calledOnceWith(
+            bondingManagerMock.address,
+            stake,
+        );
         expect(bondingManagerMock.bondForWithHint).to.be.calledOnceWith(
             stake,
             delegator.address,
