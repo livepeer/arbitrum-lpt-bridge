@@ -44,7 +44,7 @@ contract ManagerProxy is ManagerProxyTarget {
     }
 
     /**
-     * @notice Uses delegatecall to execute function calls on this proxy contract's target contract using its own storage context.
+     * @dev Uses delegatecall to execute function calls on this proxy contract's target contract using its own storage context.
      This fallback function will look up the address of the target contract using the Controller and the target contract ID.
      It will then use the calldata for a function call as the data payload for a delegatecall on the target contract. The return value
      of the executed function call will also be returned
