@@ -32,7 +32,7 @@ export const getController = async (
   );
 };
 
-const getControllerAddress = (network: 'L1' | 'L2') => {
+export const getControllerAddress = (network: 'L1' | 'L2') => {
   if (!process.env.L1_PROTOCOL_DEPLOYMENT_EXPORT_PATH) {
     throw new Error('L1_PROTOCOL_DEPLOYMENT_EXPORT_PATH is not set');
   }

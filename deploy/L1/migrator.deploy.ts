@@ -21,7 +21,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const token = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
 
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
-      'L2Migrator',
+      'L2MigratorProxy',
   );
   const l1LPTgateway = await deployments.get('L1LPTGateway');
 
