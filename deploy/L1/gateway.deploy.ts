@@ -12,7 +12,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const arbitrumContracts = getArbitrumContracts(hre.network.name);
 
-  const l2Provider = new EthersProviderWrapper(hre.companionNetworks['l2'].provider);
+  const l2Provider = new EthersProviderWrapper(
+      hre.companionNetworks['l2'].provider,
+  );
   const l1LPT = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
   const l2LPT = await getAddress(l2Provider, 'LivepeerToken', 'L2');
   const escrow = await deployments.get('L1Escrow');
@@ -29,18 +31,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log: true,
   });
 
-  const DEFAULT_ADMIN_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['DEFAULT_ADMIN_ROLE'],
-  );
-  await execute(
-      'L1Escrow',
-      {from: deployer, log: true},
-      'grantRole',
-      DEFAULT_ADMIN_ROLE,
-      deployer,
-  );
-
   await execute(
       'L1Escrow',
       {from: deployer, log: true},
@@ -48,18 +38,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       l1LPT,
       l1Gateway.address,
       ethers.constants.MaxUint256,
-  );
-
-  const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
-      ['string'],
-      ['GOVERNOR_ROLE'],
-  );
-  await execute(
-      'L1LPTGateway',
-      {from: deployer, log: true},
-      'grantRole',
-      GOVERNOR_ROLE,
-      deployer,
   );
 };
 

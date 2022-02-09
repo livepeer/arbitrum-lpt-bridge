@@ -12,8 +12,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const arbitrumContracts = getArbitrumContracts(hre.network.name);
 
-  const l2Provider = new EthersProviderWrapper(hre.companionNetworks['l1'].provider);
-  const l1LPT = await getAddress(l2Provider, 'LivepeerToken', 'L1');
+  const l1Provider = new EthersProviderWrapper(
+      hre.companionNetworks['l1'].provider,
+  );
+  const l1LPT = await getAddress(l1Provider, 'LivepeerToken', 'L1');
   const l2LPT = await getAddress(ethers.provider, 'LivepeerToken', 'L2');
   const l2DataCache = await deployments.get('L2LPTDataCache');
 
@@ -27,14 +29,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ],
     log: true,
   });
-
-  await execute(
-      'L2LPTGateway',
-      {from: deployer, log: true},
-      'grantRole',
-      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
-      deployer,
-  );
 
   await execute(
       'L2_LPT',
