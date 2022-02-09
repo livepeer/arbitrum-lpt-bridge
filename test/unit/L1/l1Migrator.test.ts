@@ -138,7 +138,6 @@ describe('L1Migrator', function() {
         mockInboxEOA.address,
         mockBondingManagerEOA.address,
         mockTicketBrokerEOA.address,
-        mockBridgeMinterEOA.address,
         mockTokenEOA.address,
         mockL1LPTGatewayEOA.address,
         mockL2MigratorEOA.address,
@@ -146,6 +145,10 @@ describe('L1Migrator', function() {
     await l1Migrator.deployed();
 
     await l1Migrator.grantRole(ADMIN_ROLE, admin.address);
+
+    await l1Migrator
+        .connect(admin)
+        .setBridgeMinter(mockBridgeMinterEOA.address);
 
     inboxMock = await smock.fake('IInbox', {
       address: mockInboxEOA.address,
@@ -234,6 +237,33 @@ describe('L1Migrator', function() {
             .withArgs(mockTokenEOA.address);
         const l2MigratorAddr = await l1Migrator.l2MigratorAddr();
         expect(l2MigratorAddr).to.equal(mockTokenEOA.address);
+      });
+    });
+  });
+
+  describe('setBridgeMinter', () => {
+    describe('caller is not admin', () => {
+      it('fails to set bridgeMinter', async () => {
+        const tx = l1Migrator
+            .connect(l1EOA)
+            .setBridgeMinter(mockL2MigratorEOA.address);
+        await expect(tx).to.be.revertedWith(
+            // eslint-disable-next-line
+          `AccessControl: account ${l1EOA.address.toLowerCase()} is missing role ${ADMIN_ROLE}`
+        );
+      });
+    });
+
+    describe('caller is admin', () => {
+      it('sets bridgeMinter', async () => {
+        const tx = await l1Migrator
+            .connect(admin)
+            .setBridgeMinter(mockTokenEOA.address);
+        await expect(tx)
+            .to.emit(l1Migrator, 'BridgeMinterUpdate')
+            .withArgs(mockTokenEOA.address);
+        const bridgeMinterAddr = await l1Migrator.bridgeMinterAddr();
+        expect(bridgeMinterAddr).to.equal(mockTokenEOA.address);
       });
     });
   });

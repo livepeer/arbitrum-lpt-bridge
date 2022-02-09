@@ -17,7 +17,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       'L1',
   );
   const ticketBroker = await getAddress(ethers.provider, 'TicketBroker', 'L1');
-  const minter = await getAddress(ethers.provider, 'Minter', 'L1');
   const token = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
 
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
@@ -31,7 +30,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       arbitrumContracts.inbox,
       bondingManager,
       ticketBroker,
-      minter,
       token,
       l1LPTgateway.address,
       l2Migrator.address,
