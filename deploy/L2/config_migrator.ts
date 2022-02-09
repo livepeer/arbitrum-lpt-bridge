@@ -2,21 +2,20 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const {deployments, getNamedAccounts} = hre;
-  const {execute} = deployments;
+  const {deployments, ethers} = hre;
 
-  const {deployer} = await getNamedAccounts();
+  const signers = await ethers.getSigners();
 
   const l1Migrator = await hre.companionNetworks['l1'].deployments.get(
       'L1Migrator',
   );
 
-  await execute(
-      'L2Migrator',
-      {from: deployer, log: true},
-      'setL1Migrator',
-      l1Migrator.address,
-  );
+  const delegatorPool = await deployments.get('DelegatorPool');
+
+  const l2MigratorProxyDeploy = await deployments.get('L2MigratorProxy');
+  const l2Migrator = await ethers.getContractAt('L2Migrator', l2MigratorProxyDeploy.address);
+
+  await (await l2Migrator.connect(signers[0]).initialize(l1Migrator.address, delegatorPool.address)).wait();
 };
 
 func.tags = ['L2_MIGRATOR_CONFIG'];
