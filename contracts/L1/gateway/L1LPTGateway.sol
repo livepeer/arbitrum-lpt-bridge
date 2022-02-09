@@ -23,7 +23,7 @@ interface IMinter {
 /**
  * @title L1LPTGateway
  * @notice Manages inbound and outbound transfers of LPT between L1 and Arbitrum Rollup
- * @dev the contract can be paused by the governor which will prevent any outbound transfers
+ * @dev the contract can be paused by the admin which will prevent any outbound transfers
  * but pausing the contract does not affect inbound transfers (tokens coming from L2)
  */
 contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
@@ -51,7 +51,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
 
     /**
      * @notice Sets address of companion L2LPTGateway
-     * @dev Only address with the governor role is allowed to change the value of l2Counterpart
+     * @dev Only address with the admin role is allowed to change the value of l2Counterpart
      * @param _l2Counterpart L2 Address of the counterpart
      */
     function setCounterpart(address _l2Counterpart)
@@ -64,7 +64,7 @@ contract L1LPTGateway is IL1LPTGateway, ControlledGateway, L1ArbitrumMessenger {
 
     /**
      * @notice Sets address of Minter
-     * @dev Only address with the governor role is allowed to change the value of minter
+     * @dev Only address with the admin role is allowed to change the value of minter
      * @param _minter L1 Address of minter
      */
     function setMinter(address _minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
