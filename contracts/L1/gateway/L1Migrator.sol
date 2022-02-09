@@ -88,9 +88,9 @@ contract L1Migrator is
 {
     address public immutable bondingManagerAddr;
     address public immutable ticketBrokerAddr;
-    address public immutable bridgeMinterAddr;
     address public immutable tokenAddr;
     address public immutable l1LPTGatewayAddr;
+    address public bridgeMinterAddr;
     address public l2MigratorAddr;
 
     event MigrateDelegatorInitiated(
@@ -109,6 +109,7 @@ contract L1Migrator is
     );
 
     event L2MigratorUpdate(address l2Migrator);
+    event BridgeMinterUpdate(address bridgeMinter);
 
     bytes32 private immutable MIGRATE_DELEGATOR_TYPE_HASH =
         keccak256("MigrateDelegator(address l1Addr,address l2Addr)");
@@ -125,7 +126,6 @@ contract L1Migrator is
         address _inbox,
         address _bondingManagerAddr,
         address _ticketBrokerAddr,
-        address _bridgeMinterAddr,
         address _tokenAddr,
         address _l1LPTGatewayAddr,
         address _l2MigratorAddr
@@ -134,7 +134,6 @@ contract L1Migrator is
 
         bondingManagerAddr = _bondingManagerAddr;
         ticketBrokerAddr = _ticketBrokerAddr;
-        bridgeMinterAddr = _bridgeMinterAddr;
         tokenAddr = _tokenAddr;
         l1LPTGatewayAddr = _l1LPTGatewayAddr;
         l2MigratorAddr = _l2MigratorAddr;
@@ -152,6 +151,18 @@ contract L1Migrator is
     {
         l2MigratorAddr = _l2MigratorAddr;
         emit L2MigratorUpdate(_l2MigratorAddr);
+    }
+
+    /**
+     * @notice Sets BridgeMinter
+     * @param _bridgeMinterAddr BridgeMinter address
+     */
+    function setBridgeMinter(address _bridgeMinterAddr)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        bridgeMinterAddr = _bridgeMinterAddr;
+        emit BridgeMinterUpdate(_bridgeMinterAddr);
     }
 
     /**
