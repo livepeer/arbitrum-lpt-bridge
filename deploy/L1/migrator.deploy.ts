@@ -5,7 +5,7 @@ import {getAddress, getArbitrumContracts} from '../helpers';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy, execute} = deployments;
+  const {deploy} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
@@ -21,7 +21,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const token = await getAddress(ethers.provider, 'LivepeerToken', 'L1');
 
   const l2Migrator = await hre.companionNetworks['l2'].deployments.get(
-      'L2Migrator',
+      'L2MigratorProxy',
   );
   const l1LPTgateway = await deployments.get('L1LPTGateway');
 
@@ -38,14 +38,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ],
     log: true,
   });
-
-  await execute(
-      'L1Migrator',
-      {from: deployer, log: true},
-      'grantRole',
-      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
-      deployer,
-  );
 };
 
 func.tags = ['L1_MIGRATOR'];

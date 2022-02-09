@@ -1,45 +1,50 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
 import {ethers} from 'hardhat';
-import {getAddress} from '../helpers';
+import {getController, getGitHeadCommitHash} from '../helpers';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const {deployments, getNamedAccounts} = hre;
-  const {deploy, execute} = deployments;
+  const {deploy} = deployments;
 
   const {deployer} = await getNamedAccounts();
 
-  const delegatorPool = await deployments.get('DelegatorPool');
-  const bondingManager = await getAddress(
-      ethers.provider,
-      'BondingManager',
-      'L2',
-  );
-  const ticketBroker = await getAddress(ethers.provider, 'TicketBroker', 'L2');
-  const merkleSnapshot = await getAddress(
-      ethers.provider,
-      'MerkleSnapshot',
-      'L2',
-  );
+  const signers = await ethers.getSigners();
 
-  await deploy('L2Migrator', {
+  const controller = await getController(signers[0], 'L2');
+
+  const targetID = ethers.utils.solidityKeccak256(['string'], ['L2MigratorTarget']);
+  const target = await deploy('L2Migrator', {
     from: deployer,
     args: [
-      ethers.constants.AddressZero,
-      delegatorPool.address,
-      bondingManager,
-      ticketBroker,
-      merkleSnapshot,
+      controller.address,
     ],
     log: true,
   });
 
-  await execute(
-      'L2Migrator',
-      {from: deployer, log: true},
-      'grantRole',
-      ethers.utils.solidityKeccak256(['string'], ['GOVERNOR_ROLE']),
-      deployer,
+  const proxyID = ethers.utils.solidityKeccak256(['string'], ['L2Migrator']);
+  const proxy = await deploy('ManagerProxy', {
+    from: deployer,
+    args: [
+      controller.address,
+      targetID,
+    ],
+    log: true,
+  });
+
+  await deployments.save('L2MigratorTarget', target);
+  await deployments.save('L2MigratorProxy', proxy);
+
+  const gitCommitHash = await getGitHeadCommitHash();
+  await controller.setContractInfo(
+      proxyID,
+      proxy.address,
+      gitCommitHash,
+  );
+  await controller.setContractInfo(
+      targetID,
+      target.address,
+      gitCommitHash,
   );
 };
 
