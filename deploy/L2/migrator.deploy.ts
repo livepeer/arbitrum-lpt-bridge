@@ -36,16 +36,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deployments.save('L2MigratorProxy', proxy);
 
   const gitCommitHash = await getGitHeadCommitHash();
-  await controller.setContractInfo(
-      proxyID,
-      proxy.address,
-      gitCommitHash,
-  );
-  await controller.setContractInfo(
-      targetID,
-      target.address,
-      gitCommitHash,
-  );
+  await (
+    await controller.setContractInfo(proxyID, proxy.address, gitCommitHash)
+  ).wait();
+
+  await (
+    await controller.setContractInfo(targetID, target.address, gitCommitHash)
+  ).wait();
 };
 
 func.tags = ['L2_MIGRATOR'];
