@@ -1,0 +1,5 @@
+{
+    "filter_paths": "contracts/arbitrum/.*|contracts/L2/token/test/.*",
+    "exclude_dependencies": true,
+    "detectors_to_exclude": "naming-convention,external-function,too-many-digits,similar-names,missing-inheritance,missing-zero-check,name-reused,unused-return"
+}

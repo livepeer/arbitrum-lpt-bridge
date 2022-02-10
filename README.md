@@ -16,6 +16,16 @@ yarn
 yarn test
 ```
 
+## Run Slither
+
+Follow the [Slither installation guide](https://github.com/crytic/slither#how-to-install).
+
+```
+slither .
+```
+
+Note: As of Slither 0.8.2, `--triage-mode` does not properly save triage results to `slither.db.json` so there is not a `slither.db.json` file checked in right now. As a result, `slither` will currently always report findings that have already been triaged as non-issues. Once `--triage-mode` is fixed, a `slither.db.json` with triage results should be checked in so filter out already triaged findings.
+
 ## Deploy LPT
 
 ```
