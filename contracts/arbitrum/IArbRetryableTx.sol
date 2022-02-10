@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-pragma solidity 0.8.8;
+pragma solidity 0.8.9;
 
 /**
  * @title precompiled contract in every Arbitrum chain for retryable transaction related data retrieval and interactions. Exists at 0x000000000000000000000000000000000000006E
