@@ -99,17 +99,23 @@ describe('L2LPTDataCache', () => {
       const amount0 = 100;
       const amount1 = 200;
 
-      await l2LPTDataCache
+      let tx = await l2LPTDataCache
           .connect(mockL2LPTGatewayEOA)
           .increaseL2SupplyFromL1(amount0);
       expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(amount0);
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L2SupplyFromL1Increase')
+          .withArgs(amount0);
 
-      await l2LPTDataCache
+      tx = await l2LPTDataCache
           .connect(mockL2LPTGatewayEOA)
           .increaseL2SupplyFromL1(amount1);
       expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(
           amount0 + amount1,
       );
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L2SupplyFromL1Increase')
+          .withArgs(amount1);
     });
   });
 
@@ -131,10 +137,14 @@ describe('L2LPTDataCache', () => {
       await l2LPTDataCache
           .connect(mockL2LPTGatewayEOA)
           .increaseL2SupplyFromL1(99);
-      await expect(
-          l2LPTDataCache.connect(mockL2LPTGatewayEOA).decreaseL2SupplyFromL1(100),
-      ).to.not.be.reverted;
+
+      const tx = await l2LPTDataCache
+          .connect(mockL2LPTGatewayEOA)
+          .decreaseL2SupplyFromL1(100);
       expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(0);
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L2SupplyFromL1Decrease')
+          .withArgs(99);
     });
 
     it('decreases l2SupplyFromL1 by specified amount', async () => {
@@ -154,12 +164,15 @@ describe('L2LPTDataCache', () => {
           initAmount - amount0,
       );
 
-      await l2LPTDataCache
+      const tx = await l2LPTDataCache
           .connect(mockL2LPTGatewayEOA)
           .decreaseL2SupplyFromL1(amount1);
       expect(await l2LPTDataCache.l2SupplyFromL1()).to.be.equal(
           initAmount - amount0 - amount1,
       );
+      await expect(tx)
+          .to.emit(l2LPTDataCache, 'L2SupplyFromL1Decrease')
+          .withArgs(amount1);
     });
   });
 

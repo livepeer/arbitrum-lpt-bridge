@@ -21,6 +21,9 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
 
     event L2LPTGatewayUpdate(address _l2LPTGateway);
 
+    event L2SupplyFromL1Increase(uint256 amount);
+    event L2SupplyFromL1Decrease(uint256 amount);
+
     modifier onlyL2LPTGateway() {
         require(msg.sender == l2LPTGateway, "NOT_L2_LPT_GATEWAY");
         _;
@@ -51,8 +54,7 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
      */
     function increaseL2SupplyFromL1(uint256 _amount) external onlyL2LPTGateway {
         l2SupplyFromL1 += _amount;
-
-        // No event because the L2LPTGateway events are sufficient
+        emit L2SupplyFromL1Increase(_amount);
     }
 
     /**
@@ -68,14 +70,14 @@ contract L2LPTDataCache is Ownable, L2ArbitrumMessenger {
         uint256 ml2SupplyFromL1 = l2SupplyFromL1;
         if (_amount >= ml2SupplyFromL1) {
             l2SupplyFromL1 = 0;
+            emit L2SupplyFromL1Decrease(ml2SupplyFromL1);
         } else {
             // Underflow not possible due to preceeding check
             unchecked {
                 l2SupplyFromL1 = ml2SupplyFromL1 - _amount;
             }
+            emit L2SupplyFromL1Decrease(_amount);
         }
-
-        // No event because the L2LPTGateway events are sufficient
     }
 
     /**
