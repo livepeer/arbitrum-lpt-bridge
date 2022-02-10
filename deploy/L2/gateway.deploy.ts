@@ -31,7 +31,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
 
   await execute(
-      'L2_LPT',
+      'LivepeerToken',
       {from: deployer, log: true},
       'grantRole',
       ethers.utils.solidityKeccak256(['string'], ['MINTER_ROLE']),
@@ -39,7 +39,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   );
 
   await execute(
-      'L2_LPT',
+      'LivepeerToken',
       {from: deployer, log: true},
       'grantRole',
       ethers.utils.solidityKeccak256(['string'], ['BURNER_ROLE']),
