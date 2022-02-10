@@ -18,11 +18,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const signer = await ethers.getSigners();
 
   const controller = await getController(signer[0], 'L2');
-  await controller.setContractInfo(
-      ethers.utils.solidityKeccak256(['string'], ['L2LPTDataCache']),
-      dataCache.address,
-      await getGitHeadCommitHash(),
-  );
+  await (
+    await controller.setContractInfo(
+        ethers.utils.solidityKeccak256(['string'], ['L2LPTDataCache']),
+        dataCache.address,
+        await getGitHeadCommitHash(),
+    )
+  ).wait();
 };
 
 func.tags = ['L2_DATA_CACHE'];
