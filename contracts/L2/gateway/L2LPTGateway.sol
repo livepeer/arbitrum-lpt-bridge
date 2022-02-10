@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.8;
+pragma solidity 0.8.9;
 
 import {ControlledGateway} from "../../ControlledGateway.sol";
 import {L2ArbitrumMessenger} from "./L2ArbitrumMessenger.sol";

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-pragma solidity 0.8.8;
+pragma solidity 0.8.9;
 
 interface IMessageProvider {
     event InboxMessageDelivered(uint256 indexed messageNum, bytes data);
