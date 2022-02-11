@@ -17,7 +17,31 @@ export class L1MigratorAuth {
           {name: 'l2Addr', type: 'address'},
         ],
       },
+      migrateUnbondingLocks: {
+        MigrateUnbondingLocks: [
+          {name: 'l1Addr', type: 'address'},
+          {name: 'l2Addr', type: 'address'},
+          {name: 'unbondingLockIds', type: 'uint256[]'},
+        ],
+      },
     };
+  }
+
+  migrateUnbondingLocksTypedData(
+      l1Addr: string,
+      l2Addr: string,
+      unbondingLockIds: number[],
+  ): any {
+    const value = {
+      l1Addr,
+      l2Addr,
+      unbondingLockIds,
+    };
+    return ethers.utils._TypedDataEncoder.getPayload(
+        this.domain(),
+        this.types.migrateUnbondingLocks,
+        value,
+    );
   }
 
   migrateSenderTypedData(l1Addr: string, l2Addr: string): any {
