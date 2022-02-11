@@ -48,6 +48,3 @@ npx hardhat deploy --tags L2_GATEWAY_INIT --network $L2_NETWORK
 
 echo -e "\n Initialize L2 Migrator"
 npx hardhat deploy --tags L2_MIGRATOR_CONFIG --network $L2_NETWORK
-
-echo -e "\n Unpause L1 Migrator"
-npx hardhat deploy --tags L1_MIGRATOR_UNPAUSE --network $L1_NETWORK
