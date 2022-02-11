@@ -6,7 +6,7 @@ import {
   getArbitrumCoreContracts,
   waitForTx,
   waitToRelayTxsToL2,
-} from '../test/utils/messaging';
+} from '../utils/arbitrum';
 import hre from 'hardhat';
 
 async function main(): Promise<void> {
