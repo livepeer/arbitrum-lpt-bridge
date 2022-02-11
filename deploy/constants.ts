@@ -18,3 +18,40 @@ export const ARBITRUM_NETWORK: any = {
     nodeInterface: '0x00000000000000000000000000000000000000C8',
   },
 };
+
+export const ACL: any = {
+  mainnet: {
+    l1Escrow: {
+      // L1 Governor
+      admin: '0xFC3CBed6A3476F7616CC70f078397700136eEBFd',
+    },
+    l1Migrator: {
+      // L1 governance multisig
+      admin: '0x04746b890d090ae3c4c5dF0101CFD089A4FACA6C',
+      // Asset migration initiator
+      tempAdmin: '0xf410be5D9C64D4280091457355C0883324eB79A5',
+    },
+    l1LPTGateway: {
+      // L1 governance multisig
+      admin: '0x04746b890d090ae3c4c5dF0101CFD089A4FACA6C',
+    },
+  },
+  arbitrumMainnet: {
+    livepeerToken: {
+      // L2 Governor
+      admin: '0xD9dEd6f9959176F0A04dcf88a0d2306178A736a6',
+    },
+    l2Migrator: {
+      // L2 Governor
+      admin: '0xD9dEd6f9959176F0A04dcf88a0d2306178A736a6',
+    },
+    l2LPTGateway: {
+      // L2 governance multisig
+      admin: '0x04F53A0bb244f015cC97731570BeD26F0229da05',
+    },
+    l2LPTDataCache: {
+      // L2 Governor
+      admin: '0xD9dEd6f9959176F0A04dcf88a0d2306178A736a6',
+    },
+  },
+};
