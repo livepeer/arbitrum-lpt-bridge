@@ -1,0 +1,169 @@
+{
+  "address": "0x148D5b6B4df9530c7C76A810bd1Cdf69EC4c2085",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_controller",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_targetContractId",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "controller",
+          "type": "address"
+        }
+      ],
+      "name": "SetController",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "controller",
+      "outputs": [
+        {
+          "internalType": "contract IController",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_controller",
+          "type": "address"
+        }
+      ],
+      "name": "setController",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "targetContractId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "transactionHash": "0xb5b29d3115e60de86f5b849325a46a87a97823505e0ab1093ede5ebb95875c15",
+  "receipt": {
+    "to": null,
+    "from": "0xB5Af4138f0f33be0D6414Eb25271B9C2Dc245fb5",
+    "contractAddress": "0x148D5b6B4df9530c7C76A810bd1Cdf69EC4c2085",
+    "transactionIndex": 0,
+    "gasUsed": "6534301",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x46ad88c1281a038429b45273e2646a2ffc44e90bd7f203c0e23ebda0042524ff",
+    "transactionHash": "0xb5b29d3115e60de86f5b849325a46a87a97823505e0ab1093ede5ebb95875c15",
+    "logs": [],
+    "blockNumber": 5864923,
+    "cumulativeGasUsed": "2695141",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xD8E8328501E9645d16Cf49539efC04f734606ee4",
+    "0xf2067c9567f013942aa0abbd1c844dbf9301abbb14dba85f598a220968c88dd9"
+  ],
+  "solcInputHash": "a582cfe11011008962da6f3d958d9716",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.9+commit.e5eed63a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_controller\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_targetContractId\",\"type\":\"bytes32\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"controller\",\"type\":\"address\"}],\"name\":\"SetController\",\"type\":\"event\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"inputs\":[],\"name\":\"controller\",\"outputs\":[{\"internalType\":\"contract IController\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_controller\",\"type\":\"address\"}],\"name\":\"setController\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"targetContractId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}],\"devdoc\":{\"details\":\"Both this proxy contract and its target contract MUST inherit from ManagerProxyTarget in order to guarantee that both contracts have the same storage layout. Differing storage layouts in a proxy contract and target contract can potentially break the delegate proxy upgradeability mechanism. Since this proxy contract inherits from ManagerProxyTarget which inherits from Manager, it implements the setController() function. The target contract will also implement setController() since it also inherits from ManagerProxyTarget. Thus, any transaction sent to the proxy that calls setController() will execute against the proxy instead of the target. As a result, developers should keep in mind that the proxy will always execute the same logic for setController() regardless of the setController() implementation on the target contract. Generally, developers should not add any additional functions to this proxy contract because any function implemented on the proxy will always be executed against the proxy and the call **will not** be forwarded to the target contract\",\"kind\":\"dev\",\"methods\":{\"constructor\":{\"params\":{\"_controller\":\"Address of Controller that this contract will be registered with\",\"_targetContractId\":\"contract ID of the target contract\"}},\"setController(address)\":{\"params\":{\"_controller\":\"Controller contract address\"}}},\"title\":\"ManagerProxy\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"constructor\":{\"notice\":\"ManagerProxy constructor. Invokes constructor of base Manager contract with provided Controller address. Also, sets the contract ID of the target contract that function calls will be executed on.\"},\"setController(address)\":{\"notice\":\"Set controller. Only callable by current controller\"}},\"notice\":\"A proxy contract that uses delegatecall to execute function calls on a target contract using its own storage context. The target contract is a Manager contract that is registered with the Controller.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/proxy/ManagerProxy.sol\":\"ManagerProxy\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/proxy/IController.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\ninterface IController {\\n    function owner() external view returns (address);\\n\\n    function paused() external view returns (bool);\\n\\n    function getContract(bytes32 _id) external view returns (address);\\n}\\n\",\"keccak256\":\"0x60e4489bb10b71c8eed7c9e0be0b8d89f2f5c6c15235aaea05d64fe1eefdc891\",\"license\":\"MIT\"},\"contracts/proxy/IManager.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\ninterface IManager {\\n    event SetController(address controller);\\n\\n    function setController(address _controller) external;\\n}\\n\",\"keccak256\":\"0xa9a807c2ed7583e51b35367a4f99c4c7b05fe9b3949a0b21d3878f7944d18bbf\",\"license\":\"MIT\"},\"contracts/proxy/Manager.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\nimport {IManager} from \\\"./IManager.sol\\\";\\nimport {IController} from \\\"./IController.sol\\\";\\n\\n// Copy of https://github.com/livepeer/protocol/blob/confluence/contracts/Manager.sol\\n// Tests at https://github.com/livepeer/protocol/blob/confluence/test/unit/ManagerProxy.js\\ncontract Manager is IManager {\\n    // Controller that contract is registered with\\n    IController public controller;\\n\\n    // Check if sender is controller\\n    modifier onlyController() {\\n        _onlyController();\\n        _;\\n    }\\n\\n    // Check if sender is controller owner\\n    modifier onlyControllerOwner() {\\n        _onlyControllerOwner();\\n        _;\\n    }\\n\\n    // Check if controller is not paused\\n    modifier whenSystemNotPaused() {\\n        _whenSystemNotPaused();\\n        _;\\n    }\\n\\n    // Check if controller is paused\\n    modifier whenSystemPaused() {\\n        _whenSystemPaused();\\n        _;\\n    }\\n\\n    constructor(address _controller) {\\n        controller = IController(_controller);\\n    }\\n\\n    /**\\n     * @notice Set controller. Only callable by current controller\\n     * @param _controller Controller contract address\\n     */\\n    function setController(address _controller) external onlyController {\\n        controller = IController(_controller);\\n\\n        emit SetController(_controller);\\n    }\\n\\n    function _onlyController() private view {\\n        require(msg.sender == address(controller), \\\"caller must be Controller\\\");\\n    }\\n\\n    function _onlyControllerOwner() private view {\\n        require(\\n            msg.sender == controller.owner(),\\n            \\\"caller must be Controller owner\\\"\\n        );\\n    }\\n\\n    function _whenSystemNotPaused() private view {\\n        require(!controller.paused(), \\\"system is paused\\\");\\n    }\\n\\n    function _whenSystemPaused() private view {\\n        require(controller.paused(), \\\"system is not paused\\\");\\n    }\\n}\\n\",\"keccak256\":\"0x5c6522421f23f344125b06b9db74220a7a4346aaa97262cf501e3bc8c2e38e08\",\"license\":\"MIT\"},\"contracts/proxy/ManagerProxy.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\nimport \\\"./ManagerProxyTarget.sol\\\";\\n\\n/**\\n * @title ManagerProxy\\n * @notice A proxy contract that uses delegatecall to execute function calls on a target contract using its own storage context.\\n The target contract is a Manager contract that is registered with the Controller.\\n * @dev Both this proxy contract and its target contract MUST inherit from ManagerProxyTarget in order to guarantee\\n that both contracts have the same storage layout. Differing storage layouts in a proxy contract and target contract can\\n potentially break the delegate proxy upgradeability mechanism. Since this proxy contract inherits from ManagerProxyTarget which inherits\\n from Manager, it implements the setController() function. The target contract will also implement setController() since it also inherits\\n from ManagerProxyTarget. Thus, any transaction sent to the proxy that calls setController() will execute against the proxy instead\\n of the target. As a result, developers should keep in mind that the proxy will always execute the same logic for setController() regardless\\n of the setController() implementation on the target contract. Generally, developers should not add any additional functions to this proxy contract\\n because any function implemented on the proxy will always be executed against the proxy and the call **will not** be forwarded to the target contract\\n */\\ncontract ManagerProxy is ManagerProxyTarget {\\n    /**\\n     * @notice ManagerProxy constructor. Invokes constructor of base Manager contract with provided Controller address.\\n     * Also, sets the contract ID of the target contract that function calls will be executed on.\\n     * @param _controller Address of Controller that this contract will be registered with\\n     * @param _targetContractId contract ID of the target contract\\n     */\\n    constructor(address _controller, bytes32 _targetContractId)\\n        Manager(_controller)\\n    {\\n        targetContractId = _targetContractId;\\n    }\\n\\n    /**\\n     * @notice Fallback function that delegates calls to target contract when there is no msg.data\\n     */\\n    receive() external payable {\\n        _fallback();\\n    }\\n\\n    /**\\n     * @notice Fallback function that delegates calls to target contract when there is msg.data\\n     */\\n    fallback() external payable {\\n        _fallback();\\n    }\\n\\n    /**\\n     * @dev Uses delegatecall to execute function calls on this proxy contract's target contract using its own storage context.\\n     This fallback function will look up the address of the target contract using the Controller and the target contract ID.\\n     It will then use the calldata for a function call as the data payload for a delegatecall on the target contract. The return value\\n     of the executed function call will also be returned\\n     */\\n    function _fallback() private {\\n        address target = controller.getContract(targetContractId);\\n        require(target != address(0), \\\"target contract must be registered\\\");\\n\\n        assembly {\\n            // Solidity keeps a free memory pointer at position 0x40 in memory\\n            let freeMemoryPtrPosition := 0x40\\n            // Load the free memory pointer\\n            let calldataMemoryOffset := mload(freeMemoryPtrPosition)\\n            // Update free memory pointer to after memory space we reserve for calldata\\n            mstore(\\n                freeMemoryPtrPosition,\\n                add(calldataMemoryOffset, calldatasize())\\n            )\\n            // Copy calldata (method signature and params of the call) to memory\\n            calldatacopy(calldataMemoryOffset, 0x0, calldatasize())\\n\\n            // Call method on target contract using calldata which is loaded into memory\\n            let ret := delegatecall(\\n                gas(),\\n                target,\\n                calldataMemoryOffset,\\n                calldatasize(),\\n                0,\\n                0\\n            )\\n\\n            // Load the free memory pointer\\n            let returndataMemoryOffset := mload(freeMemoryPtrPosition)\\n            // Update free memory pointer to after memory space we reserve for returndata\\n            mstore(\\n                freeMemoryPtrPosition,\\n                add(returndataMemoryOffset, returndatasize())\\n            )\\n            // Copy returndata (result of the method invoked by the delegatecall) to memory\\n            returndatacopy(returndataMemoryOffset, 0x0, returndatasize())\\n\\n            switch ret\\n            case 0 {\\n                // Method call failed - revert\\n                // Return any error message stored in mem[returndataMemoryOffset..(returndataMemoryOffset + returndatasize)]\\n                revert(returndataMemoryOffset, returndatasize())\\n            }\\n            default {\\n                // Return result of method call stored in mem[returndataMemoryOffset..(returndataMemoryOffset + returndatasize)]\\n                return(returndataMemoryOffset, returndatasize())\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x1ec956e765d36bcfdaf99d9d4f078397cf734031dd4d5dff797ebc0ee77fe019\",\"license\":\"MIT\"},\"contracts/proxy/ManagerProxyTarget.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\nimport \\\"./Manager.sol\\\";\\n\\n/**\\n * @title ManagerProxyTarget\\n * @notice The base contract that target contracts used by a proxy contract should inherit from\\n * @dev Both the target contract and the proxy contract (implemented as ManagerProxy) MUST inherit from ManagerProxyTarget in order to guarantee\\n that both contracts have the same storage layout. Differing storage layouts in a proxy contract and target contract can\\n potentially break the delegate proxy upgradeability mechanism\\n */\\nabstract contract ManagerProxyTarget is Manager {\\n    // Used to look up target contract address in controller's registry\\n    bytes32 public targetContractId;\\n}\\n\",\"keccak256\":\"0x920bcc2def240e06272dc06cbcb9f12976f1698cd4f1020c165af25ee837e553\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516107b83803806107b88339818101604052810190610032919061011b565b81806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505080600181905550505061015b565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006100b282610087565b9050919050565b6100c2816100a7565b81146100cd57600080fd5b50565b6000815190506100df816100b9565b92915050565b6000819050919050565b6100f8816100e5565b811461010357600080fd5b50565b600081519050610115816100ef565b92915050565b6000806040838503121561013257610131610082565b5b6000610140858286016100d0565b925050602061015185828601610106565b9150509250929050565b61064e8061016a6000396000f3fe6080604052600436106100385760003560e01c806351720b411461005157806392eefe9b1461007c578063f77c4791146100a557610047565b36610047576100456100d0565b005b61004f6100d0565b005b34801561005d57600080fd5b50610066610223565b6040516100739190610378565b60405180910390f35b34801561008857600080fd5b506100a3600480360381019061009e91906103f6565b610229565b005b3480156100b157600080fd5b506100ba6102ab565b6040516100c79190610482565b60405180910390f35b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663e16c7d986001546040518263ffffffff1660e01b815260040161012e9190610378565b60206040518083038186803b15801561014657600080fd5b505afa15801561015a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061017e91906104b2565b9050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156101f0576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016101e790610562565b60405180910390fd5b60408051368101825236600082376000803683865af482513d810184523d6000823e816000811461021f573d82f35b3d82fd5b60015481565b6102316102cf565b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f4ff638452bbf33c012645d18ae6f05515ff5f2d1dfb0cece8cbf018c60903f70816040516102a09190610591565b60405180910390a150565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461035d576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610354906105f8565b60405180910390fd5b565b6000819050919050565b6103728161035f565b82525050565b600060208201905061038d6000830184610369565b92915050565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006103c382610398565b9050919050565b6103d3816103b8565b81146103de57600080fd5b50565b6000813590506103f0816103ca565b92915050565b60006020828403121561040c5761040b610393565b5b600061041a848285016103e1565b91505092915050565b6000819050919050565b600061044861044361043e84610398565b610423565b610398565b9050919050565b600061045a8261042d565b9050919050565b600061046c8261044f565b9050919050565b61047c81610461565b82525050565b60006020820190506104976000830184610473565b92915050565b6000815190506104ac816103ca565b92915050565b6000602082840312156104c8576104c7610393565b5b60006104d68482850161049d565b91505092915050565b600082825260208201905092915050565b7f74617267657420636f6e7472616374206d75737420626520726567697374657260008201527f6564000000000000000000000000000000000000000000000000000000000000602082015250565b600061054c6022836104df565b9150610557826104f0565b604082019050919050565b6000602082019050818103600083015261057b8161053f565b9050919050565b61058b816103b8565b82525050565b60006020820190506105a66000830184610582565b92915050565b7f63616c6c6572206d75737420626520436f6e74726f6c6c657200000000000000600082015250565b60006105e26019836104df565b91506105ed826105ac565b602082019050919050565b60006020820190508181036000830152610611816105d5565b905091905056fea26469706673582212200aa0c273310d630aebb406433c91cce44c28d6bed8b772025e7746305d31b02e64736f6c63430008090033",
+  "deployedBytecode": "0x6080604052600436106100385760003560e01c806351720b411461005157806392eefe9b1461007c578063f77c4791146100a557610047565b36610047576100456100d0565b005b61004f6100d0565b005b34801561005d57600080fd5b50610066610223565b6040516100739190610378565b60405180910390f35b34801561008857600080fd5b506100a3600480360381019061009e91906103f6565b610229565b005b3480156100b157600080fd5b506100ba6102ab565b6040516100c79190610482565b60405180910390f35b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663e16c7d986001546040518263ffffffff1660e01b815260040161012e9190610378565b60206040518083038186803b15801561014657600080fd5b505afa15801561015a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061017e91906104b2565b9050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156101f0576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016101e790610562565b60405180910390fd5b60408051368101825236600082376000803683865af482513d810184523d6000823e816000811461021f573d82f35b3d82fd5b60015481565b6102316102cf565b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f4ff638452bbf33c012645d18ae6f05515ff5f2d1dfb0cece8cbf018c60903f70816040516102a09190610591565b60405180910390a150565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60008054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461035d576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610354906105f8565b60405180910390fd5b565b6000819050919050565b6103728161035f565b82525050565b600060208201905061038d6000830184610369565b92915050565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006103c382610398565b9050919050565b6103d3816103b8565b81146103de57600080fd5b50565b6000813590506103f0816103ca565b92915050565b60006020828403121561040c5761040b610393565b5b600061041a848285016103e1565b91505092915050565b6000819050919050565b600061044861044361043e84610398565b610423565b610398565b9050919050565b600061045a8261042d565b9050919050565b600061046c8261044f565b9050919050565b61047c81610461565b82525050565b60006020820190506104976000830184610473565b92915050565b6000815190506104ac816103ca565b92915050565b6000602082840312156104c8576104c7610393565b5b60006104d68482850161049d565b91505092915050565b600082825260208201905092915050565b7f74617267657420636f6e7472616374206d75737420626520726567697374657260008201527f6564000000000000000000000000000000000000000000000000000000000000602082015250565b600061054c6022836104df565b9150610557826104f0565b604082019050919050565b6000602082019050818103600083015261057b8161053f565b9050919050565b61058b816103b8565b82525050565b60006020820190506105a66000830184610582565b92915050565b7f63616c6c6572206d75737420626520436f6e74726f6c6c657200000000000000600082015250565b60006105e26019836104df565b91506105ed826105ac565b602082019050919050565b60006020820190508181036000830152610611816105d5565b905091905056fea26469706673582212200aa0c273310d630aebb406433c91cce44c28d6bed8b772025e7746305d31b02e64736f6c63430008090033",
+  "devdoc": {
+    "details": "Both this proxy contract and its target contract MUST inherit from ManagerProxyTarget in order to guarantee that both contracts have the same storage layout. Differing storage layouts in a proxy contract and target contract can potentially break the delegate proxy upgradeability mechanism. Since this proxy contract inherits from ManagerProxyTarget which inherits from Manager, it implements the setController() function. The target contract will also implement setController() since it also inherits from ManagerProxyTarget. Thus, any transaction sent to the proxy that calls setController() will execute against the proxy instead of the target. As a result, developers should keep in mind that the proxy will always execute the same logic for setController() regardless of the setController() implementation on the target contract. Generally, developers should not add any additional functions to this proxy contract because any function implemented on the proxy will always be executed against the proxy and the call **will not** be forwarded to the target contract",
+    "kind": "dev",
+    "methods": {
+      "constructor": {
+        "params": {
+          "_controller": "Address of Controller that this contract will be registered with",
+          "_targetContractId": "contract ID of the target contract"
+        }
+      },
+      "setController(address)": {
+        "params": {
+          "_controller": "Controller contract address"
+        }
+      }
+    },
+    "title": "ManagerProxy",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "constructor": {
+        "notice": "ManagerProxy constructor. Invokes constructor of base Manager contract with provided Controller address. Also, sets the contract ID of the target contract that function calls will be executed on."
+      },
+      "setController(address)": {
+        "notice": "Set controller. Only callable by current controller"
+      }
+    },
+    "notice": "A proxy contract that uses delegatecall to execute function calls on a target contract using its own storage context. The target contract is a Manager contract that is registered with the Controller.",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 7169,
+        "contract": "contracts/proxy/ManagerProxy.sol:ManagerProxy",
+        "label": "controller",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(IController)7146"
+      },
+      {
+        "astId": 7351,
+        "contract": "contracts/proxy/ManagerProxy.sol:ManagerProxy",
+        "label": "targetContractId",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_bytes32"
+      }
+    ],
+    "types": {
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_contract(IController)7146": {
+        "encoding": "inplace",
+        "label": "contract IController",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}
