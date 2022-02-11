@@ -98,6 +98,22 @@ const config: HardhatUserConfig = {
         l1: 'rinkebyDevnet',
       },
     },
+    mainnet: {
+      url: process.env.MAINNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l2: 'arbitrumMainnet',
+      },
+    },
+    arbitrumMainnet: {
+      url: process.env.ARB_MAINNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l1: 'mainnet',
+      },
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
