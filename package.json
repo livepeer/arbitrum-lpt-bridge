@@ -11,7 +11,7 @@
     "eslint": "eslint . --ext .ts",
     "solhint": "npx solhint 'contracts/**/*.sol'",
     "prettier:sol": "prettier --write 'contracts/**/*.sol'",
-    "prettier:ts": "prettier-eslint --write 'test/**/*.ts' 'scripts/**/*.ts'",
+    "prettier:ts": "prettier-eslint --write 'test/**/*.ts' 'scripts/**/*.ts' 'tasks/**/*.ts' 'utils/**/*.ts'",
     "prettier": "yarn prettier:sol && yarn prettier:ts",
     "clean": "rm -rf cache artifacts typechain",
     "compile": "npx hardhat compile",
