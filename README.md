@@ -41,3 +41,41 @@ export L1_PROTOCOL_DEPLOYMENT_EXPORT_PATH=~/Development/l1_contracts.json
 export L2_PROTOCOL_DEPLOYMENT_EXPORT_PATH=~/Development/l2_contracts.json
 yarn deploy
 ```
+
+## Tasks
+
+Migrating a broadcaster (i.e. its funds locked as a sender in the L1 TicketBroker):
+
+```
+npx hardhat migrate-sender --network mainnet --l1addr <L1_ADDRESS> --l2addr <L2_ADDRESS> --sig <SIGNATURE>
+``` 
+
+- `--l1addr` is the broadcaster's L1 address.
+- `--l2addr` is the L2 address to use for the broadcaster. You can specify the current L1 address as long as it is not a contract.
+- `--sig` is a signature authorizing migration. See below.
+
+Creating a signature to authorize migration of a broadcaster:
+
+```
+npx hardhat migrate-sender-typed-data --network mainnet --l1addr <L1_ADDRESS> --l2addr <L2_ADDRESS>
+```
+
+The output of this command will be a typed data payload that can be signed using the "Sign Typed Data" option in `livepeer_cli`.
+
+Migrating unbonding locks in the L1 BondingManager:
+
+```
+npx hardhat migrate-unbonding-locks --network mainnet --l1addr <L1_ADDRESS> --l2addr <L2_ADDRESS> --sig <SIGNATURE>
+```
+
+- `--l1addr` is the L1 address with unbonding locks.
+- `--l2addr` is the L2 address to stake the tokens from the unbonding locks for. You can specify the current L1 address as long as it is not a contract.
+- `--sig` is a signature authorizing migration. See below.
+
+Creating a signature to authorize migration of unbonding locks:
+
+```
+npx hardhat migrate-unbonding-locks-typed-data --network mainnet --l1addr <L1_ADDRESS> --l2addr <L2_ADDRESS>
+```
+
+The output of this command will be a typed data payload that can be signed using the "Sign Typed Data" option in `livepeer_cli`.
