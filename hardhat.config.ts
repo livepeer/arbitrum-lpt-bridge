@@ -1,11 +1,13 @@
 import * as dotenv from 'dotenv';
 
-import {HardhatUserConfig, task} from 'hardhat/config';
+import {HardhatUserConfig} from 'hardhat/config';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
+import path from 'path';
+import fs from 'fs';
 
 // deployment plugins
 import 'hardhat-deploy';
@@ -13,13 +15,16 @@ import '@nomiclabs/hardhat-ethers';
 
 dotenv.config();
 
-task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
+function loadTasks() {
+  const tasksPath = path.join(__dirname, 'tasks');
+  fs.readdirSync(tasksPath).forEach((task) => {
+    require(`${tasksPath}/${task}`);
+  });
+}
 
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
+if (fs.existsSync(path.join(__dirname, 'artifacts'))) {
+  loadTasks();
+}
 
 const config: HardhatUserConfig = {
   solidity: {
