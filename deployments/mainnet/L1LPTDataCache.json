@@ -1,0 +1,216 @@
+{
+  "address": "0xB0D25B02fc24f13bC0CD901670fE79D4f3a09787",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_inbox",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_tokenAddr",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_l2LPTDataCacheAddr",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "seqNo",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalSupply",
+          "type": "uint256"
+        }
+      ],
+      "name": "CacheTotalSupplyInitiated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "seqNum",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "TxToL2",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_maxGas",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_gasPriceBid",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_maxSubmissionCost",
+          "type": "uint256"
+        }
+      ],
+      "name": "cacheTotalSupply",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getCacheTotalSupplyData",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalSupply",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "inbox",
+      "outputs": [
+        {
+          "internalType": "contract IInbox",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "l2LPTDataCacheAddr",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokenAddr",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x1ced4b0ec6b997d55ae8f7372c31fe21ecb01d272accfba1720d4d6cdcd821ce",
+  "receipt": {
+    "to": null,
+    "from": "0xB5Af4138f0f33be0D6414Eb25271B9C2Dc245fb5",
+    "contractAddress": "0xB0D25B02fc24f13bC0CD901670fE79D4f3a09787",
+    "transactionIndex": 54,
+    "gasUsed": "507297",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x963e576bf90952bb2614b269d14182997e2efd75efbf01fcce82b297058e3c2b",
+    "transactionHash": "0x1ced4b0ec6b997d55ae8f7372c31fe21ecb01d272accfba1720d4d6cdcd821ce",
+    "logs": [],
+    "blockNumber": 14185765,
+    "cumulativeGasUsed": "4911767",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x4c6f947Ae67F572afa4ae0730947DE7C874F95Ef",
+    "0x58b6A8A3302369DAEc383334672404Ee733aB239",
+    "0xd78b6bD09cd28A83cFb21aFa0DA95c685A6bb0B1"
+  ],
+  "solcInputHash": "a582cfe11011008962da6f3d958d9716",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.9+commit.e5eed63a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_inbox\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_tokenAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_l2LPTDataCacheAddr\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"seqNo\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalSupply\",\"type\":\"uint256\"}],\"name\":\"CacheTotalSupplyInitiated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"seqNum\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"TxToL2\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_maxGas\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasPriceBid\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_maxSubmissionCost\",\"type\":\"uint256\"}],\"name\":\"cacheTotalSupply\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCacheTotalSupplyData\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"totalSupply\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"inbox\",\"outputs\":[{\"internalType\":\"contract IInbox\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"l2LPTDataCacheAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenAddr\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"cacheTotalSupply(uint256,uint256,uint256)\":{\"params\":{\"_gasPriceBid\":\"Gas price bid for L2 execution\",\"_maxGas\":\"Gas limit for L2 execution\",\"_maxSubmissionCost\":\"Max ETH to pay for retryable ticket base submission fee\"}},\"getCacheTotalSupplyData()\":{\"returns\":{\"data\":\"L2 calldata for L2LPTDataCache\",\"totalSupply\":\"L1 LPT total supply\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"cacheTotalSupply(uint256,uint256,uint256)\":{\"notice\":\"Executes a L2 call to cache L1 LPT total supply in L2LPTDataCache\"},\"getCacheTotalSupplyData()\":{\"notice\":\"Return L2 calldata and total supply to use for a L2 call on L2LPTDataCache\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/L1/gateway/L1LPTDataCache.sol\":\"L1LPTDataCache\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/L1/gateway/L1ArbitrumMessenger.sol\":{\"content\":\"//SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\nimport {IBridge} from \\\"../../arbitrum/IBridge.sol\\\";\\nimport {IInbox} from \\\"../../arbitrum/IInbox.sol\\\";\\nimport {IOutbox} from \\\"../../arbitrum/IOutbox.sol\\\";\\n\\nabstract contract L1ArbitrumMessenger {\\n    IInbox public immutable inbox;\\n\\n    event TxToL2(\\n        address indexed from,\\n        address indexed to,\\n        uint256 indexed seqNum,\\n        bytes data\\n    );\\n\\n    constructor(address _inbox) {\\n        inbox = IInbox(_inbox);\\n    }\\n\\n    modifier onlyL2Counterpart(address l2Counterpart) {\\n        // a message coming from the counterpart gateway was executed by the bridge\\n        address bridge = inbox.bridge();\\n        require(msg.sender == bridge, \\\"NOT_FROM_BRIDGE\\\");\\n\\n        // and the outbox reports that the L2 address of the sender is the counterpart gateway\\n        address l2ToL1Sender = IOutbox(IBridge(bridge).activeOutbox())\\n            .l2ToL1Sender();\\n        require(l2ToL1Sender == l2Counterpart, \\\"ONLY_COUNTERPART_GATEWAY\\\");\\n        _;\\n    }\\n\\n    function sendTxToL2(\\n        address target,\\n        address from,\\n        uint256 maxSubmissionCost,\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        bytes memory data\\n    ) internal returns (uint256) {\\n        return\\n            sendTxToL2(\\n                target,\\n                from,\\n                msg.value,\\n                0, // we always assume that l2CallValue = 0\\n                maxSubmissionCost,\\n                maxGas,\\n                gasPriceBid,\\n                data\\n            );\\n    }\\n\\n    function sendTxToL2(\\n        address target,\\n        address from,\\n        uint256 _l1CallValue,\\n        uint256 _l2CallValue,\\n        uint256 maxSubmissionCost,\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        bytes memory data\\n    ) internal returns (uint256) {\\n        uint256 seqNum = inbox.createRetryableTicket{value: _l1CallValue}(\\n            target,\\n            _l2CallValue,\\n            maxSubmissionCost,\\n            from,\\n            from,\\n            maxGas,\\n            gasPriceBid,\\n            data\\n        );\\n        emit TxToL2(from, target, seqNum, data);\\n        return seqNum;\\n    }\\n}\\n\",\"keccak256\":\"0x5992094d676f73b20bb0f7f014f6b9491ceb44f3a7fc16f4ef78deefae37795c\",\"license\":\"MIT\"},\"contracts/L1/gateway/L1LPTDataCache.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.9;\\n\\nimport {L1ArbitrumMessenger} from \\\"./L1ArbitrumMessenger.sol\\\";\\n\\ninterface TotalSupplyLike {\\n    function totalSupply() external view returns (uint256);\\n}\\n\\ninterface IL2LPTDataCache {\\n    function finalizeCacheTotalSupply(uint256 _totalSupply) external;\\n}\\n\\ncontract L1LPTDataCache is L1ArbitrumMessenger {\\n    address public immutable tokenAddr;\\n    address public immutable l2LPTDataCacheAddr;\\n\\n    event CacheTotalSupplyInitiated(uint256 seqNo, uint256 totalSupply);\\n\\n    constructor(\\n        address _inbox,\\n        address _tokenAddr,\\n        address _l2LPTDataCacheAddr\\n    ) L1ArbitrumMessenger(_inbox) {\\n        tokenAddr = _tokenAddr;\\n        l2LPTDataCacheAddr = _l2LPTDataCacheAddr;\\n    }\\n\\n    /**\\n     * @notice Executes a L2 call to cache L1 LPT total supply in L2LPTDataCache\\n     * @param _maxGas Gas limit for L2 execution\\n     * @param _gasPriceBid Gas price bid for L2 execution\\n     * @param _maxSubmissionCost Max ETH to pay for retryable ticket base submission fee\\n     */\\n    function cacheTotalSupply(\\n        uint256 _maxGas,\\n        uint256 _gasPriceBid,\\n        uint256 _maxSubmissionCost\\n    ) external payable {\\n        (bytes memory data, uint256 totalSupply) = getCacheTotalSupplyData();\\n\\n        uint256 seqNo = sendTxToL2(\\n            l2LPTDataCacheAddr,\\n            msg.sender, // Refund to caller\\n            _maxSubmissionCost,\\n            _maxGas,\\n            _gasPriceBid,\\n            data\\n        );\\n\\n        emit CacheTotalSupplyInitiated(seqNo, totalSupply);\\n    }\\n\\n    /**\\n     * @notice Return L2 calldata and total supply to use for a L2 call on L2LPTDataCache\\n     * @return data L2 calldata for L2LPTDataCache\\n     * @return totalSupply L1 LPT total supply\\n     */\\n    function getCacheTotalSupplyData()\\n        public\\n        view\\n        returns (bytes memory data, uint256 totalSupply)\\n    {\\n        totalSupply = TotalSupplyLike(tokenAddr).totalSupply();\\n\\n        data = abi.encodeWithSelector(\\n            IL2LPTDataCache.finalizeCacheTotalSupply.selector,\\n            totalSupply\\n        );\\n    }\\n}\\n\",\"keccak256\":\"0xe45723615bb2e9dc27e213db38af7d8e12174057626df1532d42487834131b57\",\"license\":\"MIT\"},\"contracts/arbitrum/IBridge.sol\":{\"content\":\"// SPDX-License-Identifier: Apache-2.0\\n\\n/*\\n * Copyright 2021, Offchain Labs, Inc.\\n *\\n * Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n * you may not use this file except in compliance with the License.\\n * You may obtain a copy of the License at\\n *\\n *    http://www.apache.org/licenses/LICENSE-2.0\\n *\\n * Unless required by applicable law or agreed to in writing, software\\n * distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n * See the License for the specific language governing permissions and\\n * limitations under the License.\\n */\\n\\npragma solidity 0.8.9;\\n\\ninterface IBridge {\\n    event MessageDelivered(\\n        uint256 indexed messageIndex,\\n        bytes32 indexed beforeInboxAcc,\\n        address inbox,\\n        uint8 kind,\\n        address sender,\\n        bytes32 messageDataHash\\n    );\\n\\n    event BridgeCallTriggered(\\n        address indexed outbox,\\n        address indexed destAddr,\\n        uint256 amount,\\n        bytes data\\n    );\\n\\n    event InboxToggle(address indexed inbox, bool enabled);\\n\\n    event OutboxToggle(address indexed outbox, bool enabled);\\n\\n    function deliverMessageToInbox(\\n        uint8 kind,\\n        address sender,\\n        bytes32 messageDataHash\\n    ) external payable returns (uint256);\\n\\n    function executeCall(\\n        address destAddr,\\n        uint256 amount,\\n        bytes calldata data\\n    ) external returns (bool success, bytes memory returnData);\\n\\n    // These are only callable by the admin\\n    function setInbox(address inbox, bool enabled) external;\\n\\n    function setOutbox(address inbox, bool enabled) external;\\n\\n    // View functions\\n\\n    function activeOutbox() external view returns (address);\\n\\n    function allowedInboxes(address inbox) external view returns (bool);\\n\\n    function allowedOutboxes(address outbox) external view returns (bool);\\n\\n    function inboxAccs(uint256 index) external view returns (bytes32);\\n\\n    function messageCount() external view returns (uint256);\\n}\\n\",\"keccak256\":\"0x4e72972d4c0f6d4832d5cb338faab1a016d5eee9c9461631334a873bffdc96dd\",\"license\":\"Apache-2.0\"},\"contracts/arbitrum/IInbox.sol\":{\"content\":\"// SPDX-License-Identifier: Apache-2.0\\n\\n/*\\n * Copyright 2021, Offchain Labs, Inc.\\n *\\n * Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n * you may not use this file except in compliance with the License.\\n * You may obtain a copy of the License at\\n *\\n *    http://www.apache.org/licenses/LICENSE-2.0\\n *\\n * Unless required by applicable law or agreed to in writing, software\\n * distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n * See the License for the specific language governing permissions and\\n * limitations under the License.\\n */\\n\\npragma solidity 0.8.9;\\n\\nimport \\\"./IMessageProvider.sol\\\";\\n\\ninterface IInbox is IMessageProvider {\\n    function sendL2Message(bytes calldata messageData)\\n        external\\n        returns (uint256);\\n\\n    function sendUnsignedTransaction(\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        uint256 nonce,\\n        address destAddr,\\n        uint256 amount,\\n        bytes calldata data\\n    ) external returns (uint256);\\n\\n    function sendContractTransaction(\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        address destAddr,\\n        uint256 amount,\\n        bytes calldata data\\n    ) external returns (uint256);\\n\\n    function sendL1FundedUnsignedTransaction(\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        uint256 nonce,\\n        address destAddr,\\n        bytes calldata data\\n    ) external payable returns (uint256);\\n\\n    function sendL1FundedContractTransaction(\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        address destAddr,\\n        bytes calldata data\\n    ) external payable returns (uint256);\\n\\n    function createRetryableTicket(\\n        address destAddr,\\n        uint256 arbTxCallValue,\\n        uint256 maxSubmissionCost,\\n        address submissionRefundAddress,\\n        address valueRefundAddress,\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        bytes calldata data\\n    ) external payable returns (uint256);\\n\\n    function createRetryableTicketNoRefundAliasRewrite(\\n        address destAddr,\\n        uint256 arbTxCallValue,\\n        uint256 maxSubmissionCost,\\n        address submissionRefundAddress,\\n        address valueRefundAddress,\\n        uint256 maxGas,\\n        uint256 gasPriceBid,\\n        bytes calldata data\\n    ) external payable returns (uint256);\\n\\n    function depositEth(uint256 maxSubmissionCost)\\n        external\\n        payable\\n        returns (uint256);\\n\\n    function bridge() external view returns (address);\\n\\n    function pauseCreateRetryables() external;\\n\\n    function unpauseCreateRetryables() external;\\n\\n    function startRewriteAddress() external;\\n\\n    function stopRewriteAddress() external;\\n}\\n\",\"keccak256\":\"0xfb28f598c86519a5a414fe4523b3fd17d608e88e02ead26599af32f8605f3583\",\"license\":\"Apache-2.0\"},\"contracts/arbitrum/IMessageProvider.sol\":{\"content\":\"// SPDX-License-Identifier: Apache-2.0\\n\\n/*\\n * Copyright 2021, Offchain Labs, Inc.\\n *\\n * Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n * you may not use this file except in compliance with the License.\\n * You may obtain a copy of the License at\\n *\\n *    http://www.apache.org/licenses/LICENSE-2.0\\n *\\n * Unless required by applicable law or agreed to in writing, software\\n * distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n * See the License for the specific language governing permissions and\\n * limitations under the License.\\n */\\n\\npragma solidity 0.8.9;\\n\\ninterface IMessageProvider {\\n    event InboxMessageDelivered(uint256 indexed messageNum, bytes data);\\n\\n    event InboxMessageDeliveredFromOrigin(uint256 indexed messageNum);\\n}\\n\",\"keccak256\":\"0xc1a98f8599fdb5fd7b29abf5c00d48d3e35e5f649cbd81b4f4a940f2e587d9b0\",\"license\":\"Apache-2.0\"},\"contracts/arbitrum/IOutbox.sol\":{\"content\":\"// SPDX-License-Identifier: Apache-2.0\\n\\n/*\\n * Copyright 2021, Offchain Labs, Inc.\\n *\\n * Licensed under the Apache License, Version 2.0 (the \\\"License\\\");\\n * you may not use this file except in compliance with the License.\\n * You may obtain a copy of the License at\\n *\\n *    http://www.apache.org/licenses/LICENSE-2.0\\n *\\n * Unless required by applicable law or agreed to in writing, software\\n * distributed under the License is distributed on an \\\"AS IS\\\" BASIS,\\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\\n * See the License for the specific language governing permissions and\\n * limitations under the License.\\n */\\n\\npragma solidity 0.8.9;\\n\\ninterface IOutbox {\\n    event OutboxEntryCreated(\\n        uint256 indexed batchNum,\\n        uint256 outboxEntryIndex,\\n        bytes32 outputRoot,\\n        uint256 numInBatch\\n    );\\n    event OutBoxTransactionExecuted(\\n        address indexed destAddr,\\n        address indexed l2Sender,\\n        uint256 indexed outboxEntryIndex,\\n        uint256 transactionIndex\\n    );\\n\\n    function l2ToL1Sender() external view returns (address);\\n\\n    function l2ToL1Block() external view returns (uint256);\\n\\n    function l2ToL1EthBlock() external view returns (uint256);\\n\\n    function l2ToL1Timestamp() external view returns (uint256);\\n\\n    function l2ToL1BatchNum() external view returns (uint256);\\n\\n    function l2ToL1OutputId() external view returns (bytes32);\\n\\n    function processOutgoingMessages(\\n        bytes calldata sendsData,\\n        uint256[] calldata sendLengths\\n    ) external;\\n\\n    function outboxEntryExists(uint256 batchNum) external view returns (bool);\\n}\\n\",\"keccak256\":\"0xa3f81acfc7f912053a527abd61058a646fcd1d2ebc8b34cc64a0bd40a5860151\",\"license\":\"Apache-2.0\"}},\"version\":1}",
+  "bytecode": "0x60e060405234801561001057600080fd5b506040516109eb3803806109eb8339818101604052810190610032919061013b565b828073ffffffffffffffffffffffffffffffffffffffff1660808173ffffffffffffffffffffffffffffffffffffffff1681525050508173ffffffffffffffffffffffffffffffffffffffff1660a08173ffffffffffffffffffffffffffffffffffffffff16815250508073ffffffffffffffffffffffffffffffffffffffff1660c08173ffffffffffffffffffffffffffffffffffffffff168152505050505061018e565b600080fd5b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000610108826100dd565b9050919050565b610118816100fd565b811461012357600080fd5b50565b6000815190506101358161010f565b92915050565b600080600060608486031215610154576101536100d8565b5b600061016286828701610126565b935050602061017386828701610126565b925050604061018486828701610126565b9150509250925092565b60805160a05160c0516108196101d26000396000818161012e01526101c001526000818161019c01526101e8015260008181610304015261034a01526108196000f3fe60806040526004361061004a5760003560e01c80632adfd9991461004f5780635fbe4d1d1461006b57806376540da614610096578063c7fce66f146100c1578063fb0e722b146100ed575b600080fd5b610069600480360381019061006491906104b5565b610118565b005b34801561007757600080fd5b5061008061019a565b60405161008d9190610549565b60405180910390f35b3480156100a257600080fd5b506100ab6101be565b6040516100b89190610549565b60405180910390f35b3480156100cd57600080fd5b506100d66101e2565b6040516100e492919061060c565b60405180910390f35b3480156100f957600080fd5b50610102610302565b60405161010f919061069b565b60405180910390f35b6000806101236101e2565b9150915060006101577f00000000000000000000000000000000000000000000000000000000000000003386898988610326565b90507fc592f6a24d7ed60d007a73d985d899c2de29e7b1820003d666188f9b20951d2d818360405161018a9291906106b6565b60405180910390a1505050505050565b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b606060007f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff166318160ddd6040518163ffffffff1660e01b815260040160206040518083038186803b15801561024c57600080fd5b505afa158015610260573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061028491906106f4565b905063ae3a23e060e01b8160405160240161029f9190610721565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505091509091565b7f000000000000000000000000000000000000000000000000000000000000000081565b6000610339878734600089898989610345565b90509695505050505050565b6000807f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff1663679b6ded898c8a8a8e8f8c8c8c6040518a63ffffffff1660e01b81526004016103b098979695949392919061073c565b6020604051808303818588803b1580156103c957600080fd5b505af11580156103dd573d6000803e3d6000fd5b50505050506040513d601f19601f8201168201806040525081019061040291906106f4565b9050808a73ffffffffffffffffffffffffffffffffffffffff168a73ffffffffffffffffffffffffffffffffffffffff167fc1d1490cf25c3b40d600dfb27c7680340ed1ab901b7e8f3551280968a3b372b08660405161046291906107c1565b60405180910390a48091505098975050505050505050565b600080fd5b6000819050919050565b6104928161047f565b811461049d57600080fd5b50565b6000813590506104af81610489565b92915050565b6000806000606084860312156104ce576104cd61047a565b5b60006104dc868287016104a0565b93505060206104ed868287016104a0565b92505060406104fe868287016104a0565b9150509250925092565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b600061053382610508565b9050919050565b61054381610528565b82525050565b600060208201905061055e600083018461053a565b92915050565b600081519050919050565b600082825260208201905092915050565b60005b8381101561059e578082015181840152602081019050610583565b838111156105ad576000848401525b50505050565b6000601f19601f8301169050919050565b60006105cf82610564565b6105d9818561056f565b93506105e9818560208601610580565b6105f2816105b3565b840191505092915050565b6106068161047f565b82525050565b6000604082019050818103600083015261062681856105c4565b905061063560208301846105fd565b9392505050565b6000819050919050565b600061066161065c61065784610508565b61063c565b610508565b9050919050565b600061067382610646565b9050919050565b600061068582610668565b9050919050565b6106958161067a565b82525050565b60006020820190506106b0600083018461068c565b92915050565b60006040820190506106cb60008301856105fd565b6106d860208301846105fd565b9392505050565b6000815190506106ee81610489565b92915050565b60006020828403121561070a5761070961047a565b5b6000610718848285016106df565b91505092915050565b600060208201905061073660008301846105fd565b92915050565b600061010082019050610752600083018b61053a565b61075f602083018a6105fd565b61076c60408301896105fd565b610779606083018861053a565b610786608083018761053a565b61079360a08301866105fd565b6107a060c08301856105fd565b81810360e08301526107b281846105c4565b90509998505050505050505050565b600060208201905081810360008301526107db81846105c4565b90509291505056fea2646970667358221220183c6dcb156b0f53bc615599f88ede092bab4c83c0f222bb24565da12352213d64736f6c63430008090033",
+  "deployedBytecode": "0x60806040526004361061004a5760003560e01c80632adfd9991461004f5780635fbe4d1d1461006b57806376540da614610096578063c7fce66f146100c1578063fb0e722b146100ed575b600080fd5b610069600480360381019061006491906104b5565b610118565b005b34801561007757600080fd5b5061008061019a565b60405161008d9190610549565b60405180910390f35b3480156100a257600080fd5b506100ab6101be565b6040516100b89190610549565b60405180910390f35b3480156100cd57600080fd5b506100d66101e2565b6040516100e492919061060c565b60405180910390f35b3480156100f957600080fd5b50610102610302565b60405161010f919061069b565b60405180910390f35b6000806101236101e2565b9150915060006101577f00000000000000000000000000000000000000000000000000000000000000003386898988610326565b90507fc592f6a24d7ed60d007a73d985d899c2de29e7b1820003d666188f9b20951d2d818360405161018a9291906106b6565b60405180910390a1505050505050565b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b606060007f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff166318160ddd6040518163ffffffff1660e01b815260040160206040518083038186803b15801561024c57600080fd5b505afa158015610260573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061028491906106f4565b905063ae3a23e060e01b8160405160240161029f9190610721565b604051602081830303815290604052907bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19166020820180517bffffffffffffffffffffffffffffffffffffffffffffffffffffffff838183161783525050505091509091565b7f000000000000000000000000000000000000000000000000000000000000000081565b6000610339878734600089898989610345565b90509695505050505050565b6000807f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff1663679b6ded898c8a8a8e8f8c8c8c6040518a63ffffffff1660e01b81526004016103b098979695949392919061073c565b6020604051808303818588803b1580156103c957600080fd5b505af11580156103dd573d6000803e3d6000fd5b50505050506040513d601f19601f8201168201806040525081019061040291906106f4565b9050808a73ffffffffffffffffffffffffffffffffffffffff168a73ffffffffffffffffffffffffffffffffffffffff167fc1d1490cf25c3b40d600dfb27c7680340ed1ab901b7e8f3551280968a3b372b08660405161046291906107c1565b60405180910390a48091505098975050505050505050565b600080fd5b6000819050919050565b6104928161047f565b811461049d57600080fd5b50565b6000813590506104af81610489565b92915050565b6000806000606084860312156104ce576104cd61047a565b5b60006104dc868287016104a0565b93505060206104ed868287016104a0565b92505060406104fe868287016104a0565b9150509250925092565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b600061053382610508565b9050919050565b61054381610528565b82525050565b600060208201905061055e600083018461053a565b92915050565b600081519050919050565b600082825260208201905092915050565b60005b8381101561059e578082015181840152602081019050610583565b838111156105ad576000848401525b50505050565b6000601f19601f8301169050919050565b60006105cf82610564565b6105d9818561056f565b93506105e9818560208601610580565b6105f2816105b3565b840191505092915050565b6106068161047f565b82525050565b6000604082019050818103600083015261062681856105c4565b905061063560208301846105fd565b9392505050565b6000819050919050565b600061066161065c61065784610508565b61063c565b610508565b9050919050565b600061067382610646565b9050919050565b600061068582610668565b9050919050565b6106958161067a565b82525050565b60006020820190506106b0600083018461068c565b92915050565b60006040820190506106cb60008301856105fd565b6106d860208301846105fd565b9392505050565b6000815190506106ee81610489565b92915050565b60006020828403121561070a5761070961047a565b5b6000610718848285016106df565b91505092915050565b600060208201905061073660008301846105fd565b92915050565b600061010082019050610752600083018b61053a565b61075f602083018a6105fd565b61076c60408301896105fd565b610779606083018861053a565b610786608083018761053a565b61079360a08301866105fd565b6107a060c08301856105fd565b81810360e08301526107b281846105c4565b90509998505050505050505050565b600060208201905081810360008301526107db81846105c4565b90509291505056fea2646970667358221220183c6dcb156b0f53bc615599f88ede092bab4c83c0f222bb24565da12352213d64736f6c63430008090033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "cacheTotalSupply(uint256,uint256,uint256)": {
+        "params": {
+          "_gasPriceBid": "Gas price bid for L2 execution",
+          "_maxGas": "Gas limit for L2 execution",
+          "_maxSubmissionCost": "Max ETH to pay for retryable ticket base submission fee"
+        }
+      },
+      "getCacheTotalSupplyData()": {
+        "returns": {
+          "data": "L2 calldata for L2LPTDataCache",
+          "totalSupply": "L1 LPT total supply"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "cacheTotalSupply(uint256,uint256,uint256)": {
+        "notice": "Executes a L2 call to cache L1 LPT total supply in L2LPTDataCache"
+      },
+      "getCacheTotalSupplyData()": {
+        "notice": "Return L2 calldata and total supply to use for a L2 call on L2LPTDataCache"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
