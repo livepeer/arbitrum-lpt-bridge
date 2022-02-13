@@ -19,6 +19,12 @@ export const ARBITRUM_NETWORK: any = {
   },
 };
 
+export const PROTOCOL_CONTRACTS: any = {
+  mainnet: {
+    bridgeMinter: '0x8dDDB96CF36AC8860f1DE5C7c4698fd499FAB405',
+  },
+};
+
 export const ACL: any = {
   mainnet: {
     l1Escrow: {

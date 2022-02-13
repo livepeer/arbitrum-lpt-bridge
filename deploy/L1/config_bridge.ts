@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/dist/types';
 import {getAddress} from '../helpers';
+import {PROTOCOL_CONTRACTS} from '../constants';
 import {ethers} from 'hardhat';
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
@@ -13,7 +14,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       'L2LPTGateway',
   );
 
-  const minter = await getAddress(ethers.provider, 'Minter', 'L1');
+  let minter;
+  if (hre.network.name === 'mainnet') {
+    minter = PROTOCOL_CONTRACTS.mainnet.bridgeMinter;
+  } else {
+    minter = await getAddress(ethers.provider, 'Minter', 'L1');
+  }
 
   await execute(
       'L1LPTGateway',
