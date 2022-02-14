@@ -1,4 +1,4 @@
-import {Contract} from 'ethers';
+import {Contract, ethers} from 'ethers';
 import {task} from 'hardhat/config';
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 
@@ -16,20 +16,38 @@ task('verify-bridge-l2', 'prints ACL for L2 bridge contracts').setAction(
       const {deployments, ethers} = hre;
       const startBlock = 5322556;
 
+      const batchQueryFilter = async (contract: ethers.Contract, filter: ethers.EventFilter, startBlock: number, latestBlock: number) => {
+        const batchSize = 100000;
+        const events = [];
+        for (let i = startBlock; i < latestBlock; i += batchSize) {
+          const batchEvents = await contract.queryFilter(
+              filter,
+              i,
+              i + batchSize - 1,
+          );
+          events.push(...batchEvents);
+        }
+        return events;
+      };
+
       async function getEvents<T extends Contract>(name: string, role: string) {
         const deployment = await deployments.get(name);
         const contract: T = await ethers.getContractAt(name, deployment.address);
 
-        const roleGrantedEvents = await contract.queryFilter(
+        const latestBlock = await ethers.provider.getBlockNumber();
+
+        const roleGrantedEvents = await batchQueryFilter(
+            contract,
             contract.filters.RoleGranted(),
             startBlock,
-            'latest',
+            latestBlock,
         );
 
-        const roleRevokedEvents = await contract.queryFilter(
+        const roleRevokedEvents = await batchQueryFilter(
+            contract,
             contract.filters.RoleRevoked(),
             startBlock,
-            'latest',
+            latestBlock,
         );
 
         const grantedFiltered = roleGrantedEvents.filter(
