@@ -11,7 +11,21 @@ import 'solidity-coverage';
 import 'hardhat-deploy';
 import '@nomiclabs/hardhat-ethers';
 
+import path from 'path';
+import fs from 'fs';
+
 dotenv.config();
+
+function loadTasks() {
+  const tasksPath = path.join(__dirname, 'tasks');
+  fs.readdirSync(tasksPath).forEach((task) => {
+    require(`${tasksPath}/${task}`);
+  });
+}
+
+if (fs.existsSync(path.join(__dirname, 'artifacts'))) {
+  loadTasks();
+}
 
 task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
