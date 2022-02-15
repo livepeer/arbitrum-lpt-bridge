@@ -156,23 +156,27 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
             // 3. Stake non-self delegated stake on behalf of the delegator pool
             bondFor(_params.stake, _params.l2Addr, _params.l2Addr);
 
-            address poolAddr = Clones.clone(delegatorPoolImpl);
-
-            delegatorPools[_params.l1Addr] = poolAddr;
-
             // _params.delegatedStake includes _params.stake which is the orchestrator's self-stake
             // Subtract _params.stake to get the orchestrator's non-self delegated stake
             uint256 nonSelfDelegatedStake = _params.delegatedStake -
                 _params.stake;
-            bondFor(
-                nonSelfDelegatedStake - claimedDelegatedStake[_params.l1Addr],
-                poolAddr,
-                _params.l2Addr
-            );
+            uint256 unclaimedNonSelfDelegatedStake = nonSelfDelegatedStake -
+                claimedDelegatedStake[_params.l1Addr];
+            if (unclaimedNonSelfDelegatedStake > 0) {
+                address poolAddr = Clones.clone(delegatorPoolImpl);
 
-            IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
+                delegatorPools[_params.l1Addr] = poolAddr;
 
-            emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
+                bondFor(
+                    unclaimedNonSelfDelegatedStake,
+                    poolAddr,
+                    _params.l2Addr
+                );
+
+                IDelegatorPool(poolAddr).initialize(bondingManagerAddr);
+
+                emit DelegatorPoolCreated(_params.l1Addr, poolAddr);
+            }
         } else {
             // l1Addr is a delegator on L1:
             // If a delegator pool exists for _params.delegate claim stake which

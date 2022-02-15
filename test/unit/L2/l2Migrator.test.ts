@@ -524,6 +524,64 @@ describe('L2Migrator', function() {
 
     describe('finalizes migration', () => {
       describe('l1Addr == delegate (is orchestrator on L1)', () => {
+        it('does not create delegator pool for zero non self delegated stake', async () => {
+          const params = {
+            ...mockMigrateDelegatorParams(),
+            stake: 100,
+            delegatedStake: 100,
+          };
+
+          const tx = await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params);
+
+          await expect(tx).to.not.emit(l2Migrator, 'DelegatorPoolCreated');
+          expect(await l2Migrator.delegatorPools(params.l1Addr)).to.be.equal(
+              ethers.constants.AddressZero,
+          );
+          expect(bondingManagerMock.bondForWithHint).to.be.calledOnce;
+        });
+
+        it('does not create delegator pool for zero unclaimed non self delegated stake', async () => {
+          const delegator = l2AddrEOA.address;
+          const delegate = l1AddrEOA.address;
+          const stake = 100;
+
+          const params1 = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: delegator,
+            l2Addr: delegator,
+            delegate,
+            stake,
+          };
+          await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params1);
+
+          expect(await l2Migrator.claimedDelegatedStake(delegate)).to.be.equal(
+              stake,
+          );
+
+          const params2 = {
+            ...mockMigrateDelegatorParams(),
+            l1Addr: delegate,
+            l2Addr: delegate,
+            delegate,
+          };
+
+          bondingManagerMock.bondForWithHint.reset();
+          tokenMock.approve.reset();
+
+          const tx = await l2Migrator
+              .connect(mockL1MigratorL2AliasEOA)
+              .finalizeMigrateDelegator(params2);
+          await expect(tx).to.not.emit(l2Migrator, 'DelegatorPoolCreated');
+          expect(await l2Migrator.delegatorPools(params2.l1Addr)).to.be.equal(
+              ethers.constants.AddressZero,
+          );
+          expect(bondingManagerMock.bondForWithHint).to.be.calledOnce;
+        });
+
         it('creates delegator pool', async () => {
           const pendingStake = 500;
           bondingManagerMock.pendingStake.returns(pendingStake);
