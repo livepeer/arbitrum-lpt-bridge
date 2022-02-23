@@ -19,8 +19,10 @@ const getL1Pending = async (orchAddr: string) => {
       new EthersProviderWrapper(hre.companionNetworks['l1'].provider),
   );
 
-  const pendingStake = await bondingManager.pendingStake(orchAddr, roundNum);
-  const pendingFees = await bondingManager.pendingFees(orchAddr, roundNum);
+  const [pendingStake, pendingFees] = await Promise.all([
+    await bondingManager.pendingStake(orchAddr, roundNum),
+    await bondingManager.pendingFees(orchAddr, roundNum),
+  ]);
 
   return {
     address: orchAddr,
@@ -39,8 +41,10 @@ const getL2Pending = async (orchAddr: string) => {
       new EthersProviderWrapper(hre.network.provider),
   );
 
-  const pendingStake = await bondingManager.pendingStake(orchAddr, roundNum);
-  const pendingFees = await bondingManager.pendingFees(orchAddr, roundNum);
+  const [pendingStake, pendingFees] = await Promise.all([
+    await bondingManager.pendingStake(orchAddr, roundNum),
+    await bondingManager.pendingFees(orchAddr, roundNum),
+  ]);
 
   return {
     address: orchAddr,
@@ -74,28 +78,54 @@ const getClaimers = async () => {
     owedFees: BigNumber;
   }[] = [];
 
-  for (let index = 0; index < events.length; index++) {
-    const event = events[index];
+  // faster - run if order of addresses not important
+  await Promise.all(
+      events.map(async (event) => {
+        const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
+        const delegatorPool: DelegatorPool = await ethers.getContractAt(
+            'DelegatorPool',
+            poolAddr,
+        );
 
-    const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
-    const delegatorPool: DelegatorPool = await ethers.getContractAt(
-        'DelegatorPool',
-        poolAddr,
-    );
+        const claimEvent = await delegatorPool.queryFilter(
+            delegatorPool.filters.Claimed(),
+            event.blockHash,
+        );
 
-    const claimEvent = await delegatorPool.queryFilter(
-        delegatorPool.filters.Claimed(),
-        event.blockHash,
-    );
+        data.push({
+          address: event.args.delegator,
+          requestedStake: event.args.stake,
+          requestedFees: event.args.fees,
+          owedStake: claimEvent[0].args._stake,
+          owedFees: claimEvent[0].args._fees,
+        });
+      }),
+  );
 
-    data.push({
-      address: event.args.delegator,
-      requestedStake: event.args.stake,
-      requestedFees: event.args.fees,
-      owedStake: claimEvent[0].args._stake,
-      owedFees: claimEvent[0].args._fees,
-    });
-  }
+  // slower - run if order of addresses is important/only care about new addresses
+
+  // for (let index = 0; index < events.length; index++) {
+  //   const event = events[index];
+
+  //   const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
+  //   const delegatorPool: DelegatorPool = await ethers.getContractAt(
+  //       'DelegatorPool',
+  //       poolAddr,
+  //   );
+
+  //   const claimEvent = await delegatorPool.queryFilter(
+  //       delegatorPool.filters.Claimed(),
+  //       event.blockHash,
+  //   );
+
+  //   data.push({
+  //     address: event.args.delegator,
+  //     requestedStake: event.args.stake,
+  //     requestedFees: event.args.fees,
+  //     owedStake: claimEvent[0].args._stake,
+  //     owedFees: claimEvent[0].args._fees,
+  //   });
+  // }
 
   return data;
 };
