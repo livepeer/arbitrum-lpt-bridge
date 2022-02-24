@@ -16,7 +16,12 @@ task('verify-bridge-l2', 'prints ACL for L2 bridge contracts').setAction(
       const {deployments, ethers} = hre;
       const startBlock = 5322556;
 
-      const batchQueryFilter = async (contract: ethers.Contract, filter: ethers.EventFilter, startBlock: number, latestBlock: number) => {
+      const batchQueryFilter = async (
+          contract: ethers.Contract,
+          filter: ethers.EventFilter,
+          startBlock: number,
+          latestBlock: number,
+      ) => {
         const batchSize = 100000;
         const events = [];
         for (let i = startBlock; i < latestBlock; i += batchSize) {
