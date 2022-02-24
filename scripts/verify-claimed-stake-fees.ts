@@ -83,66 +83,34 @@ const getClaimers = async () => {
     owedFees: BigNumber;
   }[] = [];
 
-  // faster - run if order of addresses not important
-  // await Promise.all(
-  //     events.map(async (event) => {
-  //       const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
+  await Promise.all(
+      events.map(async (event) => {
+        const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
 
-  //       // if delegator pool does not exist
-  //       // i.e orchestrator did not migrate
-  //       if (poolAddr !== ethers.constants.AddressZero) {
-  //         const delegatorPool: DelegatorPool = await ethers.getContractAt(
-  //             'DelegatorPool',
-  //             poolAddr,
-  //         );
+        // if delegator pool does not exist
+        // i.e orchestrator did not migrate
+        if (poolAddr !== ethers.constants.AddressZero) {
+          const delegatorPool: DelegatorPool = await ethers.getContractAt(
+              'DelegatorPool',
+              poolAddr,
+          );
 
-  //         const claimEvent = await delegatorPool.queryFilter(
-  //             delegatorPool.filters.Claimed(),
-  //             event.blockHash,
-  //         );
+          const claimEvent = await delegatorPool.queryFilter(
+              delegatorPool.filters.Claimed(),
+              event.blockHash,
+          );
 
-  //         data.push({
-  //           address: event.args.delegator,
-  //           claimBlock: event.blockNumber,
-  //           requestedStake: event.args.stake,
-  //           requestedFees: event.args.fees,
-  //           owedStake: claimEvent[0].args._stake,
-  //           owedFees: claimEvent[0].args._fees,
-  //         });
-  //       }
-  //     }),
-  // );
-
-  // slower - run if order of addresses is important/only care about new addresses
-
-  for (let index = 0; index < events.length; index++) {
-    const event = events[index];
-
-    const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
-
-    // if delegator pool does not exist
-    // i.e orchestrator did not migrate
-    if (poolAddr !== ethers.constants.AddressZero) {
-      const delegatorPool: DelegatorPool = await ethers.getContractAt(
-          'DelegatorPool',
-          poolAddr,
-      );
-
-      const claimEvent = await delegatorPool.queryFilter(
-          delegatorPool.filters.Claimed(),
-          event.blockHash,
-      );
-
-      data.push({
-        address: event.args.delegator,
-        claimBlock: event.blockNumber,
-        requestedStake: event.args.stake,
-        requestedFees: event.args.fees,
-        owedStake: claimEvent[0].args._stake,
-        owedFees: claimEvent[0].args._fees,
-      });
-    }
-  }
+          data.push({
+            address: event.args.delegator,
+            claimBlock: event.blockNumber,
+            requestedStake: event.args.stake,
+            requestedFees: event.args.fees,
+            owedStake: claimEvent[0].args._stake,
+            owedFees: claimEvent[0].args._fees,
+          });
+        }
+      }),
+  );
 
   return data;
 };
@@ -165,7 +133,11 @@ async function main(): Promise<void> {
       ),
   );
 
-  stakeClaimers.forEach((claimer) => {
+  const sortedStakeClaimers = stakeClaimers.sort(
+      (a, b) => a.claimBlock - b.claimBlock,
+  );
+
+  sortedStakeClaimers.forEach((claimer) => {
     const l1Pending = pendingL1.filter(
         (delegator) => delegator.address === claimer.address,
     )[0];
