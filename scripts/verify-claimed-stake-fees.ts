@@ -82,23 +82,28 @@ const getClaimers = async () => {
   await Promise.all(
       events.map(async (event) => {
         const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
-        const delegatorPool: DelegatorPool = await ethers.getContractAt(
-            'DelegatorPool',
-            poolAddr,
-        );
 
-        const claimEvent = await delegatorPool.queryFilter(
-            delegatorPool.filters.Claimed(),
-            event.blockHash,
-        );
+        // if delegator pool does not exist
+        // i.e orchestrator did not migrate
+        if (poolAddr !== ethers.constants.AddressZero) {
+          const delegatorPool: DelegatorPool = await ethers.getContractAt(
+              'DelegatorPool',
+              poolAddr,
+          );
 
-        data.push({
-          address: event.args.delegator,
-          requestedStake: event.args.stake,
-          requestedFees: event.args.fees,
-          owedStake: claimEvent[0].args._stake,
-          owedFees: claimEvent[0].args._fees,
-        });
+          const claimEvent = await delegatorPool.queryFilter(
+              delegatorPool.filters.Claimed(),
+              event.blockHash,
+          );
+
+          data.push({
+            address: event.args.delegator,
+            requestedStake: event.args.stake,
+            requestedFees: event.args.fees,
+            owedStake: claimEvent[0].args._stake,
+            owedFees: claimEvent[0].args._fees,
+          });
+        }
       }),
   );
 
