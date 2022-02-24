@@ -9,49 +9,49 @@ const bondingManagerABI = [
   'function pendingFees(address _delegator, uint256 _endRound) public view returns (uint256)',
 ];
 
-const getL1Pending = async (orchAddr: string) => {
-  const bondingManagerAddr = '0x511bc4556d823ae99630ae8de28b9b80df90ea2e';
-  const roundNum = 2466;
+/* eslint-disable */
+// eslint throws a false-positive unused variable for this block
+enum ENetwork {
+  L1_MAINNET = 'L1_MAINNET',
+  L2_MAINNET = 'L2_MAINNET',
+}
+/* eslint-enable */
 
-  const bondingManager = new ethers.Contract(
-      bondingManagerAddr,
-      bondingManagerABI,
-      new EthersProviderWrapper(hre.companionNetworks['l1'].provider),
-  );
-
-  const [pendingStake, pendingFees] = await Promise.all([
-    await bondingManager.pendingStake(orchAddr, roundNum),
-    await bondingManager.pendingFees(orchAddr, roundNum),
-  ]);
-
-  return {
-    address: orchAddr,
-    stake: pendingStake,
-    fees: pendingFees,
-  };
+const network = {
+  [ENetwork.L1_MAINNET]: {
+    bondingManagerAddr: '0x511bc4556d823ae99630ae8de28b9b80df90ea2e',
+    provider: new EthersProviderWrapper(hre.companionNetworks['l1'].provider),
+  },
+  [ENetwork.L2_MAINNET]: {
+    bondingManagerAddr: '0x35Bcf3c30594191d53231E4FF333E8A770453e40',
+    provider: new EthersProviderWrapper(hre.network.provider),
+  },
 };
 
-const getL2Pending = async (orchAddr: string, claimBlock: number) => {
-  const bondingManagerAddr = '0x35Bcf3c30594191d53231E4FF333E8A770453e40';
+const getPending = async (
+    delegatorAddr: string,
+    chain: ENetwork,
+    claimBlock: number | string = 'latest',
+) => {
   const roundNum = 2466; // does not matter on L2, only current round is used
 
   const bondingManager = new ethers.Contract(
-      bondingManagerAddr,
+      network[chain].bondingManagerAddr,
       bondingManagerABI,
-      new EthersProviderWrapper(hre.network.provider),
+      network[chain].provider,
   );
 
   const [pendingStake, pendingFees] = await Promise.all([
-    await bondingManager.pendingStake(orchAddr, roundNum, {
+    await bondingManager.pendingStake(delegatorAddr, roundNum, {
       blockTag: claimBlock,
     }),
-    await bondingManager.pendingFees(orchAddr, roundNum, {
+    await bondingManager.pendingFees(delegatorAddr, roundNum, {
       blockTag: claimBlock,
     }),
   ]);
 
   return {
-    address: orchAddr,
+    address: delegatorAddr,
     stake: pendingStake,
     fees: pendingFees,
   };
@@ -153,17 +153,17 @@ async function main(): Promise<void> {
 
   console.log('fetching L1 pending stake and fees');
   const pendingL1 = await Promise.all(
-      stakeClaimers.map((delegator) => getL1Pending(delegator.address)),
+      stakeClaimers.map((delegator) =>
+        getPending(delegator.address, ENetwork.L1_MAINNET),
+      ),
   );
 
   console.log('fetching L2 pending stake and fees');
   const pendingL2 = await Promise.all(
       stakeClaimers.map((delegator) =>
-        getL2Pending(delegator.address, delegator.claimBlock),
+        getPending(delegator.address, ENetwork.L2_MAINNET, delegator.claimBlock),
       ),
   );
-
-  // const table: any = [];
 
   stakeClaimers.forEach((claimer) => {
     const l1Pending = pendingL1.filter(
@@ -183,19 +183,7 @@ async function main(): Promise<void> {
         ethers.utils.formatEther(l1Pending.fees),
         ethers.utils.formatEther(claimer.owedFees),
     );
-
-    // table.push({
-    //   address: claimer.address,
-    //   l2pendingStake: ethers.utils.formatEther(l2Pending.stake),
-    //   l1pendingStake: ethers.utils.formatEther(l1Pending.stake),
-    //   owedStake: ethers.utils.formatEther(claimer.owedStake),
-    //   l2pendingFees: ethers.utils.formatEther(l2Pending.fees),
-    //   l1pendingFees: ethers.utils.formatEther(l1Pending.fees),
-    //   owedFees: ethers.utils.formatEther(claimer.owedFees),
-    // });
   });
-
-  // console.table(table);
 }
 
 main()
