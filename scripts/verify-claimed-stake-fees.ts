@@ -31,7 +31,7 @@ const getL1Pending = async (orchAddr: string) => {
   };
 };
 
-const getL2Pending = async (orchAddr: string) => {
+const getL2Pending = async (orchAddr: string, claimBlock: number) => {
   const bondingManagerAddr = '0x35Bcf3c30594191d53231E4FF333E8A770453e40';
   const roundNum = 2466; // does not matter on L2, only current round is used
 
@@ -42,8 +42,12 @@ const getL2Pending = async (orchAddr: string) => {
   );
 
   const [pendingStake, pendingFees] = await Promise.all([
-    await bondingManager.pendingStake(orchAddr, roundNum),
-    await bondingManager.pendingFees(orchAddr, roundNum),
+    await bondingManager.pendingStake(orchAddr, roundNum, {
+      blockTag: claimBlock,
+    }),
+    await bondingManager.pendingFees(orchAddr, roundNum, {
+      blockTag: claimBlock,
+    }),
   ]);
 
   return {
@@ -72,6 +76,7 @@ const getClaimers = async () => {
 
   const data: {
     address: string;
+    claimBlock: number;
     requestedStake: BigNumber;
     requestedFees: BigNumber;
     owedStake: BigNumber;
@@ -79,58 +84,65 @@ const getClaimers = async () => {
   }[] = [];
 
   // faster - run if order of addresses not important
-  await Promise.all(
-      events.map(async (event) => {
-        const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
+  // await Promise.all(
+  //     events.map(async (event) => {
+  //       const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
 
-        // if delegator pool does not exist
-        // i.e orchestrator did not migrate
-        if (poolAddr !== ethers.constants.AddressZero) {
-          const delegatorPool: DelegatorPool = await ethers.getContractAt(
-              'DelegatorPool',
-              poolAddr,
-          );
+  //       // if delegator pool does not exist
+  //       // i.e orchestrator did not migrate
+  //       if (poolAddr !== ethers.constants.AddressZero) {
+  //         const delegatorPool: DelegatorPool = await ethers.getContractAt(
+  //             'DelegatorPool',
+  //             poolAddr,
+  //         );
 
-          const claimEvent = await delegatorPool.queryFilter(
-              delegatorPool.filters.Claimed(),
-              event.blockHash,
-          );
+  //         const claimEvent = await delegatorPool.queryFilter(
+  //             delegatorPool.filters.Claimed(),
+  //             event.blockHash,
+  //         );
 
-          data.push({
-            address: event.args.delegator,
-            requestedStake: event.args.stake,
-            requestedFees: event.args.fees,
-            owedStake: claimEvent[0].args._stake,
-            owedFees: claimEvent[0].args._fees,
-          });
-        }
-      }),
-  );
+  //         data.push({
+  //           address: event.args.delegator,
+  //           claimBlock: event.blockNumber,
+  //           requestedStake: event.args.stake,
+  //           requestedFees: event.args.fees,
+  //           owedStake: claimEvent[0].args._stake,
+  //           owedFees: claimEvent[0].args._fees,
+  //         });
+  //       }
+  //     }),
+  // );
 
   // slower - run if order of addresses is important/only care about new addresses
 
-  // for (let index = 0; index < events.length; index++) {
-  //   const event = events[index];
+  for (let index = 0; index < events.length; index++) {
+    const event = events[index];
 
-  //   const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
-  //   const delegatorPool: DelegatorPool = await ethers.getContractAt(
-  //       'DelegatorPool',
-  //       poolAddr,
-  //   );
+    const poolAddr = await l2Migrator.delegatorPools(event.args.delegate);
 
-  //   const claimEvent = await delegatorPool.queryFilter(
-  //       delegatorPool.filters.Claimed(),
-  //       event.blockHash,
-  //   );
+    // if delegator pool does not exist
+    // i.e orchestrator did not migrate
+    if (poolAddr !== ethers.constants.AddressZero) {
+      const delegatorPool: DelegatorPool = await ethers.getContractAt(
+          'DelegatorPool',
+          poolAddr,
+      );
 
-  //   data.push({
-  //     address: event.args.delegator,
-  //     requestedStake: event.args.stake,
-  //     requestedFees: event.args.fees,
-  //     owedStake: claimEvent[0].args._stake,
-  //     owedFees: claimEvent[0].args._fees,
-  //   });
-  // }
+      const claimEvent = await delegatorPool.queryFilter(
+          delegatorPool.filters.Claimed(),
+          event.blockHash,
+      );
+
+      data.push({
+        address: event.args.delegator,
+        claimBlock: event.blockNumber,
+        requestedStake: event.args.stake,
+        requestedFees: event.args.fees,
+        owedStake: claimEvent[0].args._stake,
+        owedFees: claimEvent[0].args._fees,
+      });
+    }
+  }
 
   return data;
 };
@@ -146,10 +158,12 @@ async function main(): Promise<void> {
 
   console.log('fetching L2 pending stake and fees');
   const pendingL2 = await Promise.all(
-      stakeClaimers.map((delegator) => getL2Pending(delegator.address)),
+      stakeClaimers.map((delegator) =>
+        getL2Pending(delegator.address, delegator.claimBlock),
+      ),
   );
 
-  const table: any = [];
+  // const table: any = [];
 
   stakeClaimers.forEach((claimer) => {
     const l1Pending = pendingL1.filter(
@@ -160,18 +174,28 @@ async function main(): Promise<void> {
         (delegator) => delegator.address === claimer.address,
     )[0];
 
-    table.push({
-      address: claimer.address,
-      l2pendingStake: ethers.utils.formatEther(l2Pending.stake),
-      l1pendingStake: ethers.utils.formatEther(l1Pending.stake),
-      owedStake: ethers.utils.formatEther(claimer.owedStake),
-      l2pendingFees: ethers.utils.formatEther(l2Pending.fees),
-      l1pendingFees: ethers.utils.formatEther(l1Pending.fees),
-      owedFees: ethers.utils.formatEther(claimer.owedFees),
-    });
+    console.log(
+        claimer.address,
+        ethers.utils.formatEther(l2Pending.stake),
+        ethers.utils.formatEther(l1Pending.stake),
+        ethers.utils.formatEther(claimer.owedStake),
+        ethers.utils.formatEther(l2Pending.fees),
+        ethers.utils.formatEther(l1Pending.fees),
+        ethers.utils.formatEther(claimer.owedFees),
+    );
+
+    // table.push({
+    //   address: claimer.address,
+    //   l2pendingStake: ethers.utils.formatEther(l2Pending.stake),
+    //   l1pendingStake: ethers.utils.formatEther(l1Pending.stake),
+    //   owedStake: ethers.utils.formatEther(claimer.owedStake),
+    //   l2pendingFees: ethers.utils.formatEther(l2Pending.fees),
+    //   l1pendingFees: ethers.utils.formatEther(l1Pending.fees),
+    //   owedFees: ethers.utils.formatEther(claimer.owedFees),
+    // });
   });
 
-  console.table(table);
+  // console.table(table);
 }
 
 main()
