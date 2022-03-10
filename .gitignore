@@ -110,3 +110,8 @@ typechain
 #Hardhat files
 cache
 artifacts
+
+#foundry
+/.dapple
+/build
+/out
