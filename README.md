@@ -10,10 +10,20 @@ cd arbitrum-lpt-bridge
 yarn
 ```
 
-## Run Tests
+## Run hardhat tests
 
 ```
 yarn test
+```
+
+## Run foundry tests
+
+```
+yarn test:forge
+```
+Note: Tests that require to fork a network can be run with the ```--fork-url``` flag:
+```
+yarn test:forge -vvvv --fork-url https://alchemy_ARBITRUM_MAINNET_rpc_address
 ```
 
 ## Run Slither

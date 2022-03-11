@@ -20,6 +20,7 @@
     "test:unit": "npx hardhat test test/unit/*.*",
     "test:integration": "npx hardhat test test/integration/**",
     "test:gas": "REPORT_GAS=true npx hardhat test test/gas-report/*",
+    "test:forge": "forge test -v",
     "tsc": "tsc"
   },
   "repository": {
