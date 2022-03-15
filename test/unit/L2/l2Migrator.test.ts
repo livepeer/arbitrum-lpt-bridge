@@ -1056,7 +1056,7 @@ describe('L2Migrator', function() {
               [],
               ethers.constants.AddressZero,
           );
-      expect(tx).to.revertedWith('CLAIM_STAKE:ALREADY_MIGRATED');
+      await expect(tx).to.revertedWith('CLAIM_STAKE:ALREADY_MIGRATED');
     });
 
     it('reverts if fee transfer fails', async () => {
@@ -1069,7 +1069,7 @@ describe('L2Migrator', function() {
               [],
               ethers.constants.AddressZero,
           );
-      expect(tx).to.be.reverted;
+      await expect(tx).to.be.reverted;
     });
 
     describe('delegate is null', () => {
