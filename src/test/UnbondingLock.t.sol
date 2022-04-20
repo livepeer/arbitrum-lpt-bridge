@@ -2,52 +2,14 @@ pragma solidity 0.8.9;
 
 import "ds-test/test.sol";
 import "../../contracts/L2/gateway/L2Migrator.sol";
+import "./interfaces/ICheatCodes.sol";
+import "./interfaces/ICheatCodes.sol";
+import "./interfaces/IRoundManager.sol";
+import "./interfaces/IBondingManager.sol";
 
-interface CheatCodes {
-    function roll(uint256) external;
-
-    function prank(address) external;
-
-    function deal(address who, uint256 newBalance) external;
-
-    function startPrank(address) external;
-
-    function stopPrank() external;
-}
-
-interface IBondingManagerOverride {
-    function bondForWithHint(
-        uint256 _amount,
-        address _owner,
-        address _to,
-        address _oldDelegateNewPosPrev,
-        address _oldDelegateNewPosNext,
-        address _newDelegateNewPosPrev,
-        address _newDelegateNewPosNext
-    ) external;
-
-    function getDelegator(address _addr)
-        external
-        view
-        returns (
-            uint256 bondedAmount,
-            uint256 fees,
-            address delegateAddress,
-            uint256 delegatedAmount,
-            uint256 startRound,
-            uint256 lastClaimRound,
-            uint256 nextUnbondingLockId
-        );
-
-    function getDelegatorUnbondingLock(address _addr, uint256 _unbondingLockId)
-        external
-        view
-        returns (uint256 amount, uint256 withdrawRound);
-}
-
-// forge test -v --fork-url https://alchemy_ARBITRUM_MAINNET_rpc_address
+// forge test -v --fork-url https://alchemy_ARBITRUM_MAINNET_rpc_address --match-contract UnbondingLockTest
 contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
-    CheatCodes public constant CHEATS = CheatCodes(HEVM_ADDRESS);
+    ICheatCodes public constant CHEATS = ICheatCodes(HEVM_ADDRESS);
 
     address public constant L1_MIGRATOR_ADDRESS =
         0x21146B872D3A95d2cF9afeD03eE5a783DaE9A89A;
@@ -62,17 +24,16 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
         0x0070EdA17A3656D6568eC4C94FeF34A396D20613;
     address public constant DELEGATOR_WITH_NULL_DELEGATE =
         0x00ac9C5193660b1F69092Fb4B0f011521B67627f;
+    IRoundsManager public constant ROUND_MANAGER =
+        IRoundsManager(0xdd6f56DcC28D3F5f27084381fE8Df634985cc39f);
 
-    uint256 public constant TEST_BLOCK_NUMBER = 14366402;
-
-    function testSanityCheck() public {
-        assertTrue(true);
-    }
+    uint256 public constant TEST_BLOCK_NUMBER = 9999999999;
 
     function testFinalizeMigrateUnbondingLocksDelegatorWithNullDelegate()
         public
     {
         CHEATS.roll(TEST_BLOCK_NUMBER);
+        ROUND_MANAGER.initializeRound();
         CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NULL_DELEGATE,
@@ -84,6 +45,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
 
     function testDelegateTransferWithDelegatorWithNullDelegate() public {
         CHEATS.roll(TEST_BLOCK_NUMBER);
+        ROUND_MANAGER.initializeRound();
         CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
         address l2DelegateAlias = applyL1ToL2Alias(L1_DELEGATE);
         address delegateAddress = _migrateBondingLock(
@@ -96,6 +58,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
 
     function testDelegateTransferWithDelegatorWithNonNullDelegate() public {
         CHEATS.roll(TEST_BLOCK_NUMBER);
+        ROUND_MANAGER.initializeRound();
         CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
         address l2DelegateAlias = applyL1ToL2Alias(L1_DELEGATE);
         address delegateAddress = _migrateBondingLock(
