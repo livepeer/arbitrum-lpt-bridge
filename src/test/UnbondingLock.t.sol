@@ -3,7 +3,6 @@ pragma solidity 0.8.9;
 import "ds-test/test.sol";
 import "../../contracts/L2/gateway/L2Migrator.sol";
 import "./interfaces/ICheatCodes.sol";
-import "./interfaces/ICheatCodes.sol";
 import "./interfaces/IRoundManager.sol";
 import "./interfaces/IBondingManager.sol";
 
@@ -47,26 +46,24 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
         CHEATS.roll(TEST_BLOCK_NUMBER);
         ROUND_MANAGER.initializeRound();
         CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
-        address l2DelegateAlias = applyL1ToL2Alias(L1_DELEGATE);
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NULL_DELEGATE,
-            l2DelegateAlias
+            L1_DELEGATE
         );
         CHEATS.stopPrank();
-        assertTrue(delegateAddress == l2DelegateAlias);
+        assertTrue(delegateAddress == L1_DELEGATE);
     }
 
     function testDelegateTransferWithDelegatorWithNonNullDelegate() public {
         CHEATS.roll(TEST_BLOCK_NUMBER);
         ROUND_MANAGER.initializeRound();
         CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
-        address l2DelegateAlias = applyL1ToL2Alias(L1_DELEGATE);
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NON_NULL_DELEGATE,
-            l2DelegateAlias
+            L1_DELEGATE
         );
         CHEATS.stopPrank();
-        assertTrue(delegateAddress == l2DelegateAlias);
+        assertTrue(delegateAddress == L1_DELEGATE);
     }
 
     function _migrateBondingLock(address _delegator, address _delegate)
@@ -78,7 +75,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
             memory migrateDelegatorParams = IMigrator
                 .MigrateUnbondingLocksParams({
                     l1Addr: _delegator,
-                    l2Addr: applyL1ToL2Alias(_delegator),
+                    l2Addr: _delegator,
                     total: 10,
                     unbondingLockIds: _unbondingLockIds,
                     delegate: _delegate
@@ -94,7 +91,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
         returns (address)
     {
         (, , address delegateAddress, , , , ) = BONDING_MANAGER.getDelegator(
-            applyL1ToL2Alias(_delegator)
+            _delegator
         );
         return delegateAddress;
     }
