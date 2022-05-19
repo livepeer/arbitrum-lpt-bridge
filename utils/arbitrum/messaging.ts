@@ -44,6 +44,11 @@ export async function waitToRelayTxsToL2(
   const redemptionReceipt = await l2.getTransactionReceipt(redeemTransaction);
   expect(redemptionReceipt.status).equals(1);
   console.log('Xchain message arrived');
+
+  return {
+    l1TxHash: l1Tx.transactionHash,
+    l2TxHash: redemptionReceipt.transactionHash,
+  };
 }
 
 async function getInboxSeqNumFromContractTransaction(
