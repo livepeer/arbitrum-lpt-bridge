@@ -1,5 +1,5 @@
-export const L1LPTDataCacheAddress =
-  '0x1d24838b35A9c138Ac157A852e19e948aD6323D7';
+import { address as L2CacheAddress } from "../../../deployments/arbitrumMainnet/L2LPTDataCache.json";
+import { address as L1CacheAddress } from "../../../deployments/mainnet/L1LPTDataCache.json";
 
-export const L2LPTDataCacheAddress =
-  '0xd78b6bD09cd28A83cFb21aFa0DA95c685A6bb0B1';
+export const L1LPTDataCacheAddress = L1CacheAddress;
+export const L2LPTDataCacheAddress = L2CacheAddress;
