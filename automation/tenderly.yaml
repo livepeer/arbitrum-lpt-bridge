@@ -1,0 +1,22 @@
+account_id: ""
+actions:
+  livepeer/livepeer:
+    runtime: v1
+    sources: actions
+    specs:
+      CacheWhenL1LPTMinted:
+        description: Calls cacheTotalSupply on L1DataCache contract once Mint event is emitted
+        function: cacheLPTTotalSupply/index:triggerCache
+        trigger:
+          type: transaction
+          transaction:
+            filters:
+              - eventEmitted:
+                  contract:
+                    address: 0x58b6a8a3302369daec383334672404ee733ab239
+                  name: Mint
+                  name: Burn
+                network: 1
+            status:
+              - mined
+project_slug: "LivepeerOnchainCron"

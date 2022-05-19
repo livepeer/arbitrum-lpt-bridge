@@ -858,6 +858,11 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
+"@tenderly/actions@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@tenderly/actions/-/actions-0.0.8.tgz#22accfe4f53c55e7bd8c836105a65c82f8c2d272"
+  integrity sha512-F9+vMdKsFs5aVb70hwUgiGKNSbzpjn/tmSzLrhAOd10R1ixa+o8cWPCoKC0LOtKwgMdJdJptbCl0/QJoi3bosA==
+
 "@truffle/error@^0.0.14":
   version "0.0.14"
   resolved "https://registry.yarnpkg.com/@truffle/error/-/error-0.0.14.tgz#59683b5407bede7bddf16d80dc5592f9c5e5fa05"
