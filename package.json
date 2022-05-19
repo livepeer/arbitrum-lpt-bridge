@@ -41,6 +41,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/contracts-upgradeable": "^4.4.1",
+    "@tenderly/actions": "^0.0.8",
     "@typechain/ethers-v5": "^7.2.0",
     "@typechain/hardhat": "^2.3.1",
     "@types/chai": "^4.2.22",
@@ -74,8 +75,5 @@
     "ts-node": "^10.4.0",
     "typechain": "^5.2.0",
     "typescript": "^4.4.4"
-  },
-  "dependencies": {
-    "@tenderly/actions": "^0.0.8"
   }
 }
