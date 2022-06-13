@@ -22,7 +22,7 @@ export const getCache = (
 
 export const getArbParams = async (
     cache: L1LPTDataCache,
-    l2Provider: ethers.providers.InfuraProvider,
+    l2Provider: ethers.providers.JsonRpcProvider,
     signerAddr: string,
 ) => {
   const l2Calldata = (await cache.getCacheTotalSupplyData()).data;
