@@ -33,7 +33,7 @@ export const triggerCache: ActionFn = async (
 
   const {l1TxHash, l2TxHash} = await waitToRelayTxsToL2(
       waitForTx(tx),
-      ARBITRUM_NETWORK.rinkeby.inbox,
+      ARBITRUM_NETWORK.mainnet.inbox,
       ethProvider,
       arbProvider,
   );
