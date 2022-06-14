@@ -1,4 +1,4 @@
-account_id: ""
+account_id: ''
 actions:
   livepeer/livepeer:
     runtime: v1
@@ -15,8 +15,11 @@ actions:
                   contract:
                     address: 0x58b6a8a3302369daec383334672404ee733ab239
                   name: Mint
+              - eventEmitted:
+                  contract:
+                    address: 0x58b6a8a3302369daec383334672404ee733ab239
                   name: Burn
                 network: 1
             status:
               - mined
-project_slug: "LivepeerOnchainCron"
+project_slug: 'LivepeerOnchainCron'

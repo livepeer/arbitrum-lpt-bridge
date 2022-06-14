@@ -118,3 +118,4 @@ artifacts
 
 # Ignore tsc output
 out/**/*
+out
