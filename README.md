@@ -21,7 +21,9 @@ yarn test
 ```
 yarn test:forge
 ```
-Note: Tests that require to fork a network can be run with the ```--fork-url``` flag:
+
+Note: Tests that require to fork a network can be run with the `--fork-url` flag:
+
 ```
 yarn test:forge -vvvv --fork-url https://alchemy_ARBITRUM_MAINNET_rpc_address
 ```
@@ -58,7 +60,7 @@ Migrating a broadcaster (i.e. its funds locked as a sender in the L1 TicketBroke
 
 ```
 npx hardhat migrate-sender --network mainnet --l1addr <L1_ADDRESS> --l2addr <L2_ADDRESS> --sig <SIGNATURE>
-``` 
+```
 
 - `--l1addr` is the broadcaster's L1 address.
 - `--l2addr` is the L2 address to use for the broadcaster. You can specify the current L1 address as long as it is not a contract.
@@ -89,3 +91,21 @@ npx hardhat migrate-unbonding-locks-typed-data --network mainnet --l1addr <L1_AD
 ```
 
 The output of this command will be a typed data payload that can be signed using the "Sign Typed Data" option in `livepeer_cli`.
+
+## Tenderly
+
+#### development
+
+- run `tenderly login` to login to the account and select **livepeer** as project
+- create a new directory for new a action under `automation/actions`
+- update `tenderly.yaml` to invoke that action
+
+#### build
+
+- run `tenderly actions build` to test building the action before deployment
+  note: sometimes the build output is not very informative when it fails. Use this flag to get detailed log `--output json --debug`
+
+#### deploy
+
+- run `tenderly actions deploy` to upload the action to tenderly dashboard
+- on the dashboard test the action using manual trigger
