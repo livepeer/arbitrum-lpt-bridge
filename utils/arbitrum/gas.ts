@@ -1,4 +1,6 @@
 import {BigNumber, ethers} from 'ethers';
+import {HardhatRuntimeEnvironment} from 'hardhat/types';
+import {ARBITRUM_NETWORK} from '../../deploy/constants';
 import {getArbitrumCoreContracts} from './contracts';
 
 export async function getGasPriceBid(
@@ -8,17 +10,29 @@ export async function getGasPriceBid(
 }
 
 export async function getMaxSubmissionPrice(
-    l2: ethers.providers.BaseProvider,
+    hre: HardhatRuntimeEnvironment,
     calldataOrCalldataLength: string | number,
 ) {
   const calldataLength =
     typeof calldataOrCalldataLength === 'string' ?
       calldataOrCalldataLength.length :
       calldataOrCalldataLength;
-  const [submissionPrice] = await getArbitrumCoreContracts(
-      l2,
-  ).arbRetryableTx.getSubmissionPrice(calldataLength);
-  const maxSubmissionPrice = submissionPrice.mul(4);
+
+  const provider = hre.ethers.provider;
+
+  const abi = [
+    'function calculateRetryableSubmissionFee(uint256 dataLength,uint256 baseFee) external view returns (uint256)',
+  ];
+  const inbox = new ethers.Contract(
+      ARBITRUM_NETWORK[hre.network.name].inbox,
+      abi,
+      provider,
+  );
+  const maxSubmissionPrice = await inbox.calculateRetryableSubmissionFee(
+      calldataLength,
+      await provider.getGasPrice(),
+  );
+
   return maxSubmissionPrice;
 }
 
@@ -27,22 +41,17 @@ export async function getMaxGas(
     sender: string,
     destination: string,
     refundDestination: string,
-    maxSubmissionPrice: BigNumber,
-    gasPriceBid: BigNumber,
     calldata: string,
 ): Promise<BigNumber> {
-  const [estimatedGas] = await getArbitrumCoreContracts(
+  const estimatedGas = await getArbitrumCoreContracts(
       l2,
-  ).nodeInterface.estimateRetryableTicket(
+  ).nodeInterface.estimateGas.estimateRetryableTicket(
       sender,
       ethers.utils.parseEther('0.05'),
       destination,
       0,
-      maxSubmissionPrice,
       refundDestination,
       refundDestination,
-      0,
-      gasPriceBid,
       calldata,
   );
   const maxGas = estimatedGas.mul(4);
