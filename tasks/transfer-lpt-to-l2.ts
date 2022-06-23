@@ -43,17 +43,12 @@ task('transfer-lpt-to-l2', 'Transfer LPT to L2')
           '0x',
       );
       const gasPriceBid = await getGasPriceBid(l2Provider);
-      const maxSubmissionCost = await getMaxSubmissionPrice(
-          l2Provider,
-          l2Calldata,
-      );
+      const maxSubmissionCost = await getMaxSubmissionPrice(hre, l2Calldata);
       const maxGas = await getMaxGas(
           l2Provider,
           gateway.address,
           l2GatewayDeployment.address,
           deployer,
-          maxSubmissionCost,
-          gasPriceBid,
           l2Calldata,
       );
       const ethValue = maxSubmissionCost.add(gasPriceBid.mul(maxGas));
