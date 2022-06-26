@@ -55,17 +55,12 @@ task('migrate-unbonding-locks', 'Migrate unbonding locks to L2')
         )
       ).data;
       const gasPriceBid = await getGasPriceBid(l2Provider);
-      const maxSubmissionCost = await getMaxSubmissionPrice(
-          l2Provider,
-          l2Calldata,
-      );
+      const maxSubmissionCost = await getMaxSubmissionPrice(hre, l2Calldata);
       const maxGas = await getMaxGas(
           l2Provider,
           migrator.address,
           l2MigratorDeployment.address,
           deployer,
-          maxSubmissionCost,
-          gasPriceBid,
           l2Calldata,
       );
       const ethValue = maxSubmissionCost.add(gasPriceBid.mul(maxGas));

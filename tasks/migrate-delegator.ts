@@ -56,17 +56,12 @@ task('migrate-delegator', 'Migrate delegator to L2')
         await migrator.getMigrateDelegatorParams(taskArgs.l1addr, taskArgs.l2addr)
       ).data;
       const gasPriceBid = await getGasPriceBid(l2Provider);
-      const maxSubmissionCost = await getMaxSubmissionPrice(
-          l2Provider,
-          l2Calldata,
-      );
+      const maxSubmissionCost = await getMaxSubmissionPrice(hre, l2Calldata);
       const maxGas = await getMaxGas(
           l2Provider,
           migrator.address,
           l2MigratorDeployment.address,
           refundAddr,
-          maxSubmissionCost,
-          gasPriceBid,
           l2Calldata,
       );
       const ethValue = maxSubmissionCost.add(gasPriceBid.mul(maxGas));

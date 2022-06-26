@@ -76,6 +76,14 @@ const config: HardhatUserConfig = {
         l2: 'arbitrumRinkebyDevnet',
       },
     },
+    nitroGoerliDevnet: {
+      url: process.env.NITRO_GOERLI_DEVNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l2: 'arbitrumNitroGoerliDevnet',
+      },
+    },
     arbitrumLocal: {
       url: 'http://localhost:8547',
       accounts: {
@@ -101,6 +109,14 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       companionNetworks: {
         l1: 'rinkebyDevnet',
+      },
+    },
+    arbitrumNitroGoerliDevnet: {
+      url: process.env.ARB_NITRO_GOERLI_DEVNET_URL || '',
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      companionNetworks: {
+        l1: 'nitroGoerliDevnet',
       },
     },
     mainnet: {

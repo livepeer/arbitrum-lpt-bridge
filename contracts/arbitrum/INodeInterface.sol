@@ -39,11 +39,8 @@ interface NodeInterface {
         uint256 deposit,
         address destAddr,
         uint256 l2CallValue,
-        uint256 maxSubmissionCost,
         address excessFeeRefundAddress,
         address callValueRefundAddress,
-        uint256 maxGas,
-        uint256 gasPriceBid,
         bytes memory data
     ) external view returns (uint256, uint256);
 }
