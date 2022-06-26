@@ -9,8 +9,10 @@ const exec = util.promisify(childProcess.exec);
 export const getArbitrumContracts = (network: string) => {
   if (['rinkeby', 'rinkebyDevnet', 'arbitrumRinkeby', 'arbitrumRinkebyDevnet'].indexOf(network) > -1) {
     return ARBITRUM_NETWORK.rinkeby;
-  } else if (['nitroDevnet', 'arbitrumNitroDevnet'].indexOf(network) > -1) {
-    return ARBITRUM_NETWORK.nitroDevnet;
+  } else if (
+    ['nitroGoerliDevnet', 'arbitrumNitroGoerliDevnet'].indexOf(network) > -1
+  ) {
+    return ARBITRUM_NETWORK.nitroGoerliDevnet;
   } else if (['mainnet', 'arbitrumMainnet'].indexOf(network) > -1) {
     return ARBITRUM_NETWORK.mainnet;
   } else {
