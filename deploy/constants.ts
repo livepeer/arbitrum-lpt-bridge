@@ -17,7 +17,7 @@ export const ARBITRUM_NETWORK: any = {
     arbRetryableTx: '0x000000000000000000000000000000000000006E',
     nodeInterface: '0x00000000000000000000000000000000000000C8',
   },
-  nitroDevnet: {
+  nitroGoerliDevnet: {
     l1GatewayRouter: '0x8BDFa67ace22cE2BFb2fFebe72f0c91CDA694d4b',
     l2GatewayRouter: '0xC502Ded1EE1d616B43F7f20Ebde83Be1A275ca3c',
     inbox: '0x1FdBBcC914e84aF593884bf8e8Dd6877c29035A2',

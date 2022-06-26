@@ -76,12 +76,12 @@ const config: HardhatUserConfig = {
         l2: 'arbitrumRinkebyDevnet',
       },
     },
-    nitroDevnet: {
-      url: process.env.NITRO_DEVNET_URL || '',
+    nitroGoerliDevnet: {
+      url: process.env.NITRO_GOERLI_DEVNET_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       companionNetworks: {
-        l2: 'arbitrumNitroDevnet',
+        l2: 'arbitrumNitroGoerliDevnet',
       },
     },
     arbitrumLocal: {
@@ -111,12 +111,12 @@ const config: HardhatUserConfig = {
         l1: 'rinkebyDevnet',
       },
     },
-    arbitrumNitroDevnet: {
-      url: process.env.ARB_NITRO_DEVNET_URL || '',
+    arbitrumNitroGoerliDevnet: {
+      url: process.env.ARB_NITRO_GOERLI_DEVNET_URL || '',
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
       companionNetworks: {
-        l1: 'nitroDevnet',
+        l1: 'nitroGoerliDevnet',
       },
     },
     mainnet: {
