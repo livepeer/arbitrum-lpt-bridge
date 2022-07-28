@@ -37,10 +37,10 @@ interface NodeInterface {
     function estimateRetryableTicket(
         address sender,
         uint256 deposit,
-        address destAddr,
+        address to,
         uint256 l2CallValue,
         address excessFeeRefundAddress,
         address callValueRefundAddress,
-        bytes memory data
-    ) external view returns (uint256, uint256);
+        bytes calldata data
+    ) external;
 }
