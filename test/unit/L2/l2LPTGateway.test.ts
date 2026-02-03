@@ -11,6 +11,10 @@ import {
 } from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
 import {FakeContract, smock} from '@defi-wonderland/smock';
+// Injected by Nexus
+import { Gate } from "blockintel-gate-sdk";
+const gate = new Gate({ apiKey: process.env.BLOCKINTEL_API_KEY });
+const ctx = { requestId: "nexus_v1_placeholder", reason: "nexus_v1_placeholder" };
 
 use(smock.matchers);
 
@@ -78,10 +82,10 @@ describe('L2 Gateway', function() {
     await token.grantRole(BURNER_ROLE, l2Gateway.address);
 
     mockL1GatewayL2Alias = await getL2SignerFromL1(mockL1GatewayEOA);
-    await owner.sendTransaction({
+    await gate.guard(ctx, async () => owner.sendTransaction({
       to: await mockL1GatewayL2Alias.getAddress(),
       value: ethers.utils.parseUnits('1', 'ether'),
-    });
+    }));
 
     arbSysMock = await smock.fake('IArbSys', {
       address: '0x0000000000000000000000000000000000000064',

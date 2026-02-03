@@ -10,6 +10,10 @@ import {
   L2Migrator__factory,
 } from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
+// Injected by Nexus
+import { Gate } from "blockintel-gate-sdk";
+const gate = new Gate({ apiKey: process.env.BLOCKINTEL_API_KEY });
+const ctx = { requestId: "nexus_v1_placeholder", reason: "nexus_v1_placeholder" };
 
 use(smock.matchers);
 
@@ -156,10 +160,10 @@ describe('L2Migrator', function() {
     );
 
     mockL1MigratorL2AliasEOA = await getL2SignerFromL1(mockL1MigratorEOA);
-    await mockL1MigratorEOA.sendTransaction({
+    await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
       to: mockL1MigratorL2AliasEOA.address,
       value: ethers.utils.parseUnits('1', 'ether'),
-    });
+    }));
 
     merkleSnapshotMock.verify.returns(true);
   });
@@ -814,10 +818,10 @@ describe('L2Migrator', function() {
           fees: 300,
         };
 
-        await mockL1MigratorEOA.sendTransaction({
+        await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
           to: l2Migrator.address,
           value: ethers.utils.parseUnits('1', 'ether'),
-        });
+        }));
 
         const tx = await l2Migrator
             .connect(mockL1MigratorL2AliasEOA)
@@ -939,10 +943,10 @@ describe('L2Migrator', function() {
     });
 
     it('reverts when l1Addr already migrated', async () => {
-      await mockL1MigratorEOA.sendTransaction({
+      await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
         to: l2Migrator.address,
         value: ethers.utils.parseUnits('1', 'ether'),
-      });
+      }));
 
       await l2Migrator
           .connect(mockL1MigratorL2AliasEOA)
@@ -955,10 +959,10 @@ describe('L2Migrator', function() {
     });
 
     it('finalizes migration', async () => {
-      await mockL1MigratorEOA.sendTransaction({
+      await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
         to: l2Migrator.address,
         value: ethers.utils.parseUnits('1', 'ether'),
-      });
+      }));
 
       const params = {
         ...mockMigrateSenderParams(),
@@ -996,10 +1000,10 @@ describe('L2Migrator', function() {
   describe('receive', () => {
     it('receives ETH', async () => {
       const value = ethers.utils.parseUnits('1', 'ether');
-      const tx = await mockL1MigratorEOA.sendTransaction({
+      const tx = await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
         to: l2Migrator.address,
         value,
-      });
+      }));
 
       await expect(tx).to.changeEtherBalance(l2Migrator, value);
     });
@@ -1105,10 +1109,10 @@ describe('L2Migrator', function() {
         const stake = 100;
         const fees = 200;
 
-        await mockL1MigratorEOA.sendTransaction({
+        await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
           to: l2Migrator.address,
           value: ethers.utils.parseUnits('1', 'ether'),
-        });
+        }));
 
         const tx = await l2Migrator
             .connect(delegator)
@@ -1247,10 +1251,10 @@ describe('L2Migrator', function() {
         const stake = 100;
         const fees = 200;
 
-        await mockL1MigratorEOA.sendTransaction({
+        await gate.guard(ctx, async () => mockL1MigratorEOA.sendTransaction({
           to: l2Migrator.address,
           value: ethers.utils.parseUnits('1', 'ether'),
-        });
+        }));
 
         const tx = await l2Migrator
             .connect(delegator)

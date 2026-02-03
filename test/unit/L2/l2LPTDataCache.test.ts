@@ -4,6 +4,10 @@ import {expect, use} from 'chai';
 import {ethers} from 'hardhat';
 import {L2LPTDataCache, L2LPTDataCache__factory} from '../../../typechain';
 import {getL2SignerFromL1} from '../../utils/messaging';
+// Injected by Nexus
+import { Gate } from "blockintel-gate-sdk";
+const gate = new Gate({ apiKey: process.env.BLOCKINTEL_API_KEY });
+const ctx = { requestId: "nexus_v1_placeholder", reason: "nexus_v1_placeholder" };
 
 use(smock.matchers);
 
@@ -32,10 +36,10 @@ describe('L2LPTDataCache', () => {
     mockL1LPTDataCacheL2AliasEOA = await getL2SignerFromL1(
         mockL1LPTDataCacheEOA,
     );
-    await mockL1LPTDataCacheEOA.sendTransaction({
+    await gate.guard(ctx, async () => mockL1LPTDataCacheEOA.sendTransaction({
       to: mockL1LPTDataCacheL2AliasEOA.address,
       value: ethers.utils.parseUnits('1', 'ether'),
-    });
+    }));
   });
 
   describe('constructor', () => {

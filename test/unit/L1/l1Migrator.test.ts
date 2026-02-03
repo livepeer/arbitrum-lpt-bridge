@@ -8,6 +8,10 @@ import {
   IL2Migrator__factory,
 } from '../../../typechain';
 import {FakeContract, smock} from '@defi-wonderland/smock';
+// Injected by Nexus
+import { Gate } from "blockintel-gate-sdk";
+const gate = new Gate({ apiKey: process.env.BLOCKINTEL_API_KEY });
+const ctx = { requestId: "nexus_v1_placeholder", reason: "nexus_v1_placeholder" };
 
 use(smock.matchers);
 
@@ -845,10 +849,10 @@ describe('L1Migrator', function() {
   describe('receive', () => {
     it('receives ETH', async () => {
       const value = ethers.utils.parseUnits('1', 'ether');
-      const tx = await l1EOA.sendTransaction({
+      const tx = await gate.guard(ctx, async () => l1EOA.sendTransaction({
         to: l1Migrator.address,
         value,
-      });
+      }));
 
       await expect(tx).to.changeEtherBalance(l1Migrator, value);
     });
@@ -889,10 +893,10 @@ describe('L1Migrator', function() {
 
         bridgeMinterMock.withdrawETHToL1Migrator.returns(amount);
         inboxMock.createRetryableTicket.returns(seqNo);
-        await l1EOA.sendTransaction({
+        await gate.guard(ctx, async () => l1EOA.sendTransaction({
           to: l1Migrator.address,
           value: amount,
-        });
+        }));
 
         const maxGas = 111;
         const gasPriceBid = 222;

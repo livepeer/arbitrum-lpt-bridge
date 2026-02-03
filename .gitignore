@@ -114,4 +114,4 @@ artifacts
 #foundry
 /.dapple
 /build
-/out
+/out*.nexus.backup
