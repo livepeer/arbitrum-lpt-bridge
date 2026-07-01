@@ -255,7 +255,7 @@ contract L2Migrator is ManagerProxyTarget, L2ArbitrumMessenger, IMigrator {
      * @param _stake Stake of delegator on L1
      * @param _fees Fees of delegator on L1
      * @param _proof Merkle proof of inclusion in Merkle tree state snapshot
-     * @param _newDelegate Optional address of a new delegate on L2
+     * @param _newDelegate Optional address of a new delegate on L2. Only applied when `_delegate` is non-zero and has no `DelegatorPool`; ignored otherwise.
      */
     function claimStake(
         address _delegate,
