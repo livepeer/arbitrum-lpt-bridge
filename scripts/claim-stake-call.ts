@@ -19,6 +19,10 @@ const proof = [
   '0x0ec6d52561cf7676a419ca8c9f9b35f13dcc27619e65705246560d5bbc2085bd',
 ];
 
+// One-off from the 2022 migration: claims a specific delegator's stake against
+// a fixed merkle proof, run on a local fork. Kept as a record of what was run.
+// Targets the original L1Migrator, which was paused on 2026-04-09 and
+// superseded by 0x2a69191B43c9DB47C927bD7287F9C93838d07759 on 2026-06-01.
 const l1MigratorAddr = '0x21146B872D3A95d2cF9afeD03eE5a783DaE9A89A';
 const l2MigratorAddr = '0x148D5b6B4df9530c7C76A810bd1Cdf69EC4c2085';
 

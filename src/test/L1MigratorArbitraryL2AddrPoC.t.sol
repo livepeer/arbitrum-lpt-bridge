@@ -91,7 +91,20 @@ interface IBondingVotes {
     function totalSupply() external view returns (uint256);
 }
 
-// ETH_RPC_URL="" ARB_RPC_URL="" forge test -vvv --match-contract L1MigratorArbitraryL2AddrAttackPoC
+// PoC for the arbitrary L2 address issue in L1Migrator: a migrating L1
+// transcoder could name any L2 address, then use the resulting voting power to
+// pass a Treasury-draining proposal.
+//
+// Fixed. L1Migrator now requires _l2Addr to match _l1Addr (fb75e27), and the
+// fixed contract was redeployed on 2026-06-01 with L2Migrator re-pointed to it.
+//
+// This file targets the ORIGINAL deployment, which has been paused since
+// 2026-04-09 as the interim mitigation. That is why setUp calls
+// _unpauseL1Migrator(): the attack is reproduced under its original conditions.
+//
+// See L1MigratorArbitraryL2AddrFix for the regression test.
+//
+// ETH_RPC_URL="" ARB_RPC_URL="" forge test -vvv --match-contract L1MigratorArbitraryL2AddrPoC
 contract L1MigratorArbitraryL2AddrPoC is L2ArbitrumMessenger, DSTest {
     ICheatCodes public constant CHEATS = ICheatCodes(HEVM_ADDRESS);
 
