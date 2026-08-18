@@ -104,7 +104,7 @@ interface IBondingVotes {
 //
 // See L1MigratorArbitraryL2AddrFix for the regression test.
 //
-// ETH_RPC_URL="" ARB_RPC_URL="" forge test -vvv --match-contract L1MigratorArbitraryL2AddrAttackPoC
+// ETH_RPC_URL="" ARB_RPC_URL="" forge test -vvv --match-contract L1MigratorArbitraryL2AddrPoC
 contract L1MigratorArbitraryL2AddrPoC is L2ArbitrumMessenger, DSTest {
     ICheatCodes public constant CHEATS = ICheatCodes(HEVM_ADDRESS);
 

@@ -10,8 +10,6 @@ import "./interfaces/IBondingManager.sol";
 contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
     ICheatCodes public constant CHEATS = ICheatCodes(HEVM_ADDRESS);
 
-    address public constant L1_MIGRATOR_ADDRESS =
-        0x2a69191B43c9DB47C927bD7287F9C93838d07759;
     L2Migrator public constant L2_MIGRATOR =
         L2Migrator(payable(0x148D5b6B4df9530c7C76A810bd1Cdf69EC4c2085));
     IBondingManagerOverride public constant BONDING_MANAGER =
@@ -33,7 +31,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
     {
         CHEATS.roll(TEST_BLOCK_NUMBER);
         ROUND_MANAGER.initializeRound();
-        CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
+        CHEATS.startPrank(applyL1ToL2Alias(L2_MIGRATOR.l1MigratorAddr()));
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NULL_DELEGATE,
             address(0)
@@ -45,7 +43,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
     function testDelegateTransferWithDelegatorWithNullDelegate() public {
         CHEATS.roll(TEST_BLOCK_NUMBER);
         ROUND_MANAGER.initializeRound();
-        CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
+        CHEATS.startPrank(applyL1ToL2Alias(L2_MIGRATOR.l1MigratorAddr()));
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NULL_DELEGATE,
             L1_DELEGATE
@@ -57,7 +55,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
     function testDelegateTransferWithDelegatorWithNonNullDelegate() public {
         CHEATS.roll(TEST_BLOCK_NUMBER);
         ROUND_MANAGER.initializeRound();
-        CHEATS.startPrank(applyL1ToL2Alias(L1_MIGRATOR_ADDRESS));
+        CHEATS.startPrank(applyL1ToL2Alias(L2_MIGRATOR.l1MigratorAddr()));
         address delegateAddress = _migrateBondingLock(
             DELEGATOR_WITH_NON_NULL_DELEGATE,
             L1_DELEGATE
