@@ -11,7 +11,7 @@ contract UnbondingLockTest is L2ArbitrumMessenger, DSTest {
     ICheatCodes public constant CHEATS = ICheatCodes(HEVM_ADDRESS);
 
     address public constant L1_MIGRATOR_ADDRESS =
-        0x21146B872D3A95d2cF9afeD03eE5a783DaE9A89A;
+        0x2a69191B43c9DB47C927bD7287F9C93838d07759;
     L2Migrator public constant L2_MIGRATOR =
         L2Migrator(payable(0x148D5b6B4df9530c7C76A810bd1Cdf69EC4c2085));
     IBondingManagerOverride public constant BONDING_MANAGER =

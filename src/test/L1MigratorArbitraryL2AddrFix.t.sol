@@ -4,6 +4,14 @@ pragma solidity 0.8.9;
 import "./L1MigratorArbitraryL2AddrPoC.t.sol";
 import {L1Migrator} from "../../contracts/L1/gateway/L1Migrator.sol";
 
+// Regression test for L1MigratorArbitraryL2AddrPoC: reruns the same attack and
+// asserts the _l2Addr equality check now blocks it.
+//
+// Note it deploys L1Migrator from THIS REPO'S SOURCE at a fresh address and
+// re-points L2Migrator at it, rather than exercising the live deployment. So it
+// proves the source is fixed, not that any particular deployed address is. The
+// forks are pinned so the pre-fix state it builds on cannot drift.
+//
 // ETH_RPC_URL="" ARB_RPC_URL="" ETH_BLOCK=24993518 ARB_BLOCK=457950814 forge test -vvv --match-contract L1MigratorArbitraryL2AddrFix
 contract L1MigratorArbitraryL2AddrFix is L1MigratorArbitraryL2AddrPoC {
 
